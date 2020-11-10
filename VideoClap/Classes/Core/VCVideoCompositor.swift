@@ -64,7 +64,7 @@ internal class VCVideoCompositor: NSObject {
         for existingTimeRange in existingTimeRanges {
             let intersection = existingTimeRange.intersection(timeRange)
             if intersection.isEmpty {
-                return true
+                continue
             } else {
                 return false
             }
