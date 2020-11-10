@@ -1,0 +1,14 @@
+platform :ios, '10.0'
+
+source 'https://github.com/CocoaPods/Specs.git'
+
+target 'VideoClap_Example' do
+  use_frameworks!
+  
+  pod 'VideoClap', :path => '../'
+  pod 'SSPlayer', :git => 'https://github.com/lai001/SSPlayer.git'
+  pod 'SDWebImage'
+  pod 'SnapKit', '4.2.0'
+  
+  pod 'SwiftyBeaver'
+end

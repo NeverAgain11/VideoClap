@@ -1,0 +1,102 @@
+PODS:
+  - lottie-ios (3.1.9)
+  - SDWebImage (5.9.4):
+    - SDWebImage/Core (= 5.9.4)
+  - SDWebImage/Core (5.9.4)
+  - SnapKit (4.2.0)
+  - SSPlayer (0.1.0)
+  - SwiftyBeaver (1.9.2)
+  - SwiftyTimer (2.1.0)
+  - VideoClap (0.1.0):
+    - lottie-ios
+    - SwiftyBeaver
+    - SwiftyTimer
+    - VideoClap/AudioEffects (= 0.1.0)
+    - VideoClap/Core (= 0.1.0)
+    - VideoClap/CustomFilter (= 0.1.0)
+    - VideoClap/Extension (= 0.1.0)
+    - VideoClap/MetalLibs (= 0.1.0)
+    - VideoClap/Model (= 0.1.0)
+    - VideoClap/Protocol (= 0.1.0)
+    - VideoClap/Trajectory (= 0.1.0)
+    - VideoClap/Transition (= 0.1.0)
+    - VideoClap/Utilities (= 0.1.0)
+  - VideoClap/AudioEffects (0.1.0):
+    - lottie-ios
+    - SwiftyBeaver
+    - SwiftyTimer
+  - VideoClap/Core (0.1.0):
+    - lottie-ios
+    - SwiftyBeaver
+    - SwiftyTimer
+  - VideoClap/CustomFilter (0.1.0):
+    - lottie-ios
+    - SwiftyBeaver
+    - SwiftyTimer
+  - VideoClap/Extension (0.1.0):
+    - lottie-ios
+    - SwiftyBeaver
+    - SwiftyTimer
+  - VideoClap/MetalLibs (0.1.0):
+    - lottie-ios
+    - SwiftyBeaver
+    - SwiftyTimer
+  - VideoClap/Model (0.1.0):
+    - lottie-ios
+    - SwiftyBeaver
+    - SwiftyTimer
+  - VideoClap/Protocol (0.1.0):
+    - lottie-ios
+    - SwiftyBeaver
+    - SwiftyTimer
+  - VideoClap/Trajectory (0.1.0):
+    - lottie-ios
+    - SwiftyBeaver
+    - SwiftyTimer
+  - VideoClap/Transition (0.1.0):
+    - lottie-ios
+    - SwiftyBeaver
+    - SwiftyTimer
+  - VideoClap/Utilities (0.1.0):
+    - lottie-ios
+    - SwiftyBeaver
+    - SwiftyTimer
+
+DEPENDENCIES:
+  - SDWebImage
+  - SnapKit (= 4.2.0)
+  - SSPlayer (from `https://github.com/lai001/SSPlayer.git`)
+  - SwiftyBeaver
+  - VideoClap (from `../`)
+
+SPEC REPOS:
+  https://github.com/CocoaPods/Specs.git:
+    - lottie-ios
+    - SDWebImage
+    - SnapKit
+    - SwiftyBeaver
+    - SwiftyTimer
+
+EXTERNAL SOURCES:
+  SSPlayer:
+    :git: https://github.com/lai001/SSPlayer.git
+  VideoClap:
+    :path: "../"
+
+CHECKOUT OPTIONS:
+  SSPlayer:
+    :commit: a4e509618b83a56cd42467e634c557ade3e363d1
+    :git: https://github.com/lai001/SSPlayer.git
+
+SPEC CHECKSUMS:
+  lottie-ios: 3a3758ef5a008e762faec9c9d50a39842f26d124
+  SDWebImage: b69257f4ab14e9b6a2ef53e910fdf914d8f757c1
+  SnapKit: fe8a619752f3f27075cc9a90244d75c6c3f27e2a
+  SSPlayer: 6299c67bde2d7a5f64292dccac0e6ddd45bfdd91
+  SwiftyBeaver: b8239f6bfe9e1ea3303e6139abc8c24228081d84
+  SwiftyTimer: 02dd6cf10cbc71cbf67cec494f6e5eb782102543
+  VideoClap: 90aba8344a4036dcfa4bd1dd04b8bd39ec264511
+
+PODFILE CHECKSUM: caae0992d13fb9ab8e8ce7c89b35f5920c97d588
+
+COCOAPODS: 1.10.0
