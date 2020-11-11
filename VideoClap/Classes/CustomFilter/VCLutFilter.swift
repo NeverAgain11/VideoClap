@@ -10,7 +10,7 @@ import CoreImage
 
 open class VCLutFilter: CIFilter {
     
-    private let sourceCode = """
+    private static let sourceCode = """
     kernel vec4 YasicLUT(sampler inputImage, sampler inputLUT, float intensity) {
         vec4 textureColor = sample(inputImage, samplerCoord(inputImage));
         textureColor = clamp(textureColor, vec4(0.0), vec4(1.0));
@@ -39,7 +39,7 @@ open class VCLutFilter: CIFilter {
     }
     """
     
-    private lazy var lutKernel: CIKernel? = {
+    private static let kernel: CIKernel? = {
         return CIKernel(source: sourceCode)
     }()
     
@@ -50,7 +50,7 @@ open class VCLutFilter: CIFilter {
     @objc public var inputIntensity: NSNumber = 1.0
     
     public override var outputImage: CIImage? {
-        guard let kernel = lutKernel else { return nil }
+        guard let kernel = VCLutFilter.kernel else { return nil }
         guard let inputImage = self.inputImage else { return nil }
         guard let lookupImage = self.lookupImage else { return nil }
         var finalFrame: CIImage = inputImage

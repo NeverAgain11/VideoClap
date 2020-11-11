@@ -10,7 +10,7 @@ import CoreImage
 
 open class VCWaveFilter: CIFilter {
     
-    private let sourceCode = """
+    private static let sourceCode = """
     kernel vec4 YasicLUT(sampler inputImage, sampler inputTargetImage, float iTime) {
         vec2 uv =  samplerCoord(inputImage);
         vec4 texture0Color = sample(inputImage, samplerCoord(inputImage));
@@ -31,7 +31,7 @@ open class VCWaveFilter: CIFilter {
     }
     """
     
-    private lazy var waveKernel: CIKernel? = {
+    private static let kernel: CIKernel? = {
         return CIKernel(source: sourceCode)
     }()
     
@@ -42,7 +42,7 @@ open class VCWaveFilter: CIFilter {
     @objc public var inputTime: NSNumber = 1.0
     
     public override var outputImage: CIImage? {
-        guard let kernel = waveKernel else { return nil }
+        guard let kernel = VCWaveFilter.kernel else { return nil }
         guard let inputImage = self.inputImage else { return nil }
         guard let inputTargetImage = self.inputTargetImage else { return nil }
         var finalFrame: CIImage = inputImage

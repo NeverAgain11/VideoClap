@@ -11,7 +11,7 @@ import CoreImage
 open class VCDropletsFilter: CIFilter {
     
     /// https://www.shadertoy.com/view/ltlSzl
-    private let sourceCode = """
+    private static let sourceCode = """
     
     #define NUM 100
 
@@ -78,7 +78,7 @@ open class VCDropletsFilter: CIFilter {
     }
     """
     
-    private lazy var waveKernel: CIKernel? = {
+    private static let kernel: CIKernel? = {
         return CIKernel(source: sourceCode)
     }()
     
@@ -87,7 +87,7 @@ open class VCDropletsFilter: CIFilter {
     @objc public var inputTime: NSNumber = 1.0
     
     public override var outputImage: CIImage? {
-        guard let kernel = waveKernel else { return nil }
+        guard let kernel = VCDropletsFilter.kernel else { return nil }
         guard let inputImage = self.inputImage else { return nil }
         var finalFrame: CIImage = inputImage
         let aspectLength = max(inputImage.extent.size.width, inputImage.extent.size.height)

@@ -11,7 +11,7 @@ import CoreImage
 
 open class VCSquareswireFilter: CIFilter {
     
-    private let sourceCode = """
+    private static let sourceCode = """
 
     kernel vec4 transition(sampler inputImage, sampler inputTargetImage, float progress, vec2 squares, vec2 direction, float smoothness) {
         vec2 center = vec2(0.5, 0.5);
@@ -31,7 +31,7 @@ open class VCSquareswireFilter: CIFilter {
 
     """
     
-    private lazy var kernel: CIKernel? = {
+    private static let kernel: CIKernel? = {
         return CIKernel(source: sourceCode)
     }()
     
@@ -48,7 +48,7 @@ open class VCSquareswireFilter: CIFilter {
     @objc public var smoothness: NSNumber = 1.6
     
     public override var outputImage: CIImage? {
-        guard let kernel = kernel else { return nil }
+        guard let kernel = VCSquareswireFilter.kernel else { return nil }
         guard let inputImage = self.inputImage else { return nil }
         guard let inputTargetImage = self.inputTargetImage else { return nil }
         var finalFrame: CIImage = inputImage

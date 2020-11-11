@@ -10,7 +10,7 @@ import CoreImage
 
 open class VCDoorwayFilter: CIFilter {
     
-    private let sourceCode = """
+    private static let sourceCode = """
     #define black vec4(0.0, 0.0, 0.0, 1.0)
     #define boundMin vec2(0.0, 0.0)
     #define boundMax vec2(1.0, 1.0)
@@ -70,7 +70,7 @@ open class VCDoorwayFilter: CIFilter {
 
     """
     
-    private lazy var waveKernel: CIKernel? = {
+    private static let kernel: CIKernel? = {
         return CIKernel(source: sourceCode)
     }()
     
@@ -87,7 +87,7 @@ open class VCDoorwayFilter: CIFilter {
     @objc public var depth: NSNumber = 3.0
     
     public override var outputImage: CIImage? {
-        guard let kernel = waveKernel else { return nil }
+        guard let kernel = VCDoorwayFilter.kernel else { return nil }
         guard let inputImage = self.inputImage else { return nil }
         guard let inputTargetImage = self.inputTargetImage else { return nil }
         var finalFrame: CIImage = inputImage

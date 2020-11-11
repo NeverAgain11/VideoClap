@@ -10,7 +10,7 @@ import CoreImage
 
 open class VCIceMeltingFilter: CIFilter {
     
-    private let sourceCode = """
+    private static let sourceCode = """
 
     #define PHASE_POWER 2.0
     #define PHI 1.61803398874989484820459
@@ -109,7 +109,7 @@ open class VCIceMeltingFilter: CIFilter {
 
     """
     
-    private lazy var kernel: CIKernel? = {
+    private static let kernel: CIKernel? = {
         return CIKernel(source: sourceCode)
     }()
     
@@ -120,7 +120,7 @@ open class VCIceMeltingFilter: CIFilter {
     @objc public var inputTime: NSNumber = 1.0
     
     public override var outputImage: CIImage? {
-        guard let kernel = kernel else { return nil }
+        guard let kernel = VCIceMeltingFilter.kernel else { return nil }
         guard let inputImage = self.inputImage else { return nil }
         guard let inputTargetImage = self.inputTargetImage else { return nil }
         var finalFrame: CIImage = inputImage
