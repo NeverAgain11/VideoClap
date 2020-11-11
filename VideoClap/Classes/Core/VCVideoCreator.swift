@@ -14,8 +14,6 @@ public struct RenderSettings {
     var width: CGFloat = 720
     var height: CGFloat = 720
     var avCodecKey: String = AVVideoCodecH264
-    var videoFilename: String = "black30s"
-    var videoFilenameExt: String = "mov"
     var duration: CMTime = CMTime(seconds: 30.0, preferredTimescale: 2)
     
     var size: CGSize {
@@ -55,17 +53,13 @@ public struct RenderSettings {
         return sourcePixelBufferAttributesDictionary as [String : Any]
     }
     
-    init(outputURL: URL,
+    public init(outputURL: URL,
          width: CGFloat = 720,
          height: CGFloat = 720,
-         videoFilename: String = "black30s",
-         videoFilenameExt: String = "mov",
          duration: CMTime = CMTime(seconds: 30.0, preferredTimescale: 2)) {
         self.outputURL = outputURL
         self.width = width
         self.height = height
-        self.videoFilename = videoFilename
-        self.videoFilenameExt = videoFilenameExt
         self.duration = duration
     }
     
@@ -77,7 +71,6 @@ public class VCVideoCreator: NSObject {
     
     let settings: RenderSettings
     let videoWriter: VCVideoWriter
-    let name: String
     
     lazy var images: [UIImage] = {
         let renderer = VCGraphicsRenderer()
@@ -89,8 +82,7 @@ public class VCVideoCreator: NSObject {
         return (0..<settings.duration.value).map({ _ in image }).compactMap({ $0 })
     }()
     
-    init(renderSettings: RenderSettings, name: String) {
-        self.name = name
+    public init(renderSettings: RenderSettings) {
         settings = renderSettings
         videoWriter = VCVideoWriter(renderSettings: settings)
         super.init()
@@ -119,11 +111,7 @@ public class VCVideoCreator: NSObject {
         }
     }
     
-    func render(completion: @escaping () -> Void) {
-        if FileManager.default.fileExists(atPath: settings.outputURL.path) {
-            completion()
-            return
-        }
+    public func render(completion: @escaping () -> Void) {
         removeFileAtURL(fileURL: settings.outputURL)
         videoWriter.render(appendPixelBuffers: { (compositionTime: CMTime, feedImage: VCVideoWriter.FeedImage) -> Bool in
             let index = Int(compositionTime.value)

@@ -71,6 +71,7 @@ class ViewController: UIViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(transitionChange), name: TransitionNotification, object: nil)
         setupUI()
         
+        videoDescription.fps = 24.0
         videoDescription.renderSize = CGSize(width: 720, height: 720)
         videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
         videoDescription.setWaterMarkImageClosure { () -> CIImage? in
@@ -124,9 +125,9 @@ class ViewController: UIViewController {
         do {
             let track = VCMediaTrack(id: "track3",
                                      trackType: .audio,
-                                     timeRange: CMTimeRange(start: 0.0, duration: 10.0))
+                                     timeRange: CMTimeRange(start: 0.0, duration: 180.0))
             track.mediaURL = Bundle.main.url(forResource: "02.Ellis - Clear My Head (Radio Edit) [NCS]", withExtension: "mp3", subdirectory: "Mat")
-            track.mediaClipTimeRange = CMTimeRange(start: 6.0, duration: 10.0)
+            track.mediaClipTimeRange = CMTimeRange(start: 10.0, duration: 100.0)
             if #available(iOS 11.0, *) {
                 track.audioEffectProvider = VCGhostAudioEffectProvider()
             }
@@ -237,6 +238,8 @@ class ViewController: UIViewController {
             transition = VCSquareswireTransition()
         case .Mod:
             transition = VCModTransition()
+        case .Cube:
+            transition = VCCubeTransition()
         case .Translation:
             transition = VCTranslationTransition().config(closure: {
                 $0.translation = 720.0

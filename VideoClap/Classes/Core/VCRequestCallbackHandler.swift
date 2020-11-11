@@ -14,8 +14,6 @@ import CoreAudioKit
 
 open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol {
     
-    public var tapTokens: [VCTapToken] = []
-    
     private lazy var ciContext: CIContext = {
         if let gpu = MTLCreateSystemDefaultDevice() {
             return CIContext(mtlDevice: gpu)
@@ -150,7 +148,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                 let progress: Float = Float(compositionTime.value - findTransition.timeRange.start.value) / Float(findTransition.timeRange.duration.value)
                 if let image = findTransition.transition(renderSize: videoDescription.renderSize,
                                                          progress: progress,
-                                                         fromImage: fromImage,
+                                                         fromImage: fromImage.composited(over: blackImage),
                                                          toImage: toImage) {
                     transitionFinishImages.append(image)
                 }

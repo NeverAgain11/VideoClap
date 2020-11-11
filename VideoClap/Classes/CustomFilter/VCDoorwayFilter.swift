@@ -63,6 +63,7 @@ open class VCDoorwayFilter: CIFilter {
             return color;
         }
         else {
+            return vec4(0.0, 0.0, 0.0, 1.0); // FIXME: 返回黑色，暂时修复显示图像异常
             vec4 backgroundColor = bgColor(p, pto, reflection, inputTargetImage, progress);
             return backgroundColor;
         }

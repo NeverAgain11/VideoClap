@@ -248,8 +248,15 @@ internal class VCVideoCompositor: NSObject {
         guard let userTrack = videoAsset.tracks(withMediaType: .audio).first else {
             throw VCVideoCompositorError.noAudioTrack("\(mediaURL.path)没有音频轨道")
         }
-        let timeRange = CMTimeRange(start: track.mediaClipTimeRange.start, end: min(videoAsset.duration, track.mediaClipTimeRange.end))
-        try compositionTrack.insertTimeRange(timeRange, of: userTrack, at: track.timeRange.start)
+        
+        var clipTimeRange: CMTimeRange = CMTimeRange(start: track.mediaClipTimeRange.start, end: min(videoAsset.duration, track.mediaClipTimeRange.end))
+        
+        if clipTimeRange.duration != track.timeRange.duration {
+            log.warning("\(track.id) - 音频裁剪的时间（\(clipTimeRange.duration.seconds)s）与设定的播放时间（\(track.timeRange.duration.seconds)s）不相等，已将裁减时间改为（\(track.timeRange.duration.seconds)s）")
+            clipTimeRange.duration = track.timeRange.duration
+        }
+        
+        try compositionTrack.insertTimeRange(clipTimeRange, of: userTrack, at: track.timeRange.start)
     }
     
     private func addAudioMix(audioTrack: AVMutableCompositionTrack, audioTrackID: CMPersistentTrackID, track: VCTrack) -> AVMutableAudioMixInputParameters? {
@@ -268,7 +275,6 @@ internal class VCVideoCompositor: NSObject {
         if let handler = requestCallbackHandler {
             do {
                 let cookie = VCTapToken(trackID: track.id, processCallback: handler)
-                handler.tapTokens.append(cookie)
                 try inputParams.setAudioProcessingTap(cookie: cookie)
             } catch let error {
                 log.error(error)

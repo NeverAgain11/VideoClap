@@ -7,8 +7,12 @@
 
 import AVFoundation
 
+private var tokens: Set<VCTapToken> = {
+    return []
+}()
+
 extension AVMutableAudioMixInputParameters {
-    
+
     func setAudioProcessingTap(cookie: VCTapToken) throws {
         var callbacks = MTAudioProcessingTapCallbacks(
             version: kMTAudioProcessingTapCallbacksVersion_0,
@@ -31,11 +35,13 @@ extension AVMutableAudioMixInputParameters {
         } else {
             throw VCAudioProcessingTapError.initError
         }
+        tokens.insert(cookie)
     }
 }
 
 private func tapFinalize(tap: MTAudioProcessingTap) {
-    Unmanaged<VCTapToken>.fromOpaque(MTAudioProcessingTapGetStorage(tap)).release()
+    let token = Unmanaged<VCTapToken>.fromOpaque(MTAudioProcessingTapGetStorage(tap)).takeUnretainedValue()
+    tokens.remove(token)
 }
 
 private func tapUnprepare(tap: MTAudioProcessingTap) {

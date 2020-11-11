@@ -59,7 +59,7 @@ open class VideoClap: NSObject {
     public func exportToVideo(fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) {
         let playerItem = playerItemForPlay()
 //        playerItem.seekingWaitsForVideoCompositionRendering = true
-        let presetName = AVAssetExportPresetMediumQuality
+        let presetName = AVAssetExportPresetHighestQuality
         AVAssetExportSession.determineCompatibility(ofExportPreset: presetName, with: playerItem.asset, outputFileType: .mov) { (canExport) in
             guard canExport, let session = AVAssetExportSession(asset: playerItem.asset, presetName: presetName) else {
                 completionHandler(nil, VideoClapError.exportFailed)

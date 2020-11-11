@@ -9,8 +9,6 @@ import AVFoundation
 
 public protocol VCAudioProcessingTapProcessProtocol: NSObject {
     
-    var tapTokens: [VCTapToken] { get set }
-    
     func handle(trackID: String,
                 timeRange: CMTimeRange,
                 inCount: CMItemCount,
