@@ -17,9 +17,7 @@ open class VCMediaTrack: VCTrackDescription, FastEnum {
     
     public var filterIntensity: NSNumber = 1.0
     
-//    public var filterLutImage: CIImage?
-    
-    public var asyncFilterLutImageClosure: (((CIImage?) -> Void) -> Void)?
+    public var filterLutImageClosure: (() -> CIImage?)?
     
     /// 顺时针，弧度制，1.57顺时针旋转90度，3.14顺时针旋转180度
     public var rotateRadian: CGFloat = 0.0
@@ -28,16 +26,12 @@ open class VCMediaTrack: VCTrackDescription, FastEnum {
     
     public var audioEffectProvider: VCAudioEffectProviderProtocol?
     
-    public func asyncFilterLutImageImage(closure: (CIImage?) -> Void) {
-        if let asyncFilterLutImageClosure = asyncFilterLutImageClosure {
-            asyncFilterLutImageClosure(closure)
-        } else {
-            closure(nil)
-        }
+    public func filterLutImageImage() -> CIImage? {
+        return filterLutImageClosure?()
     }
     
-    public func setAsyncFilterLutImageClosure(closure: (((CIImage?) -> Void) -> Void)?) {
-        asyncFilterLutImageClosure = closure
+    public func setFilterLutImageClosure(closure: @escaping () -> CIImage?) {
+        filterLutImageClosure = closure
     }
     
     public override func mutableCopy(with zone: NSZone? = nil) -> Any {
@@ -46,10 +40,10 @@ open class VCMediaTrack: VCTrackDescription, FastEnum {
         copyObj.isFit                       = self.isFit
         copyObj.isFlipHorizontal            = self.isFlipHorizontal
         copyObj.filterIntensity             = self.filterIntensity
-        copyObj.asyncFilterLutImageClosure  = self.asyncFilterLutImageClosure
+        copyObj.filterLutImageClosure       = self.filterLutImageClosure
         copyObj.rotateRadian                = self.rotateRadian
         copyObj.cropedRect                  = self.cropedRect
-        copyObj.asyncImageClosure           = self.asyncImageClosure
+        copyObj.imageClosure                = self.imageClosure
         copyObj.audioVolumeRampDescriptions = self.audioVolumeRampDescriptions
         return copyObj
     }

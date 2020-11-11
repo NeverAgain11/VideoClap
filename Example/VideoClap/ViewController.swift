@@ -73,14 +73,14 @@ class ViewController: UIViewController {
         
         videoDescription.renderSize = CGSize(width: 720, height: 720)
         videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
-        videoDescription.setAsyncWaterMarkImageClosure { (closure: (CIImage?) -> Void) in
+        videoDescription.setWaterMarkImageClosure { () -> CIImage? in
             if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: "waterMarkImage")?.ciImage {
-                closure(cacheImage)
+                return cacheImage
             } else {
                 let waterMarkImageURL = Bundle.main.url(forResource: "test3", withExtension: "jpg", subdirectory: "Mat")!
                 let image = CIImage(contentsOf: waterMarkImageURL)!
                 self.imageCache.storeImage(toMemory: UIImage(ciImage: image), forKey: "waterMarkImage")
-                closure(image)
+                return image
             }
         }
         
@@ -90,14 +90,14 @@ class ViewController: UIViewController {
                                      timeRange: CMTimeRange(start: 0.0, duration: 8.0))
             track.mediaURL = Bundle.main.url(forResource: "video0", withExtension: "mp4", subdirectory: "Mat")
             track.mediaClipTimeRange = CMTimeRange(start: 0.0, duration: 8.0)
-            track.setAsyncFilterLutImageClosure { (closure: (CIImage?) -> Void) in
+            track.setFilterLutImageClosure { () -> CIImage? in
                 let url = Bundle.main.url(forResource: "lut_filter_27", withExtension: "jpg", subdirectory: "Mat")!
                 if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: url.lastPathComponent)?.ciImage {
-                    closure(cacheImage)
+                    return cacheImage
                 } else {
                     let image = CIImage(contentsOf: url)!
                     self.imageCache.storeImage(toMemory: UIImage(ciImage: image), forKey: url.lastPathComponent)
-                    closure(image)
+                    return image
                 }
             }
             videoDescription.mediaTracks.append(track)
@@ -109,13 +109,13 @@ class ViewController: UIViewController {
                                      timeRange: CMTimeRange(start: 0.0, duration: 5.0))
             
             track.imageURL = Bundle.main.url(forResource: "test0", withExtension: "jpg", subdirectory: "Mat")
-            track.setAsyncImageClosure { (closure: (CIImage?) -> Void) in
+            track.setImageClosure { () -> CIImage? in
                 if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: track.id)?.ciImage {
-                    closure(cacheImage)
+                    return cacheImage
                 } else {
                     let image = CIImage(contentsOf: track.imageURL!)!
                     self.imageCache.storeImage(toMemory: UIImage(ciImage: image), forKey: track.id)
-                    closure(image)
+                    return image
                 }
             }
             videoDescription.mediaTracks.append(track)

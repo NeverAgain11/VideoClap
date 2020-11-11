@@ -23,7 +23,7 @@ open class VCTrackDescription: NSObject, VCTrackDescriptionProtocol {
     
     public var audioVolumeRampDescriptions: [VCAudioVolumeRampDescription] = []
     
-    public var asyncImageClosure: (((CIImage?) -> Void) -> Void)?
+    public var imageClosure: (() -> CIImage?)?
     
     public init(id: String,
          trackType: VCTrackType,
@@ -34,12 +34,12 @@ open class VCTrackDescription: NSObject, VCTrackDescriptionProtocol {
         self.timeRange = timeRange
     }
     
-    public func asyncImage(closure: (CIImage?) -> Void) {
-        asyncImageClosure?(closure)
+    public func image() -> CIImage? {
+        return imageClosure?()
     }
     
-    public func setAsyncImageClosure(closure: (((CIImage?) -> Void) -> Void)?) {
-        asyncImageClosure = closure
+    public func setImageClosure(closure: @escaping () -> CIImage?) {
+        imageClosure = closure
     }
     
     public func copy(with zone: NSZone? = nil) -> Any {
@@ -48,10 +48,10 @@ open class VCTrackDescription: NSObject, VCTrackDescriptionProtocol {
     
     public func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCTrackDescription(id: self.id, trackType: self.trackType, timeRange: self.timeRange)
-        copyObj.prefferdTransform = self.prefferdTransform
-        copyObj.mediaURL = self.mediaURL
-        copyObj.mediaClipTimeRange = self.mediaClipTimeRange
-        copyObj.asyncImageClosure = self.asyncImageClosure
+        copyObj.prefferdTransform           = self.prefferdTransform
+        copyObj.mediaURL                    = self.mediaURL
+        copyObj.mediaClipTimeRange          = self.mediaClipTimeRange
+        copyObj.imageClosure                = self.imageClosure
         copyObj.audioVolumeRampDescriptions = self.audioVolumeRampDescriptions
         return copyObj
     }

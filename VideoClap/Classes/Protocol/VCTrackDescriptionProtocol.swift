@@ -23,6 +23,6 @@ public protocol VCTrackDescriptionProtocol: NSObject, NSCopying, NSMutableCopyin
     
     var audioVolumeRampDescriptions: [VCAudioVolumeRampDescription] { get set }
     
-    var asyncImageClosure: (((CIImage?) -> Void) -> Void)? { get set }
+    var imageClosure: (() -> CIImage?)? { get set }
     
 }

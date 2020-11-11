@@ -22,18 +22,14 @@ open class VCFullVideoDescription: VCVideoDescription {
     
     public var animationStickers: [VCAnimationSticker] = []
     
-    public var asyncWaterMarkImageClosure: (((CIImage?) -> Void) -> Void)?
+    public var waterMarkImageClosure: (() -> CIImage?)?
     
-    public func asyncWaterMarkImage(closure: (CIImage?) -> Void) {
-        if let asyncWaterMarkImageClosure = asyncWaterMarkImageClosure {
-            asyncWaterMarkImageClosure(closure)
-        } else {
-            closure(nil)
-        }
+    public func waterMarkImage() -> CIImage? {
+        return waterMarkImageClosure?()
     }
     
-    public func setAsyncWaterMarkImageClosure(closure: (((CIImage?) -> Void) -> Void)?) {
-        asyncWaterMarkImageClosure = closure
+    public func setWaterMarkImageClosure(closure: @escaping () -> CIImage?) {
+        waterMarkImageClosure = closure
     }
     
     public override func mutableCopy(with zone: NSZone? = nil) -> Any {
@@ -43,7 +39,7 @@ open class VCFullVideoDescription: VCVideoDescription {
         copyObj.fps = self.fps
         copyObj.mediaTracks = self.mediaTracks.map({ $0.mutableCopy() as! VCTrackDescriptionProtocol })
         copyObj.waterMarkRect = self.waterMarkRect
-        copyObj.asyncWaterMarkImageClosure = self.asyncWaterMarkImageClosure
+        copyObj.waterMarkImageClosure = self.waterMarkImageClosure
         copyObj.transitions = self.transitions
         copyObj.trajectories = self.trajectories
         copyObj.laminations = self.laminations.map({ $0.mutableCopy() as! VCLamination })

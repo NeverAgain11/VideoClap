@@ -52,9 +52,7 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
             videoCompositionRequest.finish(with: VCVideoCompositingError.internalError)
             return
         }
-        
-        let sema = DispatchSemaphore(value: 1)
-        
+
         var items: [VCRequestItem] = []
         for track: VCTrack in instruction.tracks {
             if track.persistentTrackID == VCVideoCompositor.EmptyVideoTrackID { // 如果是空白的视频轨道，表示音频的时间比视频的时间要长，则不应该再继续处理，应该渲染黑色的画面
@@ -65,13 +63,11 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
                 }
                 return
             }
-            sema.wait()
             switch track.trackType {
             case .stillImage:
-                track.asyncImage { (frame: CIImage?) in
-                    let item = VCRequestItem(frame: frame, id: track.id)
+                if let image = track.image() {
+                    let item = VCRequestItem(frame: image, id: track.id)
                     items.append(item)
-                    sema.signal()
                 }
                 
             case .video:
@@ -80,10 +76,9 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
                     let item = VCRequestItem(frame: sourceImage, id: track.id)
                     items.append(item)
                 }
-                sema.signal()
                 
             default:
-                sema.signal()
+                break
             }
         }
         

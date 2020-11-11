@@ -13,11 +13,11 @@ internal class VCTrack: VCTrackDescription {
     
     init(description: VCTrackDescriptionProtocol, persistentTrackID: CMPersistentTrackID) {
         super.init(id: description.id, trackType: description.trackType, timeRange: description.timeRange)
-        self.persistentTrackID  = persistentTrackID
-        self.prefferdTransform  = description.prefferdTransform
-        self.mediaURL           = description.mediaURL
-        self.mediaClipTimeRange = description.mediaClipTimeRange
-        self.asyncImageClosure = description.asyncImageClosure
+        self.persistentTrackID           = persistentTrackID
+        self.prefferdTransform           = description.prefferdTransform
+        self.mediaURL                    = description.mediaURL
+        self.mediaClipTimeRange          = description.mediaClipTimeRange
+        self.imageClosure                = description.imageClosure
         self.audioVolumeRampDescriptions = description.audioVolumeRampDescriptions
     }
     

@@ -121,21 +121,15 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                 frame = frame.transformed(by: transform)
             }
             
-            let group = DispatchGroup()
-            group.enter()
-            mediaTrack.asyncFilterLutImageImage { (filterLutImage: CIImage?) in
-                if let filterLutImage = filterLutImage, mediaTrack.filterIntensity.floatValue > 0.0 { // 查找表，添加滤镜
-                    let lutFilter = VCLutFilter()
-                    lutFilter.inputIntensity = mediaTrack.filterIntensity
-                    lutFilter.inputImage = frame
-                    lutFilter.lookupImage = filterLutImage
-                    if let outputImage = lutFilter.outputImage {
-                        frame = outputImage
-                    }
+            if let filterLutImage = mediaTrack.filterLutImageImage(), mediaTrack.filterIntensity.floatValue > 0.0 {  // 查找表，添加滤镜
+                let lutFilter = VCLutFilter()
+                lutFilter.inputIntensity = mediaTrack.filterIntensity
+                lutFilter.inputImage = frame
+                lutFilter.lookupImage = filterLutImage
+                if let outputImage = lutFilter.outputImage {
+                    frame = outputImage
                 }
-                group.leave()
             }
-            group.wait()
             
             preprocessFinishedImages[id] = frame
         }
@@ -260,29 +254,24 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             finalFrame = laminationImage.composited(over: backgroudImage)
         }
         
-        group.enter()
-        videoDescription.asyncWaterMarkImage { (waterMarkImage: CIImage?) in
-            if var waterMarkImage = waterMarkImage, let waterMarkRect = videoDescription.waterMarkRect, let backgroudImage = finalFrame {
-                let width = renderSize.width * waterMarkRect.normalizeWidth // 水印宽度，基于像素
-                let height = renderSize.height * waterMarkRect.normalizeHeight // 水印高度，基于像素
-                let left = waterMarkRect.normalizeCenter.x * renderSize.width // 水印中心距离画布左边的距离，基于像素
-                let bottom = waterMarkRect.normalizeCenter.y * renderSize.height // 水印中心距离画布底部的距离，基于像素
+        if var waterMarkImage = videoDescription.waterMarkImage(), let waterMarkRect = videoDescription.waterMarkRect, let backgroudImage = finalFrame {
+            let width = renderSize.width * waterMarkRect.normalizeWidth // 水印宽度，基于像素
+            let height = renderSize.height * waterMarkRect.normalizeHeight // 水印高度，基于像素
+            let left = waterMarkRect.normalizeCenter.x * renderSize.width // 水印中心距离画布左边的距离，基于像素
+            let bottom = waterMarkRect.normalizeCenter.y * renderSize.height // 水印中心距离画布底部的距离，基于像素
 
-                let scaleX = width / waterMarkImage.extent.size.width
-                let scaleY = height / waterMarkImage.extent.size.height
-                var transform: CGAffineTransform = .identity
-                let move1 = CGAffineTransform(translationX: -waterMarkImage.extent.size.width / 2.0, // 将水印中心移动到画布左下角
-                                              y: -waterMarkImage.extent.size.height / 2.0)
-                let scale = CGAffineTransform(scaleX: scaleX, y: scaleY)
-                let move2 = CGAffineTransform(translationX: left, y: bottom)
-                transform = transform.concatenating(move1).concatenating(scale).concatenating(move2)
-                
-                waterMarkImage = waterMarkImage.transformed(by: transform)
-                finalFrame = waterMarkImage.composited(over: backgroudImage)
-            }
-            group.leave()
+            let scaleX = width / waterMarkImage.extent.size.width
+            let scaleY = height / waterMarkImage.extent.size.height
+            var transform: CGAffineTransform = .identity
+            let move1 = CGAffineTransform(translationX: -waterMarkImage.extent.size.width / 2.0, // 将水印中心移动到画布左下角
+                                          y: -waterMarkImage.extent.size.height / 2.0)
+            let scale = CGAffineTransform(scaleX: scaleX, y: scaleY)
+            let move2 = CGAffineTransform(translationX: left, y: bottom)
+            transform = transform.concatenating(move1).concatenating(scale).concatenating(move2)
+            
+            waterMarkImage = waterMarkImage.transformed(by: transform)
+            finalFrame = waterMarkImage.composited(over: backgroudImage)
         }
-        group.wait()
 
     }
     
