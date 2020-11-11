@@ -156,14 +156,14 @@ class ViewController: UIViewController {
         do {
             let lamination = VCLamination(id: "lamination1")
             lamination.timeRange = CMTimeRange(start: .zero, end: videoClap.estimateVideoDuration())
-            lamination.setAsyncImageClosure { (closure: (CIImage?) -> Void) in
+            lamination.setImageClosure { () -> CIImage? in
                 if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: lamination.id)?.ciImage {
-                    closure(cacheImage)
+                    return cacheImage
                 } else {
                     let imageUrl = Bundle.main.url(forResource: "Anniversary1", withExtension: "png", subdirectory: "Mat")!
                     let image = CIImage(contentsOf: imageUrl)!
                     self.imageCache.storeImage(toMemory: UIImage(ciImage: image), forKey: lamination.id)
-                    closure(image)
+                    return image
                 }
             }
             videoDescription.laminations = [lamination]

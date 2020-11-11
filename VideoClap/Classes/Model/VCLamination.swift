@@ -13,23 +13,19 @@ public class VCLamination: NSObject, NSCopying, NSMutableCopying {
     
     public var timeRange: CMTimeRange = .zero
     
-    public var asyncImageClosure: (((CIImage?) -> Void) -> Void)?
+    public var imageClosure: (() -> CIImage?)?
     
     public init(id: String) {
         super.init()
         self.id = id
     }
     
-    public func asyncImage(closure: (CIImage?) -> Void) {
-        if let asyncImageClosure = asyncImageClosure {
-            asyncImageClosure(closure)
-        } else {
-            closure(nil)
-        }
+    public func image() -> CIImage? {
+        return imageClosure?()
     }
     
-    public func setAsyncImageClosure(closure: (((CIImage?) -> Void) -> Void)?) {
-        asyncImageClosure = closure
+    public func setImageClosure(closure: (() -> CIImage?)?) {
+        imageClosure = closure
     }
     
     public func copy(with zone: NSZone? = nil) -> Any {
@@ -38,8 +34,8 @@ public class VCLamination: NSObject, NSCopying, NSMutableCopying {
     
     public func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCLamination(id: self.id)
-        copyObj.timeRange = self.timeRange
-        copyObj.asyncImageClosure = self.asyncImageClosure
+        copyObj.timeRange    = self.timeRange
+        copyObj.imageClosure = self.imageClosure
         return copyObj
     }
     

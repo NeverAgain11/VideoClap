@@ -21,7 +21,7 @@ internal class FastEnumor<T: FastEnum>: NSObject {
         }
     }
     
-    func get(id: String) -> T? {
+    func object(id: String) -> T? {
         return fastEnum[id]
     }
     

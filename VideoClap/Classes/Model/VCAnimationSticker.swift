@@ -30,7 +30,7 @@ public class VCAnimationSticker: NSObject, NSCopying, NSMutableCopying {
         animationView?.animation = animation
     }
     
-    func getAnimationFrame(handler: @escaping (_ frame: CIImage?) -> Void) {
+    func animationFrame(handler: @escaping (_ frame: CIImage?) -> Void) {
         DispatchQueue.main.async {
             guard let animationView = self.animationView, let animation = animationView.animation else {
                 handler(nil)

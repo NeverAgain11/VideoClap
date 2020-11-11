@@ -10,7 +10,7 @@ import Metal
 
 public class VCHelper: NSObject {
     
-    internal static func getBundle() -> Bundle {
+    internal static func bundle() -> Bundle {
         let bundleName: String = "VideoClap"
         var bundle: Bundle?
         if let url = Bundle.main.url(forResource: "Frameworks/\(bundleName).framework/\(bundleName).bundle", withExtension: nil) {
@@ -22,7 +22,7 @@ public class VCHelper: NSObject {
         return bundle ?? Bundle(for: VideoClap.self)
     }
     
-    internal static func getDefaultMetallib() -> URL? {
+    internal static func defaultMetallib() -> URL? {
         let bundleName: String = "VideoClap"
         var defaultMetallib: URL?
         
@@ -36,9 +36,9 @@ public class VCHelper: NSObject {
     }
     
     @available(iOS 11.0, *)
-    internal static func metalKernel(functionName: String) -> CIKernel? {
+    internal static func kernel(functionName: String) -> CIKernel? {
         do {
-            if let lib = VCHelper.getDefaultMetallib() {
+            if let lib = VCHelper.defaultMetallib() {
                 let data = try Data(contentsOf: lib)
                 let kernel = try CIKernel(functionName: functionName, fromMetalLibraryData: data)
                 return kernel

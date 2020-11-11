@@ -69,7 +69,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
         
         for item in items { // 对图片预处理，自适应或者铺满，水平翻转，添加滤镜
-            guard let mediaTrack = fastEnumor.get(id: item.id) else { continue }
+            guard let mediaTrack = fastEnumor.object(id: item.id) else { continue }
             guard var frame = item.frame else {
                 continue
             }
@@ -149,7 +149,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                 if let image = findTransition.transition(renderSize: videoDescription.renderSize,
                                                          progress: progress,
                                                          fromImage: fromImage.composited(over: blackImage),
-                                                         toImage: toImage) {
+                                                         toImage: toImage.composited(over: blackImage)) {
                     transitionFinishImages.append(image)
                 }
             }
@@ -185,32 +185,25 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         let findLaminations = videoDescription.laminations.filter { (lamination: VCLamination) -> Bool in // // 当前时间的所有叠层
             return lamination.timeRange.containsTime(compositionTime)
         }
-        let group = DispatchGroup()
+
         for lamination in findLaminations {
-            group.enter()
-            lamination.asyncImage { (optionalImage: CIImage?) in
-                guard let image = optionalImage else {
-                    group.leave()
-                    return
-                }
+            if let image = lamination.image() {
                 if let laminationImage = finalLaminationImage {
                     finalLaminationImage = sourceAtopCompositing(inputImage: laminationImage, inputBackgroundImage: image)
                 } else {
                     finalLaminationImage = image
                 }
-                group.leave()
             }
-            group.wait()
         }
         
         do { // 贴纸动画
             let animationStickers = videoDescription.animationStickers.filter({ $0.timeRange.containsTime(compositionTime) })
             var compositionSticker: CIImage?
-            
+            let group = DispatchGroup()
             for animationSticker in animationStickers {
                 group.enter()
                 animationSticker.animationPlayTime = compositionTime - animationSticker.timeRange.start
-                animationSticker.getAnimationFrame { (image: CIImage?) in
+                animationSticker.animationFrame { (image: CIImage?) in
                     var stickerImage: CIImage?
                     if let image = image {
                         let width = renderSize.width * animationSticker.rect.normalizeWidth // 贴纸宽度，基于像素
@@ -289,7 +282,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         guard let mediaTracks = videoDescription.mediaTracks as? [VCMediaTrack] else { return }
         let fastEnumor = FastEnumor<VCMediaTrack>.init(group: mediaTracks)
         
-        guard let audioTrack = fastEnumor.get(id: trackID), let url = audioTrack.mediaURL else { return }
+        guard let audioTrack = fastEnumor.object(id: trackID), let url = audioTrack.mediaURL else { return }
         
         if #available(iOS 11.0, *) {
             do {
