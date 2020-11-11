@@ -237,6 +237,10 @@ class ViewController: UIViewController {
             transition = VCSquareswireTransition()
         case .Mod:
             transition = VCModTransition()
+        case .Translation:
+            transition = VCTranslationTransition().config(closure: {
+                $0.translation = 720.0
+            })
         }
         return transition
     }

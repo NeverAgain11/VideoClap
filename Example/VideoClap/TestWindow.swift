@@ -28,6 +28,7 @@ enum TransitionType: String, CaseIterable {
     case Doorway
     case Squareswire
     case Mod
+    case Translation
 }
 
 class TestWindow: UIWindow {
