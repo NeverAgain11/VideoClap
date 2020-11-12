@@ -30,6 +30,7 @@ enum TransitionType: String, CaseIterable {
     case Mod
     case Cube
     case Translation
+    case Heart
 }
 
 class TestWindow: UIWindow {
