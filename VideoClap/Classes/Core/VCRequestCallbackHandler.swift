@@ -27,6 +27,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     public var videoDescription: VCVideoDescriptionProtocol = VCFullVideoDescription()
     
     open func handle(items: [VCRequestItem], compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
+        var items = items
         var finalFrame: CIImage?
         defer {
             finalFrame = finalFrame?.composited(over: blackImage) // 让背景变为黑色，防止出现图像重叠
@@ -36,7 +37,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         let renderSize = videoDescription.renderSize
         guard let mediaTracks = videoDescription.mediaTracks as? [VCMediaTrack] else { return }
 
-        let fastEnumor = FastEnumor<VCMediaTrack>.init(group: mediaTracks)
+        let fastEnumor = VCFastEnumor<VCMediaTrack>.init(group: mediaTracks)
         
         var preprocessFinishedImages: [String:CIImage] = [:] // 预处理完的图片
         var findTransitions: [VCTransitionProtocol] = [] // 当前时间的所有过渡
@@ -48,9 +49,29 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         var findTrajectories: [VCTrajectoryProtocol] = [] // 当前时间的所有轨迹
         
         for transition in videoDescription.transitions { // 搜寻在当前时间的所有过渡
-            let ids = items.map({ $0.id })
-            if ids.contains(transition.fromId) && ids.contains(transition.toId), transition.timeRange.containsTime(compositionTime) {
-                findTransitions.append(transition)
+            
+            guard let fromTrack = fastEnumor.object(id: transition.fromId), let toTrack = fastEnumor.object(id: transition.toId) else { continue }
+            let fromTimeRange = fromTrack.timeRange
+            let toTimeRange = toTrack.timeRange
+            
+            if fromTimeRange.end == toTimeRange.start { // 两个轨道没有重叠，但是需要过渡动画，根据 'range' 计算出过渡时间，并判断当前是否需要过渡动画
+                let start: CMTime = CMTime(seconds: fromTimeRange.end.seconds - fromTimeRange.duration.seconds * Double(transition.range.left))
+                let end: CMTime = CMTime(seconds: toTimeRange.start.seconds + toTimeRange.duration.seconds * Double(transition.range.right))
+                if CMTimeRange(start: start, end: end).containsTime(compositionTime) {
+                    let ids = items.map({ $0.id })
+                    if ids.contains(transition.toId) == false {
+                        items.append(VCRequestItem(frame: transition.toTrackVideoTransitionFrame(), id: transition.toId))
+                    }
+                    if ids.contains(transition.fromId) == false {
+                        items.append(VCRequestItem(frame: transition.fromTrackVideoTransitionFrame(), id: transition.fromId))
+                    }
+                    findTransitions.append(transition)
+                }
+            } else { // 两个轨道有重叠
+                let ids = items.map({ $0.id })
+                if ids.contains(transition.fromId) && ids.contains(transition.toId) {
+                    findTransitions.append(transition)
+                }
             }
         }
         
@@ -159,11 +180,29 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         
         for findTransition in findTransitions { // 对每个过渡应用过渡效果
             if let fromImage = preprocessFinishedImages[findTransition.fromId], let toImage = preprocessFinishedImages[findTransition.toId] {
-                let progress: Float = Float(compositionTime.value - findTransition.timeRange.start.value) / Float(findTransition.timeRange.duration.value)
-                if let image = findTransition.transition(renderSize: videoDescription.renderSize,
-                                                         progress: progress,
-                                                         fromImage: fromImage.composited(over: blackImage),
-                                                         toImage: toImage.composited(over: blackImage)) {
+                let fromTrack = fastEnumor.object(id: findTransition.fromId)!
+                let toTrack = fastEnumor.object(id: findTransition.toId)!
+                let fromTimeRange = fromTrack.timeRange
+                let toTimeRange = toTrack.timeRange
+                
+                var start: CMTime = .zero
+                var end: CMTime = .zero
+                var duration: CMTime = .zero
+                var progress: Float = 0.0
+                
+                if fromTimeRange.end == toTimeRange.start { // 两个轨道没有重叠的情况
+                    start = CMTime(seconds: fromTimeRange.end.seconds - fromTimeRange.duration.seconds * Double(findTransition.range.left))
+                    end = CMTime(seconds: toTimeRange.start.seconds + toTimeRange.duration.seconds * Double(findTransition.range.right))
+                } else {  // 两个轨道重叠的情况，过渡开始时间取 'to' 轨道的开始时间，过渡结束时间取 'from' 轨道的结束时间
+                    start = fastEnumor.object(id: findTransition.toId)!.timeRange.start
+                    end = fastEnumor.object(id: findTransition.fromId)!.timeRange.end
+                }
+                duration = end - start
+                progress = Float((compositionTime - start).seconds / duration.seconds)
+                if progress.isNaN == false, progress.isInfinite == false, let image = findTransition.transition(renderSize: videoDescription.renderSize,
+                                                                                                                progress: progress,
+                                                                                                                fromImage: fromImage.composited(over: blackImage),
+                                                                                                                toImage: toImage.composited(over: blackImage)) {
                     transitionFinishImages.append(image)
                 }
             }
@@ -294,7 +333,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         
         guard let videoDescription = self.videoDescription as? VCFullVideoDescription else { return }
         guard let mediaTracks = videoDescription.mediaTracks as? [VCMediaTrack] else { return }
-        let fastEnumor = FastEnumor<VCMediaTrack>.init(group: mediaTracks)
+        let fastEnumor = VCFastEnumor<VCMediaTrack>.init(group: mediaTracks)
         
         guard let audioTrack = fastEnumor.object(id: trackID), let url = audioTrack.mediaURL else { return }
         

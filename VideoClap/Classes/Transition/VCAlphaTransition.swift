@@ -16,11 +16,15 @@ public enum FadeType {
 
 open class VCAlphaTransition: NSObject, VCTransitionProtocol {
     
+    public var range: VCRange = VCRange(left: 0, right: 0)
+    
+    public var fromTrackVideoTransitionFrameClosure: (() -> CIImage?)?
+    
+    public var toTrackVideoTransitionFrameClosure: (() -> CIImage?)?
+    
     public var fromId: String = ""
     
     public var toId: String = ""
-    
-    public var timeRange: CMTimeRange = .zero
     
     public var fadeType: FadeType = .out
     

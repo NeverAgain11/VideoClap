@@ -11,18 +11,23 @@ import CoreImage
 
 open class VCPageCurlWithShadowTransition: NSObject, VCTransitionProtocol {
     
+    public var range: VCRange = VCRange(left: 0, right: 0)
+    
+    public var fromTrackVideoTransitionFrameClosure: (() -> CIImage?)?
+    
+    public var toTrackVideoTransitionFrameClosure: (() -> CIImage?)?
+    
     public var fromId: String = ""
     
     public var toId: String = ""
-    
-    public var timeRange: CMTimeRange = .zero
-    
+
     public func transition(renderSize: CGSize, progress: Float, fromImage: CIImage, toImage: CIImage) -> CIImage? {
         var finalImage: CIImage?
         
         finalImage = pageCurlWithShadowTransition(inputImage: fromImage,
                                                   inputTargetImage: toImage,
                                                   inputBacksideImage: fromImage,
+                                                  inputExtent: CIVector(cgRect: fromImage.extent),
                                                   inputTime: NSNumber(value: progress),
                                                   inputAngle: NSNumber(value: 3.14 / 1.2))
         return finalImage

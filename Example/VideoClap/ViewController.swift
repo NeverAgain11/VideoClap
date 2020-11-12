@@ -47,6 +47,12 @@ class ViewController: UIViewController {
         return slider
     }()
     
+    lazy var timelabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .black
+        return label
+    }()
+    
     lazy var playButton: UIButton = {
         let button = UIButton()
         button.layer.cornerRadius = 8
@@ -73,7 +79,7 @@ class ViewController: UIViewController {
         
         videoDescription.fps = 24.0
         videoDescription.renderSize = CGSize(width: 720, height: 720)
-        videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
+//        videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
         videoDescription.setWaterMarkImageClosure { () -> CIImage? in
             if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: "waterMarkImage")?.ciImage {
                 return cacheImage
@@ -88,9 +94,9 @@ class ViewController: UIViewController {
         do {
             let track = VCMediaTrack(id: "track1",
                                      trackType: .video,
-                                     timeRange: CMTimeRange(start: 0.0, duration: 8.0))
-            track.mediaURL = Bundle.main.url(forResource: "video0", withExtension: "mp4", subdirectory: "Mat")
-            track.mediaClipTimeRange = CMTimeRange(start: 0.0, duration: 8.0)
+                                     timeRange: CMTimeRange(start: 5.0, duration: 5.0))
+            track.mediaURL = Bundle.main.url(forResource: "video1", withExtension: "mp4", subdirectory: "Mat")
+            track.mediaClipTimeRange = CMTimeRange(start: 5.0, duration: 5.0)
             track.setFilterLutImageClosure { () -> CIImage? in
                 let url = Bundle.main.url(forResource: "lut_filter_27", withExtension: "jpg", subdirectory: "Mat")!
                 if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: url.lastPathComponent)?.ciImage {
@@ -109,13 +115,14 @@ class ViewController: UIViewController {
                                      trackType: .stillImage,
                                      timeRange: CMTimeRange(start: 0.0, duration: 5.0))
             
-            track.imageURL = Bundle.main.url(forResource: "test0", withExtension: "jpg", subdirectory: "Mat")
-            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
+            track.imageURL = Bundle.main.url(forResource: "test4", withExtension: "jpg", subdirectory: "Mat")
+//            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
             track.setImageClosure { () -> CIImage? in
                 if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: track.id)?.ciImage {
                     return cacheImage
                 } else {
-                    let image = CIImage(contentsOf: track.imageURL!)!
+                    var image = CIImage(contentsOf: track.imageURL!)!
+//                    image = image.transformed(by: .init(scaleX: 0.2, y: 0.2))
                     self.imageCache.storeImage(toMemory: UIImage(ciImage: image), forKey: track.id)
                     return image
                 }
@@ -126,9 +133,9 @@ class ViewController: UIViewController {
         do {
             let track = VCMediaTrack(id: "track3",
                                      trackType: .audio,
-                                     timeRange: CMTimeRange(start: 0.0, duration: 180.0))
+                                     timeRange: CMTimeRange(start: 0.0, duration: 8.0))
             track.mediaURL = Bundle.main.url(forResource: "02.Ellis - Clear My Head (Radio Edit) [NCS]", withExtension: "mp3", subdirectory: "Mat")
-            track.mediaClipTimeRange = CMTimeRange(start: 10.0, duration: 100.0)
+            track.mediaClipTimeRange = CMTimeRange(start: 0.0, duration: 8.0)
             if #available(iOS 11.0, *) {
                 track.audioEffectProvider = VCGhostAudioEffectProvider()
             }
@@ -136,15 +143,12 @@ class ViewController: UIViewController {
                                                     endVolume: 1.0,
                                                     timeRange: CMTimeRange(start: 0.0, duration: 10.0))
             track.audioVolumeRampDescriptions = [desc]
-            videoClap.videoDescription.mediaTracks.append(track)
+            videoDescription.mediaTracks.append(track)
         }
         
         do {
-            let fadeTrasition = VCModTransition()
-            fadeTrasition.fromId = "track2"
-            fadeTrasition.toId = "track1"
-            fadeTrasition.timeRange = CMTimeRange(start: 0.0, end: 5.0)
-            videoDescription.transitions.append(fadeTrasition)
+            let trasition = VCModTransition()
+            addTransition(trasition)
         }
         
 //        do {
@@ -167,7 +171,7 @@ class ViewController: UIViewController {
                     return image
                 }
             }
-            videoDescription.laminations = [lamination]
+//            videoDescription.laminations = [lamination]
         }
         
         do {
@@ -177,7 +181,7 @@ class ViewController: UIViewController {
             animationSticker.timeRange = CMTimeRange(start: .zero, duration: videoClap.estimateVideoDuration())
             animationSticker.setAnimationView("Watermelon", subdirectory: "Mat/LottieAnimations")
             animationSticker.animationView?.frame = CGRect(origin: .zero, size: CGSize(width: 200, height: 200))
-            videoDescription.animationStickers = [animationSticker]
+//            videoDescription.animationStickers = [animationSticker]
         }
         
 //        let reverseVideo = VCReverseVideo()
@@ -194,7 +198,7 @@ class ViewController: UIViewController {
 //        initPlay()
 //        export(fileName: nil) { }
         
-//        allCasesExportVideo()
+        allCasesExportVideo()
     }
     
     override func didReceiveMemoryWarning() {
@@ -255,10 +259,7 @@ class ViewController: UIViewController {
             for type in TransitionType.allCases {
                 group.enter()
                 let transition: VCTransitionProtocol = self.getTransition(type: type)
-                transition.fromId = "track2"
-                transition.toId = "track1"
-                transition.timeRange = CMTimeRange(start: 0.0, end: 5.0)
-                self.videoDescription.transitions = [transition]
+                self.addTransition(transition)
                 self.export(fileName: type.rawValue + ".mov") {
                     group.leave()
                 }
@@ -270,12 +271,55 @@ class ViewController: UIViewController {
     @objc func transitionChange(_ sender: Notification) {
         let type = sender.userInfo?["transitionType"] as! TransitionType
         let trasition: VCTransitionProtocol = getTransition(type: type)
-        trasition.fromId = "track2"
-        trasition.toId = "track1"
-        trasition.timeRange = CMTimeRange(start: 0.0, end: 5.0)
-        videoDescription.transitions = [trasition]
+        addTransition(trasition)
         initPlay()
 //        export(fileName: nil) { }
+    }
+    
+    func addTransition(_ trasition: VCTransitionProtocol) {
+        trasition.fromId = "track2"
+        trasition.toId = "track1"
+        trasition.range = VCRange(left: 0.5, right: 0.5)
+        
+        trasition.setFromTrackVideoTransitionFrameClosure { () -> CIImage? in
+            let storeKey = trasition.fromId
+            if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: storeKey)?.ciImage {
+                return cacheImage
+            } else {
+                let track = self.videoDescription.mediaTracks.first(where: { $0.id == trasition.fromId }) as! VCMediaTrack
+                var image = CIImage(contentsOf: track.imageURL!)!
+                image = image.transformed(by: .init(scaleX: 0.2, y: 0.2))
+                self.imageCache.storeImage(toMemory: UIImage(ciImage: image), forKey: storeKey)
+                return image
+            }
+        }
+        
+        trasition.setToTrackVideoTransitionFrameClosure { () -> CIImage? in
+            let storeKey = trasition.toId + "setFromTrackVideoTransitionFrameClosure"
+            if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: storeKey)?.ciImage {
+                return cacheImage
+            } else {
+                var frame: CIImage?
+                let track = self.videoDescription.mediaTracks.first(where: { $0.id == trasition.toId }) as! VCMediaTrack
+                let videoUrl = track.mediaURL!
+                let asset = AVAsset(url: videoUrl)
+                let generator = AVAssetImageGenerator(asset: asset)
+                generator.appliesPreferredTrackTransform = true
+                generator.requestedTimeToleranceAfter = .zero
+                generator.requestedTimeToleranceBefore = .zero
+                do {
+                    let cgimage = try generator.copyCGImage(at: CMTime(seconds: 5.0), actualTime: nil)
+                    let ciimage = CIImage(cgImage: cgimage)
+                    self.imageCache.storeImage(toMemory: UIImage(ciImage: ciimage), forKey: storeKey)
+                    frame = ciimage
+                } catch {
+                    frame = nil
+                }
+                return frame
+            }
+        }
+        
+        videoDescription.transitions = [trasition]
     }
     
     func initPlay() {
@@ -383,10 +427,20 @@ class ViewController: UIViewController {
     }
     
     @objc func timer() {
-        let currentTime = player.currentItem?.currentTime().seconds ?? 0
-        let duration = player.currentItem?.duration.seconds ?? 1
-        slider.value = Float(currentTime / duration)
+        let currentTime: CMTime = player.currentItem?.currentTime() ?? .zero
+        let duration = player.currentItem?.duration ?? CMTime(seconds: 1.0)
+        slider.value = Float(currentTime.seconds / duration.seconds)
         playButton.isSelected = player.isPlaying
+        let nf = NumberFormatter()
+        nf.maximumFractionDigits = 2
+        nf.minimumFractionDigits = 2
+        nf.minimumIntegerDigits = 1
+        timelabel.text = nf.string(from: NSNumber(value: currentTime.seconds))
+        
+        if CMTimeCompare(currentTime, duration) == 0 {
+            player.pause()
+            playButton.isSelected = false
+        }
     }
     
     @objc func playButtonDidTap(_ sender: UIButton) {
@@ -407,6 +461,7 @@ extension ViewController {
         view.addSubview(playerView)
         view.addSubview(slider)
         view.addSubview(playButton)
+        view.addSubview(timelabel)
         playerView.snp.makeConstraints { (make) in
             make.edges.equalToSuperview()
         }
@@ -419,6 +474,10 @@ extension ViewController {
             make.bottom.equalTo(slider.snp.top).offset(-20)
             make.size.equalTo(44)
             make.left.equalToSuperview().offset(20)
+        }
+        timelabel.snp.makeConstraints { (make) in
+            make.left.equalTo(playButton.snp.right).offset(10)
+            make.centerY.equalTo(playButton)
         }
     }
     
