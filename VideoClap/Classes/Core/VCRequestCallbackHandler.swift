@@ -83,8 +83,22 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                 frame = correctingTransform(image: frame, prefferdTransform: optionalPrefferdTransform)
 
                 if var cropRect = mediaTrack.cropedRect {
-                    cropRect.origin.y = frame.extent.height - cropRect.origin.y - cropRect.height
-                    frame = frame.cropped(to: cropRect)
+                    let nw = cropRect.width
+                    let nh = cropRect.height
+                    let no = cropRect.origin
+                    
+                    if nw == 1.0 && nh == 1.0 && no == CGPoint(x: 0, y: 0) {
+                        // 裁剪区域为原图大小区域，不做处理
+                    } else {
+                        let width = frame.extent.width
+                        let height = frame.extent.height
+                        
+                        cropRect.size = CGSize(width: width * nw, height: height * nh)
+                        cropRect.origin = CGPoint(x: width * no.x, y: height * no.y)
+                        cropRect.origin.y = frame.extent.height - cropRect.origin.y - cropRect.height
+                        
+                        frame = frame.cropped(to: cropRect)
+                    }
                 }
                 
                 let moveFrameCenterToRenderRectOrigin = CGAffineTransform(translationX: -frame.extent.midX, y: -frame.extent.midY)

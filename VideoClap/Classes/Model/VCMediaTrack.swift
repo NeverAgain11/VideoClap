@@ -7,7 +7,7 @@
 
 import AVFoundation
 
-open class VCMediaTrack: VCTrackDescription, FastEnum {
+open class VCMediaTrack: VCTrackDescription, VCFastEnum {
     
     public var imageURL: URL?
     
@@ -22,6 +22,7 @@ open class VCMediaTrack: VCTrackDescription, FastEnum {
     /// 顺时针，弧度制，1.57顺时针旋转90度，3.14顺时针旋转180度
     public var rotateRadian: CGFloat = 0.0
     
+    /// 归一化下裁剪区域，范围（0~1）
     public var cropedRect: CGRect?
     
     public var audioEffectProvider: VCAudioEffectProviderProtocol?

@@ -7,21 +7,21 @@
 
 import Foundation
 
-internal protocol FastEnum: NSObject {
+public protocol VCFastEnum: NSObject {
     var id: String { get set }
 }
 
-internal class FastEnumor<T: FastEnum>: NSObject {
+public class VCFastEnumor<T: VCFastEnum>: NSObject {
     
     private var fastEnum: [String:T] = [:]
     
-    init(group: [T]) {
+    public init(group: [T]) {
         for item in group {
             fastEnum[item.id] = item
         }
     }
     
-    func object(id: String) -> T? {
+    public func object(id: String) -> T? {
         return fastEnum[id]
     }
     

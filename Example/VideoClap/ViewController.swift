@@ -110,6 +110,7 @@ class ViewController: UIViewController {
                                      timeRange: CMTimeRange(start: 0.0, duration: 5.0))
             
             track.imageURL = Bundle.main.url(forResource: "test0", withExtension: "jpg", subdirectory: "Mat")
+            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
             track.setImageClosure { () -> CIImage? in
                 if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: track.id)?.ciImage {
                     return cacheImage

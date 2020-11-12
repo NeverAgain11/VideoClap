@@ -48,7 +48,7 @@ internal class VCVideoCompositor: NSObject {
         let newPlayerItem = AVPlayerItem(asset: composition)
         newPlayerItem.audioMix = audioMix
         newPlayerItem.videoComposition = videoComposition
-        newPlayerItem.seekingWaitsForVideoCompositionRendering = true
+//        newPlayerItem.seekingWaitsForVideoCompositionRendering = true
         return newPlayerItem
     }
     
