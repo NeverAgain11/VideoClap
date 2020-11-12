@@ -26,6 +26,13 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     
     public var videoDescription: VCVideoDescriptionProtocol = VCFullVideoDescription()
     
+    private var fastEnumor: VCFastEnumor<VCMediaTrack> = .init(group: [])
+    
+    public func contextChanged() {
+        guard let mediaTracks = videoDescription.mediaTracks as? [VCMediaTrack] else { return }
+        fastEnumor = VCFastEnumor<VCMediaTrack>.init(group: mediaTracks)
+    }
+    
     open func handle(items: [VCRequestItem], compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
         var items = items
         var finalFrame: CIImage?
@@ -35,9 +42,6 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
         guard let videoDescription = self.videoDescription as? VCFullVideoDescription else { return }
         let renderSize = videoDescription.renderSize
-        guard let mediaTracks = videoDescription.mediaTracks as? [VCMediaTrack] else { return }
-
-        let fastEnumor = VCFastEnumor<VCMediaTrack>.init(group: mediaTracks)
         
         var preprocessFinishedImages: [String:CIImage] = [:] // 预处理完的图片
         var findTransitions: [VCTransitionProtocol] = [] // 当前时间的所有过渡
@@ -47,6 +51,8 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         var excludeTransitionImage: CIImage? // 没有过渡的图片合成一张图片
         
         var findTrajectories: [VCTrajectoryProtocol] = [] // 当前时间的所有轨迹
+        
+        let ids = items.map({ $0.id })
         
         for transition in videoDescription.transitions { // 搜寻在当前时间的所有过渡
             
@@ -58,7 +64,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                 let start: CMTime = CMTime(seconds: fromTimeRange.end.seconds - fromTimeRange.duration.seconds * Double(transition.range.left))
                 let end: CMTime = CMTime(seconds: toTimeRange.start.seconds + toTimeRange.duration.seconds * Double(transition.range.right))
                 if CMTimeRange(start: start, end: end).containsTime(compositionTime) {
-                    let ids = items.map({ $0.id })
+                    
                     if ids.contains(transition.toId) == false {
                         items.append(VCRequestItem(frame: transition.toTrackVideoTransitionFrame(), id: transition.toId))
                     }
@@ -68,7 +74,6 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                     findTransitions.append(transition)
                 }
             } else { // 两个轨道有重叠
-                let ids = items.map({ $0.id })
                 if ids.contains(transition.fromId) && ids.contains(transition.toId) {
                     findTransitions.append(transition)
                 }
@@ -76,7 +81,6 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
         
         for trajectory in videoDescription.trajectories { // 搜寻在当前时间的所有轨迹
-            let ids = items.map({ $0.id })
             if ids.contains(trajectory.id), trajectory.timeRange.containsTime(compositionTime) {
                 findTrajectories.append(trajectory)
             }

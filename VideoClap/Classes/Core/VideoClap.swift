@@ -50,6 +50,7 @@ open class VideoClap: NSObject {
     
     public func playerItemForPlay() -> AVPlayerItem {
         let videoCompositor = VCVideoCompositor()
+        requestCallbackHandler.contextChanged()
         videoCompositor.setRequestCallbackHandler(requestCallbackHandler)
         let playerItem = videoCompositor.playerItemForPlay()
 //        playerItem.seekingWaitsForVideoCompositionRendering = false

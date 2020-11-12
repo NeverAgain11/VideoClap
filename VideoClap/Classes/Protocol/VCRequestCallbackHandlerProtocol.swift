@@ -11,4 +11,6 @@ public protocol VCRequestCallbackHandlerProtocol: VCVideoProcessProtocol, VCAudi
     
     var videoDescription: VCVideoDescriptionProtocol { get set }
     
+    func contextChanged()
+    
 }
