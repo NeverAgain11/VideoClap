@@ -95,6 +95,7 @@ class ViewController: UIViewController {
             let track = VCMediaTrack(id: "track1",
                                      trackType: .video,
                                      timeRange: CMTimeRange(start: 5.0, duration: 5.0))
+            track.isFit = false
             track.mediaURL = Bundle.main.url(forResource: "video1", withExtension: "mp4", subdirectory: "Mat")
             track.mediaClipTimeRange = CMTimeRange(start: 5.0, duration: 5.0)
             track.setFilterLutImageClosure { () -> CIImage? in
@@ -116,6 +117,7 @@ class ViewController: UIViewController {
                                      timeRange: CMTimeRange(start: 0.0, duration: 5.0))
             
             track.imageURL = Bundle.main.url(forResource: "test4", withExtension: "jpg", subdirectory: "Mat")
+            track.isFit = false
 //            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
             track.setImageClosure { () -> CIImage? in
                 if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: track.id)?.ciImage {
@@ -147,7 +149,7 @@ class ViewController: UIViewController {
         }
         
         do {
-            let trasition = VCModTransition()
+            let trasition = VCBounceTransition()
             addTransition(trasition)
         }
         
@@ -258,6 +260,8 @@ class ViewController: UIViewController {
             transition = VCMegapolis2DPatternTransition()
         case .Spread:
             transition = VCSpreadTransition()
+        case .Bounce:
+            transition = VCBounceTransition()
         }
         return transition
     }
