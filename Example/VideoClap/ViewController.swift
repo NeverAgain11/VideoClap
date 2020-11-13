@@ -195,7 +195,7 @@ class ViewController: UIViewController {
 //            LLog(error)
 //        }
         
-//        initPlay()
+        initPlay()
 //        export(fileName: nil) { }
         
 //        allCasesExportVideo()
@@ -247,7 +247,8 @@ class ViewController: UIViewController {
             transition = VCCubeTransition()
         case .Translation:
             transition = VCTranslationTransition().config(closure: {
-                $0.translation = 720.0
+                $0.translationType = .left
+                $0.translation = self.videoDescription.renderSize.width
             })
         case .Heart:
             transition = VCHeartTransition()
@@ -287,7 +288,7 @@ class ViewController: UIViewController {
     func addTransition(_ trasition: VCTransitionProtocol) {
         trasition.fromId = "track2"
         trasition.toId = "track1"
-        trasition.range = VCRange(left: 1.0, right: 0.5)
+        trasition.range = VCRange(left: 0.5, right: 0.5)
         
         trasition.setFromTrackVideoTransitionFrameClosure { () -> CIImage? in
             let storeKey = trasition.fromId
