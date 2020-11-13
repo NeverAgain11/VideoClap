@@ -198,7 +198,7 @@ class ViewController: UIViewController {
 //        initPlay()
 //        export(fileName: nil) { }
         
-        allCasesExportVideo()
+//        allCasesExportVideo()
     }
     
     override func didReceiveMemoryWarning() {
@@ -249,6 +249,12 @@ class ViewController: UIViewController {
             transition = VCTranslationTransition().config(closure: {
                 $0.translation = 720.0
             })
+        case .Heart:
+            transition = VCHeartTransition()
+        case .Noise:
+            transition = VCNoiseTransition()
+        case .Megapolis:
+            transition = VCMegapolis2DPatternTransition()
         }
         return transition
     }
@@ -279,7 +285,7 @@ class ViewController: UIViewController {
     func addTransition(_ trasition: VCTransitionProtocol) {
         trasition.fromId = "track2"
         trasition.toId = "track1"
-        trasition.range = VCRange(left: 0.5, right: 0.5)
+        trasition.range = VCRange(left: 1.0, right: 0.5)
         
         trasition.setFromTrackVideoTransitionFrameClosure { () -> CIImage? in
             let storeKey = trasition.fromId
@@ -288,7 +294,7 @@ class ViewController: UIViewController {
             } else {
                 let track = self.videoDescription.mediaTracks.first(where: { $0.id == trasition.fromId }) as! VCMediaTrack
                 var image = CIImage(contentsOf: track.imageURL!)!
-                image = image.transformed(by: .init(scaleX: 0.2, y: 0.2))
+//                image = image.transformed(by: .init(scaleX: 0.2, y: 0.2))
                 self.imageCache.storeImage(toMemory: UIImage(ciImage: image), forKey: storeKey)
                 return image
             }

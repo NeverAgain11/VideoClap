@@ -31,6 +31,8 @@ enum TransitionType: String, CaseIterable {
     case Cube
     case Translation
     case Heart
+    case Noise
+    case Megapolis
 }
 
 class TestWindow: UIWindow {
