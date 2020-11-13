@@ -255,6 +255,8 @@ class ViewController: UIViewController {
             transition = VCNoiseTransition()
         case .Megapolis:
             transition = VCMegapolis2DPatternTransition()
+        case .Spread:
+            transition = VCSpreadTransition()
         }
         return transition
     }
