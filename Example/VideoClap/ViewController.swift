@@ -11,7 +11,6 @@ import AVFoundation
 import SnapKit
 import Photos
 import VideoClap
-import SDWebImage
 import SSPlayer
 
 class ViewController: UIViewController {
@@ -63,12 +62,6 @@ class ViewController: UIViewController {
         return button
     }()
     
-    lazy var imageCache: SDImageCache = {
-        let cache = SDImageCache()
-        cache.config.maxMemoryCost = UInt(Float(ProcessInfo().physicalMemory) * 0.2)
-        return cache
-    }()
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         PHPhotoLibrary.requestAuthorization { (_) in
@@ -79,17 +72,8 @@ class ViewController: UIViewController {
         
         videoDescription.fps = 24.0
         videoDescription.renderSize = CGSize(width: 720, height: 720)
-//        videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
-        videoDescription.setWaterMarkImageClosure { () -> CIImage? in
-            if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: "waterMarkImage")?.ciImage {
-                return cacheImage
-            } else {
-                let waterMarkImageURL = Bundle.main.url(forResource: "test3", withExtension: "jpg", subdirectory: "Mat")!
-                let image = CIImage(contentsOf: waterMarkImageURL)!
-                self.imageCache.storeImage(toMemory: UIImage(ciImage: image), forKey: "waterMarkImage")
-                return image
-            }
-        }
+        videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
+        videoDescription.waterMarkImageURL = Bundle.main.url(forResource: "test3", withExtension: "jpg", subdirectory: "Mat")
         
         do {
             let track = VCMediaTrack(id: "track1",
@@ -98,16 +82,7 @@ class ViewController: UIViewController {
             track.isFit = false
             track.mediaURL = Bundle.main.url(forResource: "video1", withExtension: "mp4", subdirectory: "Mat")
             track.mediaClipTimeRange = CMTimeRange(start: 5.0, duration: 5.0)
-            track.setFilterLutImageClosure { () -> CIImage? in
-                let url = Bundle.main.url(forResource: "lut_filter_27", withExtension: "jpg", subdirectory: "Mat")!
-                if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: url.lastPathComponent)?.ciImage {
-                    return cacheImage
-                } else {
-                    let image = CIImage(contentsOf: url)!
-                    self.imageCache.storeImage(toMemory: UIImage(ciImage: image), forKey: url.lastPathComponent)
-                    return image
-                }
-            }
+            track.lutImageURL = Bundle.main.url(forResource: "lut_filter_27", withExtension: "jpg", subdirectory: "Mat")
             videoDescription.mediaTracks.append(track)
         }
         
@@ -116,19 +91,9 @@ class ViewController: UIViewController {
                                      trackType: .stillImage,
                                      timeRange: CMTimeRange(start: 0.0, duration: 5.0))
             
-            track.imageURL = Bundle.main.url(forResource: "test4", withExtension: "jpg", subdirectory: "Mat")
+            track.mediaURL = Bundle.main.url(forResource: "test4", withExtension: "jpg", subdirectory: "Mat")
             track.isFit = false
-//            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
-            track.setImageClosure { () -> CIImage? in
-                if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: track.id)?.ciImage {
-                    return cacheImage
-                } else {
-                    var image = CIImage(contentsOf: track.imageURL!)!
-//                    image = image.transformed(by: .init(scaleX: 0.2, y: 0.2))
-                    self.imageCache.storeImage(toMemory: UIImage(ciImage: image), forKey: track.id)
-                    return image
-                }
-            }
+            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
             videoDescription.mediaTracks.append(track)
         }
         
@@ -163,17 +128,8 @@ class ViewController: UIViewController {
         do {
             let lamination = VCLamination(id: "lamination1")
             lamination.timeRange = CMTimeRange(start: .zero, end: videoClap.estimateVideoDuration())
-            lamination.setImageClosure { () -> CIImage? in
-                if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: lamination.id)?.ciImage {
-                    return cacheImage
-                } else {
-                    let imageUrl = Bundle.main.url(forResource: "Anniversary1", withExtension: "png", subdirectory: "Mat")!
-                    let image = CIImage(contentsOf: imageUrl)!
-                    self.imageCache.storeImage(toMemory: UIImage(ciImage: image), forKey: lamination.id)
-                    return image
-                }
-            }
-//            videoDescription.laminations = [lamination]
+            lamination.imageURL = Bundle.main.url(forResource: "Anniversary1", withExtension: "png", subdirectory: "Mat")
+            videoDescription.laminations = [lamination]
         }
         
         do {
@@ -183,7 +139,7 @@ class ViewController: UIViewController {
             animationSticker.timeRange = CMTimeRange(start: .zero, duration: videoClap.estimateVideoDuration())
             animationSticker.setAnimationView("Watermelon", subdirectory: "Mat/LottieAnimations")
             animationSticker.animationView?.frame = CGRect(origin: .zero, size: CGSize(width: 200, height: 200))
-//            videoDescription.animationStickers = [animationSticker]
+            videoDescription.animationStickers = [animationSticker]
         }
         
 //        let reverseVideo = VCReverseVideo()
@@ -197,15 +153,10 @@ class ViewController: UIViewController {
 //            LLog(error)
 //        }
         
-        initPlay()
+//        initPlay()
 //        export(fileName: nil) { }
         
 //        allCasesExportVideo()
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        imageCache.clearMemory()
     }
     
     func getTransition(type: TransitionType) -> VCTransitionProtocol {
@@ -293,45 +244,6 @@ class ViewController: UIViewController {
         trasition.fromId = "track2"
         trasition.toId = "track1"
         trasition.range = VCRange(left: 0.5, right: 0.5)
-        
-        trasition.setFromTrackVideoTransitionFrameClosure { () -> CIImage? in
-            let storeKey = trasition.fromId
-            if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: storeKey)?.ciImage {
-                return cacheImage
-            } else {
-                let track = self.videoDescription.mediaTracks.first(where: { $0.id == trasition.fromId }) as! VCMediaTrack
-                var image = CIImage(contentsOf: track.imageURL!)!
-//                image = image.transformed(by: .init(scaleX: 0.2, y: 0.2))
-                self.imageCache.storeImage(toMemory: UIImage(ciImage: image), forKey: storeKey)
-                return image
-            }
-        }
-        
-        trasition.setToTrackVideoTransitionFrameClosure { () -> CIImage? in
-            let storeKey = trasition.toId + "setFromTrackVideoTransitionFrameClosure"
-            if let cacheImage = self.imageCache.imageFromMemoryCache(forKey: storeKey)?.ciImage {
-                return cacheImage
-            } else {
-                var frame: CIImage?
-                let track = self.videoDescription.mediaTracks.first(where: { $0.id == trasition.toId }) as! VCMediaTrack
-                let videoUrl = track.mediaURL!
-                let asset = AVAsset(url: videoUrl)
-                let generator = AVAssetImageGenerator(asset: asset)
-                generator.appliesPreferredTrackTransform = true
-                generator.requestedTimeToleranceAfter = .zero
-                generator.requestedTimeToleranceBefore = .zero
-                do {
-                    let cgimage = try generator.copyCGImage(at: CMTime(seconds: 5.0), actualTime: nil)
-                    let ciimage = CIImage(cgImage: cgimage)
-                    self.imageCache.storeImage(toMemory: UIImage(ciImage: ciimage), forKey: storeKey)
-                    frame = ciimage
-                } catch {
-                    frame = nil
-                }
-                return frame
-            }
-        }
-        
         videoDescription.transitions = [trasition]
     }
     

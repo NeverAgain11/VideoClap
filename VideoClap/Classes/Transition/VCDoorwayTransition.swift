@@ -13,10 +13,6 @@ open class VCDoorwayTransition: NSObject, VCTransitionProtocol {
     
     public var range: VCRange = VCRange(left: 0, right: 0)
     
-    public var fromTrackVideoTransitionFrameClosure: (() -> CIImage?)?
-    
-    public var toTrackVideoTransitionFrameClosure: (() -> CIImage?)?
-    
     public var fromId: String = ""
     
     public var toId: String = ""

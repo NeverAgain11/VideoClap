@@ -9,6 +9,7 @@ PODS:
   - SwiftyTimer (2.1.0)
   - VideoClap (0.1.0):
     - lottie-ios
+    - SDWebImage
     - SwiftyBeaver
     - SwiftyTimer
     - VideoClap/AudioEffects (= 0.1.0)
@@ -23,47 +24,56 @@ PODS:
     - VideoClap/Utilities (= 0.1.0)
   - VideoClap/AudioEffects (0.1.0):
     - lottie-ios
+    - SDWebImage
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Core (0.1.0):
     - lottie-ios
+    - SDWebImage
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/CustomFilter (0.1.0):
     - lottie-ios
+    - SDWebImage
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Extension (0.1.0):
     - lottie-ios
+    - SDWebImage
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/MetalLibs (0.1.0):
     - lottie-ios
+    - SDWebImage
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Model (0.1.0):
     - lottie-ios
+    - SDWebImage
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Protocol (0.1.0):
     - lottie-ios
+    - SDWebImage
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Trajectory (0.1.0):
     - lottie-ios
+    - SDWebImage
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Transition (0.1.0):
     - lottie-ios
+    - SDWebImage
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Utilities (0.1.0):
     - lottie-ios
+    - SDWebImage
     - SwiftyBeaver
     - SwiftyTimer
 
 DEPENDENCIES:
-  - SDWebImage
   - SnapKit (= 4.2.0)
   - SSPlayer (from `https://github.com/lai001/SSPlayer.git`)
   - SwiftyBeaver
@@ -95,8 +105,8 @@ SPEC CHECKSUMS:
   SSPlayer: 6299c67bde2d7a5f64292dccac0e6ddd45bfdd91
   SwiftyBeaver: b8239f6bfe9e1ea3303e6139abc8c24228081d84
   SwiftyTimer: 02dd6cf10cbc71cbf67cec494f6e5eb782102543
-  VideoClap: 90aba8344a4036dcfa4bd1dd04b8bd39ec264511
+  VideoClap: 077a56f37d797a431d715e4de792e57eaab0f1a7
 
-PODFILE CHECKSUM: caae0992d13fb9ab8e8ce7c89b35f5920c97d588
+PODFILE CHECKSUM: c6034d572cd8bb4839743dd25b88c712eac5d9d3
 
-COCOAPODS: 1.10.0
+COCOAPODS: 1.9.1

@@ -30,6 +30,7 @@ TODO: Add long description of the pod here.
   s.dependency 'SwiftyBeaver'
   s.dependency 'lottie-ios'
   s.dependency 'SwiftyTimer'
+  s.dependency 'SDWebImage'
   
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 

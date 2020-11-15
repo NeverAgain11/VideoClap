@@ -17,7 +17,6 @@ internal class VCTrack: VCTrackDescription {
         self.prefferdTransform           = description.prefferdTransform
         self.mediaURL                    = description.mediaURL
         self.mediaClipTimeRange          = description.mediaClipTimeRange
-        self.imageClosure                = description.imageClosure
         self.audioVolumeRampDescriptions = description.audioVolumeRampDescriptions
     }
     

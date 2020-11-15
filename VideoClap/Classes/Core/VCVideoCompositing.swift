@@ -65,7 +65,7 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
             }
             switch track.trackType {
             case .stillImage:
-                if let image = track.image() {
+                if let image = trackImage(track: track) {
                     let item = VCRequestItem(frame: image, id: track.id)
                     items.append(item)
                 }
@@ -110,6 +110,20 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
         self.blackImage = renderer.ciImage { (context) in
             UIColor.black.setFill()
             UIRectFill(renderer.rendererRect)
+        }
+    }
+    
+    private func trackImage(track: VCTrack) -> CIImage? {
+        if let url = track.mediaURL {
+            if let cacheImage = VCImageCache.share.image(forKey: track.id) {
+                return cacheImage
+            } else {
+                let image = CIImage(contentsOf: url)
+                VCImageCache.share.storeImage(toMemory: image, forKey: track.id)
+                return image
+            }
+        } else {
+            return nil
         }
     }
     

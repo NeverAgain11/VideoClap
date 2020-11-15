@@ -65,11 +65,11 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                 let end: CMTime = CMTime(seconds: toTimeRange.start.seconds + toTimeRange.duration.seconds * Double(transition.range.right))
                 if CMTimeRange(start: start, end: end).containsTime(compositionTime) {
                     
-                    if ids.contains(transition.toId) == false {
-                        items.append(VCRequestItem(frame: transition.toTrackVideoTransitionFrame(), id: transition.toId))
+                    if ids.contains(transition.toId) == false, let frame = trackFrame(trackID: transition.toId) {
+                        items.append(VCRequestItem(frame: frame, id: transition.toId))
                     }
-                    if ids.contains(transition.fromId) == false {
-                        items.append(VCRequestItem(frame: transition.fromTrackVideoTransitionFrame(), id: transition.fromId))
+                    if ids.contains(transition.fromId) == false, let frame = trackFrame(trackID: transition.fromId) {
+                        items.append(VCRequestItem(frame: frame, id: transition.fromId))
                     }
                     findTransitions.append(transition)
                 }
@@ -158,7 +158,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                 frame = frame.transformed(by: transform)
             }
             
-            if let filterLutImage = mediaTrack.filterLutImageImage(), mediaTrack.filterIntensity.floatValue > 0.0 {  // 查找表，添加滤镜
+            if let lutImageURL = mediaTrack.lutImageURL, let filterLutImage = lutImage(url: lutImageURL), mediaTrack.filterIntensity.floatValue > 0.0 {  // 查找表，添加滤镜
                 let lutFilter = VCLutFilter()
                 lutFilter.inputIntensity = mediaTrack.filterIntensity
                 lutFilter.inputImage = frame
@@ -244,7 +244,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
 
         for lamination in findLaminations {
-            if let image = lamination.image() {
+            if let url = lamination.imageURL, let image = laminationImage(url: url) {
                 if let laminationImage = finalLaminationImage {
                     finalLaminationImage = sourceAtopCompositing(inputImage: laminationImage, inputBackgroundImage: image)
                 } else {
@@ -302,7 +302,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             finalFrame = laminationImage.composited(over: backgroudImage)
         }
         
-        if var waterMarkImage = videoDescription.waterMarkImage(), let waterMarkRect = videoDescription.waterMarkRect, let backgroudImage = finalFrame {
+        if let url = videoDescription.waterMarkImageURL, var waterMarkImage = watermarkImage(url: url), let waterMarkRect = videoDescription.waterMarkRect, let backgroudImage = finalFrame {
             let width = renderSize.width * waterMarkRect.normalizeWidth // 水印宽度，基于像素
             let height = renderSize.height * waterMarkRect.normalizeHeight // 水印高度，基于像素
             let left = waterMarkRect.normalizeCenter.x * renderSize.width // 水印中心距离画布左边的距离，基于像素
@@ -368,6 +368,62 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         } else {
             return image
         }
+    }
+    
+    private func lutImage(url: URL) -> CIImage? {
+        return image(url: url)
+    }
+    
+    private func laminationImage(url: URL) -> CIImage? {
+        return image(url: url)
+    }
+    
+    private func watermarkImage(url: URL) -> CIImage? {
+        return image(url: url)
+    }
+    
+    private func image(url: URL) -> CIImage? {
+        if let cacheImage = VCImageCache.share.image(forKey: url.path) {
+            return cacheImage
+        } else {
+            let image = CIImage(contentsOf: url)
+            VCImageCache.share.storeImage(toMemory: image, forKey: url.path)
+            return image
+        }
+    }
+    
+    private func trackFrame(trackID: String) -> CIImage? {
+        guard let track = fastEnumor.object(id: trackID) else { return nil }
+        switch track.trackType {
+        case .stillImage:
+            if let url = track.mediaURL {
+                return image(url: url)
+            }
+        case .video:
+            let storeKey = trackID + "video_first_frame"
+            if let cacheImage = VCImageCache.share.image(forKey: storeKey) {
+                return cacheImage
+            } else if let videoUrl = track.mediaURL {
+                var frame: CIImage?
+                let asset = AVAsset(url: videoUrl)
+                let generator = AVAssetImageGenerator(asset: asset)
+                generator.appliesPreferredTrackTransform = true
+                generator.requestedTimeToleranceAfter = .zero
+                generator.requestedTimeToleranceBefore = .zero
+                do {
+                    let cgimage = try generator.copyCGImage(at: CMTime(seconds: 5.0), actualTime: nil)
+                    let ciimage = CIImage(cgImage: cgimage)
+                    VCImageCache.share.storeImage(toMemory: ciimage, forKey: storeKey)
+                    frame = ciimage
+                } catch {
+                    frame = nil
+                }
+                return frame
+            }
+        case .audio:
+            break
+        }
+        return nil
     }
     
 }

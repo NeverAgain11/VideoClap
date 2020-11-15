@@ -22,27 +22,19 @@ open class VCFullVideoDescription: VCVideoDescription {
     
     public var animationStickers: [VCAnimationSticker] = []
     
-    public var waterMarkImageClosure: (() -> CIImage?)?
-    
-    public func waterMarkImage() -> CIImage? {
-        return waterMarkImageClosure?()
-    }
-    
-    public func setWaterMarkImageClosure(closure: @escaping () -> CIImage?) {
-        waterMarkImageClosure = closure
-    }
+    public var waterMarkImageURL: URL?
     
     public override func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCFullVideoDescription()
-        copyObj.renderSize = self.renderSize
-        copyObj.renderScale = self.renderScale
-        copyObj.fps = self.fps
-        copyObj.mediaTracks = self.mediaTracks.map({ $0.mutableCopy() as! VCTrackDescriptionProtocol })
-        copyObj.waterMarkRect = self.waterMarkRect
-        copyObj.waterMarkImageClosure = self.waterMarkImageClosure
-        copyObj.transitions = self.transitions
-        copyObj.trajectories = self.trajectories
-        copyObj.laminations = self.laminations.map({ $0.mutableCopy() as! VCLamination })
+        copyObj.renderSize          = self.renderSize
+        copyObj.renderScale         = self.renderScale
+        copyObj.fps                 = self.fps
+        copyObj.mediaTracks         = self.mediaTracks.map({ $0.mutableCopy() as! VCTrackDescriptionProtocol })
+        copyObj.waterMarkRect       = self.waterMarkRect
+        copyObj.waterMarkImageURL   = self.waterMarkImageURL
+        copyObj.transitions         = self.transitions
+        copyObj.trajectories        = self.trajectories
+        copyObj.laminations         = self.laminations.map({ $0.mutableCopy() as! VCLamination })
         return copyObj
     }
     

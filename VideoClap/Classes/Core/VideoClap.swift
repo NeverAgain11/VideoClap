@@ -49,6 +49,7 @@ open class VideoClap: NSObject {
     }
     
     public func playerItemForPlay() -> AVPlayerItem {
+        VCImageCache.share.clearMemory()
         let videoCompositor = VCVideoCompositor()
         requestCallbackHandler.contextChanged()
         videoCompositor.setRequestCallbackHandler(requestCallbackHandler)
