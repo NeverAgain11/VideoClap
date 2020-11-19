@@ -33,6 +33,8 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         fastEnumor = VCFastEnumor<VCMediaTrack>.init(group: mediaTracks)
     }
     
+    private let locker = NSLock()
+    
     open func handle(items: [VCRequestItem], compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
         var items = items
         var finalFrame: CIImage?
@@ -341,17 +343,17 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         
         guard let audioTrack = fastEnumor.object(id: trackID), let url = audioTrack.mediaURL else { return }
         
-        if #available(iOS 11.0, *) {
+        if #available(iOS 11.0, *), let audioEffectProvider = audioTrack.audioEffectProvider {
             do {
                 let audioFile = try AVAudioFile(forReading: url)
                 let pcmFormat = audioFile.processingFormat
-                audioTrack.audioEffectProvider?.handle(timeRange: timeRange,
-                                                       inCount: inCount,
-                                                       inFlag: inFlag,
-                                                       outBuffer: outBuffer,
-                                                       outCount: outCount,
-                                                       outFlag: outFlag,
-                                                       pcmFormat: pcmFormat)
+                audioEffectProvider.handle(timeRange: timeRange,
+                                           inCount: inCount,
+                                           inFlag: inFlag,
+                                           outBuffer: outBuffer,
+                                           outCount: outCount,
+                                           outFlag: outFlag,
+                                           pcmFormat: pcmFormat)
             } catch let error {
                 log.error(error)
             }
@@ -392,7 +394,11 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
     }
     
-    private func trackFrame(trackID: String) -> CIImage? {
+    public func trackFrame(trackID: String) -> CIImage? {
+        locker.lock()
+        defer {
+            locker.unlock()
+        }
         guard let track = fastEnumor.object(id: trackID) else { return nil }
         switch track.trackType {
         case .stillImage:
