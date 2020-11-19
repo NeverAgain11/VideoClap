@@ -48,10 +48,10 @@ open class VCWipeTransition: NSObject, VCTransitionProtocol {
             dividedRect = videoBox.divided(atDistance: videoBox.width * ratio, from: .maxXEdge)
             
         case .up:
-            dividedRect = videoBox.divided(atDistance: videoBox.width * ratio, from: .minYEdge)
+            dividedRect = videoBox.divided(atDistance: videoBox.height * ratio, from: .minYEdge)
             
         case .down:
-            dividedRect = videoBox.divided(atDistance: videoBox.width * ratio, from: .maxYEdge)
+            dividedRect = videoBox.divided(atDistance: videoBox.height * ratio, from: .maxYEdge)
         }
         source = source.cropped(to: dividedRect.remainder)
         source2 = source2.cropped(to: dividedRect.slice)
