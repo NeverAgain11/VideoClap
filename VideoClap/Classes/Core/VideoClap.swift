@@ -29,6 +29,8 @@ public enum VideoClapError: Error {
 
 open class VideoClap: NSObject {
     
+    static let ExportFolder = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("VideoClapExportVideos")
+    
     public var requestCallbackHandler: VCRequestCallbackHandlerProtocol = VCRequestCallbackHandler()
     
     public var videoDescription: VCVideoDescriptionProtocol {
@@ -67,16 +69,26 @@ open class VideoClap: NSObject {
                 completionHandler(nil, VideoClapError.exportFailed)
                 return
             }
+            let folder = VideoClap.ExportFolder
+            
+            if FileManager.default.fileExists(atPath: folder.path) == false {
+                do {
+                    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: nil)
+                } catch let error {
+                    completionHandler(nil, error)
+                    return
+                }
+            }
             
             let exportVideoURL: URL
             
             if let fileName = fileName {
-                exportVideoURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
+                exportVideoURL = folder.appendingPathComponent(fileName)
             } else {
                 let df = DateFormatter()
                 df.dateFormat = "YYYY_MM_dd_KK_mm_ss"
                 let fileName = df.string(from: Date()) + ".mov"
-                exportVideoURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
+                exportVideoURL = folder.appendingPathComponent(fileName)
             }
             if FileManager.default.fileExists(atPath: exportVideoURL.path) {
                 do {
