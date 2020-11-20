@@ -85,9 +85,7 @@ open class VideoClap: NSObject {
             if let fileName = fileName {
                 exportVideoURL = folder.appendingPathComponent(fileName)
             } else {
-                let df = DateFormatter()
-                df.dateFormat = "YYYY_MM_dd_KK_mm_ss"
-                let fileName = df.string(from: Date()) + ".mov"
+                let fileName = UUID().uuidString + ".mov"
                 exportVideoURL = folder.appendingPathComponent(fileName)
             }
             if FileManager.default.fileExists(atPath: exportVideoURL.path) {
