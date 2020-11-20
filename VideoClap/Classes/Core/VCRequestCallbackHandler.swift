@@ -432,6 +432,14 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return nil
     }
     
+    public func reloadFrame(player: AVPlayer) {
+        guard player.rate == 0 else { return }
+        guard let item = player.currentItem else { return }
+        contextChanged()
+        let videoComposition = item.videoComposition?.mutableCopy() as? AVVideoComposition
+        item.videoComposition = videoComposition
+    }
+    
 }
 
 extension VCRequestCallbackHandler {

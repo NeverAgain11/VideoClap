@@ -152,4 +152,18 @@ open class VideoClap: NSObject {
         return duration
     }
     
+    public static func cleanExportFolder() {
+        let folder = VideoClap.ExportFolder
+        if FileManager.default.fileExists(atPath: folder.path) {
+            do {
+                let contents = try FileManager.default.contentsOfDirectory(atPath: folder.path)
+                for content in contents {
+                    try FileManager.default.removeItem(atPath: folder.appendingPathComponent(content).path)
+                }
+            } catch let error {
+                log.error(error)
+            }
+        }
+    }
+    
 }
