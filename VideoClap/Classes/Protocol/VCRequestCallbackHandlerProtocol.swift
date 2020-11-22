@@ -9,7 +9,7 @@ import AVFoundation
 
 public protocol VCRequestCallbackHandlerProtocol: VCVideoProcessProtocol, VCAudioProcessingTapProcessProtocol {
     
-    var videoDescription: VCVideoDescriptionProtocol { get set }
+    var videoDescription: VCVideoDescription { get set }
     
     func contextChanged()
     

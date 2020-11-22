@@ -31,9 +31,9 @@ open class VideoClap: NSObject {
     
     static let ExportFolder = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("VideoClapExportVideos")
     
-    public var requestCallbackHandler: VCRequestCallbackHandlerProtocol = VCRequestCallbackHandler()
+    public var requestCallbackHandler: VCRequestCallbackHandler = VCRequestCallbackHandler()
     
-    public var videoDescription: VCVideoDescriptionProtocol {
+    public var videoDescription: VCVideoDescription {
         return requestCallbackHandler.videoDescription
     }
     
@@ -47,22 +47,25 @@ open class VideoClap: NSObject {
     }
     
     @objc private func receiveMemoryWarning(_ sender: Notification) {
-
+        VCImageCache.share.clearMemory()
     }
     
     public func playerItemForPlay() -> AVPlayerItem {
-        VCImageCache.share.clearMemory()
-        let videoCompositor = VCVideoCompositor()
+        let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler)
         requestCallbackHandler.contextChanged()
         videoCompositor.setRequestCallbackHandler(requestCallbackHandler)
-        let playerItem = videoCompositor.playerItemForPlay()
-//        playerItem.seekingWaitsForVideoCompositionRendering = false
+        let playerItem: AVPlayerItem
+        do {
+             playerItem = try videoCompositor.playerItemForPlay()
+        } catch let error {
+            log.error(error)
+            playerItem = AVPlayerItem(asset: AVAsset())
+        }
         return playerItem
     }
     
     public func exportToVideo(fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) {
         let playerItem = playerItemForPlay()
-//        playerItem.seekingWaitsForVideoCompositionRendering = true
         let presetName = AVAssetExportPresetHighestQuality
         AVAssetExportSession.determineCompatibility(ofExportPreset: presetName, with: playerItem.asset, outputFileType: .mov) { (canExport) in
             guard canExport, let session = AVAssetExportSession(asset: playerItem.asset, presetName: presetName) else {
@@ -148,8 +151,8 @@ open class VideoClap: NSObject {
     }
     
     public func estimateVideoDuration() -> CMTime {
-        let duration = videoDescription.mediaTracks.map({ $0.timeRange.end }).max() ?? .zero
-        return duration
+        let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler)
+        return videoCompositor.estimateVideoDuration()
     }
     
     public static func cleanExportFolder() {

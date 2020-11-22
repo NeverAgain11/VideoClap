@@ -63,3 +63,85 @@ public class VCHelper: NSObject {
     }
     
 }
+
+extension VCHelper {
+    
+    static func cropBusinessCardForPoints(image: CIImage, topLeft: CGPoint, topRight: CGPoint, bottomLeft: CGPoint, bottomRight: CGPoint) -> CIImage {
+        
+        var businessCard: CIImage
+        businessCard = image.applyingFilter("CIPerspectiveTransformWithExtent",
+                                            parameters: [
+                                                "inputExtent": CIVector(cgRect: image.extent),
+                                                "inputTopLeft": CIVector(cgPoint: topLeft),
+                                                "inputTopRight": CIVector(cgPoint: topRight),
+                                                "inputBottomLeft": CIVector(cgPoint: bottomLeft),
+                                                "inputBottomRight": CIVector(cgPoint: bottomRight)
+                                            ])
+        businessCard = image.cropped(to: businessCard.extent)
+        
+        return businessCard
+    }
+    
+    static func sourceOverCompositing(inputImage: CIImage, inputBackgroundImage: CIImage) -> CIImage? {
+        let filter = CIFilter(name: "CISourceOverCompositing")!
+        filter.setValue(inputImage, forKey: "inputImage")
+        filter.setValue(inputBackgroundImage, forKey: "inputBackgroundImage")
+        return filter.outputImage
+    }
+    
+    static func twirlDistortionCompositing(radius: CGFloat, inputImage: CIImage) -> CIImage? {
+        let twirlFilter = CIFilter(name: "CITwirlDistortion")!
+        twirlFilter.setValue(inputImage, forKey: kCIInputImageKey)
+        twirlFilter.setValue(radius, forKey: kCIInputRadiusKey)
+        let x = inputImage.extent.midX
+        let y = inputImage.extent.midY
+        twirlFilter.setValue(CIVector(x: x, y: y), forKey: kCIInputCenterKey)
+        return twirlFilter.outputImage
+    }
+    
+    static func maximumCompositing(inputImage: CIImage, inputBackgroundImage: CIImage) -> CIImage? {
+        let combineFilter = CIFilter(name: "CIMaximumCompositing")!
+        combineFilter.setValue(inputImage, forKey: kCIInputImageKey)
+        combineFilter.setValue(inputBackgroundImage, forKey: kCIInputBackgroundImageKey)
+        return combineFilter.outputImage
+    }
+    
+    static func sourceAtopCompositing(inputImage: CIImage, inputBackgroundImage: CIImage) -> CIImage? {
+        let combineFilter = CIFilter(name: "CISourceAtopCompositing")!
+        combineFilter.setValue(inputImage, forKey: kCIInputImageKey)
+        combineFilter.setValue(inputBackgroundImage, forKey: kCIInputBackgroundImageKey)
+        return combineFilter.outputImage
+    }
+    
+    static func minimumCompositing(inputImage: CIImage, inputBackgroundImage: CIImage) -> CIImage? {
+        let combineFilter = CIFilter(name: "CIMinimumCompositing")!
+        combineFilter.setValue(inputImage, forKey: kCIInputImageKey)
+        combineFilter.setValue(inputBackgroundImage, forKey: kCIInputBackgroundImageKey)
+        return combineFilter.outputImage
+    }
+    
+    static func affineTransformCompositing(inputImage: CIImage, cgAffineTransform: CGAffineTransform) -> CIImage? {
+        let filter = CIFilter(name: "CIAffineTransform")!
+        filter.setValue(inputImage, forKey: kCIInputImageKey)
+        filter.setValue(NSValue(cgAffineTransform: cgAffineTransform), forKey: kCIInputTransformKey)
+        return filter.outputImage
+    }
+    
+    static func lanczosScaleTransformCompositing(inputImage: CIImage, scale: Float, aspectRatio: Float) -> CIImage? {
+        let filter = CIFilter(name: "CILanczosScaleTransform")!
+        filter.setValue(inputImage, forKey: kCIInputImageKey)
+        filter.setValue(scale, forKey: kCIInputScaleKey)
+        filter.setValue(aspectRatio, forKey: kCIInputAspectRatioKey)
+        return filter.outputImage
+    }
+    
+    static func alphaCompositing(alphaValue: CGFloat, inputImage: CIImage) -> CIImage? {
+        guard let overlayFilter: CIFilter = CIFilter(name: "CIColorMatrix") else { return nil }
+        let overlayRgba: [CGFloat] = [0, 0, 0, alphaValue]
+        let alphaVector: CIVector = CIVector(values: overlayRgba, count: 4)
+        overlayFilter.setValue(inputImage, forKey: kCIInputImageKey)
+        overlayFilter.setValue(alphaVector, forKey: "inputAVector")
+        return overlayFilter.outputImage
+    }
+    
+}

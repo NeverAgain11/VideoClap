@@ -12,29 +12,42 @@ let TransitionNotification = NSNotification.Name(rawValue: "Transition")
 
 enum TransitionType: String, CaseIterable {
     case Alpha
+    
     case BarsSwipe
     case Blur
+    case Bounce
+    
     case CopyMachine
+    case Cube
+    
     case Dissolve
+    case Doorway
+    
     case Flip
+    
+    case Heart
+    
     case IceMelting
+    
+    case Mod
+    case Megapolis
+    
+    case Noise
+    
+    case PageCurl
+    
     case Slide
     case Swirl
-    case Vortex
-    case Wave
-    case Wipe
-    case Windowslice
-    case PageCurl
-    case Doorway
     case Squareswire
-    case Mod
-    case Cube
-    case Translation
-    case Heart
-    case Noise
-    case Megapolis
     case Spread
-    case Bounce
+    
+    case Translation
+    
+    case Vortex
+    
+    case Wave
+    case Windowslice
+    case Wipe
 }
 
 class TestWindow: UIWindow {

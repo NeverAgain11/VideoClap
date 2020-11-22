@@ -15,8 +15,8 @@ import SSPlayer
 
 class ViewController: UIViewController {
 
-    var videoDescription: VCFullVideoDescription {
-        return videoClap.requestCallbackHandler.videoDescription as! VCFullVideoDescription
+    var videoDescription: VCVideoDescription {
+        return videoClap.requestCallbackHandler.videoDescription
     }
     
     lazy var videoClap: VideoClap = {
@@ -76,41 +76,42 @@ class ViewController: UIViewController {
         videoDescription.waterMarkImageURL = Bundle.main.url(forResource: "test3", withExtension: "jpg", subdirectory: "Mat")
         
         do {
-            let track = VCMediaTrack(id: "track1",
-                                     trackType: .video,
-                                     timeRange: CMTimeRange(start: 5.0, duration: 5.0))
+            let track = VCVideoTrackDescription()
+            track.id = "videoTrack"
+            track.timeRange = CMTimeRange(start: 5.0, duration: 5.0)
             track.isFit = false
             track.mediaURL = Bundle.main.url(forResource: "video1", withExtension: "mp4", subdirectory: "Mat")
             track.mediaClipTimeRange = CMTimeRange(start: 5.0, duration: 5.0)
             track.lutImageURL = Bundle.main.url(forResource: "lut_filter_27", withExtension: "jpg", subdirectory: "Mat")
-            videoDescription.mediaTracks.append(track)
+            videoDescription.videoTracks.append(track)
         }
         
         do {
-            let track = VCMediaTrack(id: "track2",
-                                     trackType: .stillImage,
-                                     timeRange: CMTimeRange(start: 0.0, duration: 5.0))
+            let track = VCImageTrackDescription()
+            track.id = "imageTrack"
+            track.timeRange = CMTimeRange(start: 0.0, duration: 5.0)
             
             track.mediaURL = Bundle.main.url(forResource: "test4", withExtension: "jpg", subdirectory: "Mat")
-            track.isFit = false
-            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
-            videoDescription.mediaTracks.append(track)
+            track.isFit = true
+//            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
+            videoDescription.imageTracks.append(track)
         }
         
         do {
-            let track = VCMediaTrack(id: "track3",
-                                     trackType: .audio,
-                                     timeRange: CMTimeRange(start: 0.0, duration: 8.0))
+            let track = VCAudioTrackDescription()
+            track.id = "audioTrack"
+            track.timeRange = CMTimeRange(start: 0.0, duration: 4 * 60)
             track.mediaURL = Bundle.main.url(forResource: "02.Ellis - Clear My Head (Radio Edit) [NCS]", withExtension: "mp3", subdirectory: "Mat")
-            track.mediaClipTimeRange = CMTimeRange(start: 0.0, duration: 8.0)
+            
+            track.mediaClipTimeRange = CMTimeRange(start: 0.0, duration: 3 * 60 + 37)
             if #available(iOS 11.0, *) {
-                track.audioEffectProvider = VCGhostAudioEffectProvider()
+//                track.audioEffectProvider = VCGhostAudioEffectProvider()
             }
             let desc = VCAudioVolumeRampDescription(startVolume: 0.7,
                                                     endVolume: 1.0,
                                                     timeRange: CMTimeRange(start: 0.0, duration: 10.0))
             track.audioVolumeRampDescriptions = [desc]
-            videoDescription.mediaTracks.append(track)
+            videoDescription.audioTracks.append(track)
         }
         
         do {
@@ -118,28 +119,29 @@ class ViewController: UIViewController {
             addTransition(trasition)
         }
         
-//        do {
-//            let trajectory = VCMovementTrajectory()
-//            trajectory.id = "track1"
-//            trajectory.timeRange = CMTimeRange(start: CMTime(seconds: 2), end: CMTime(seconds: 30))
-//            videoDescription.trajectories.append(trajectory)
-//        }
-        
         do {
-            let lamination = VCLamination(id: "lamination1")
-            lamination.timeRange = CMTimeRange(start: .zero, end: videoClap.estimateVideoDuration())
-            lamination.imageURL = Bundle.main.url(forResource: "Anniversary1", withExtension: "png", subdirectory: "Mat")
-            videoDescription.laminations = [lamination]
+            let trajectory = VCMovementTrajectory()
+            trajectory.id = "imageTrack"
+            trajectory.timeRange = CMTimeRange(start: CMTime(seconds: 2), end: CMTime(seconds: 30))
+//            videoDescription.trajectories.append(trajectory)
         }
         
         do {
-            let animationSticker = VCAnimationSticker()
-            animationSticker.id = "animationSticker1"
+            let lamination = VCLaminationTrackDescription()
+            lamination.id = "laminationTrack"
+            lamination.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 5 * 60))
+            lamination.mediaURL = Bundle.main.url(forResource: "Anniversary1", withExtension: "png", subdirectory: "Mat")
+            videoDescription.laminationTracks.append(lamination)
+        }
+        
+        do {
+            let animationSticker = VCLottieTrackDescription()
+            animationSticker.id = "animationSticker"
             animationSticker.rect = VCRect(normalizeCenter: CGPoint(x: 0.25, y: 0.2), normalizeSize: CGSize(width: 0.35, height: 0.35))
-            animationSticker.timeRange = CMTimeRange(start: .zero, duration: videoClap.estimateVideoDuration())
+            animationSticker.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10 * 60))
             animationSticker.setAnimationView("Watermelon", subdirectory: "Mat/LottieAnimations")
             animationSticker.animationView?.frame = CGRect(origin: .zero, size: CGSize(width: 200, height: 200))
-            videoDescription.animationStickers = [animationSticker]
+            videoDescription.lottieTracks.append(animationSticker)
         }
         
 //        let reverseVideo = VCReverseVideo()
@@ -241,8 +243,8 @@ class ViewController: UIViewController {
     }
     
     func addTransition(_ trasition: VCTransitionProtocol) {
-        trasition.fromId = "track2"
-        trasition.toId = "track1"
+        trasition.fromId = "imageTrack"
+        trasition.toId = "videoTrack"
         trasition.range = VCRange(left: 0.5, right: 0.5)
         videoDescription.transitions = [trasition]
     }
@@ -263,8 +265,11 @@ class ViewController: UIViewController {
     
     func export(fileName: String?, completion: @escaping () -> Void) {
         videoClap.exportToVideo(fileName: fileName) { (progress) in
-            print(progress.fractionCompleted)
+            print(progress.fractionCompleted, fileName)
         } completionHandler: { (url, error) in
+            if let error = error {
+                LLog(error)
+            }
             #if targetEnvironment(simulator)
             
             if let url = url {

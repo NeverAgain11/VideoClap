@@ -1,23 +1,23 @@
 //
-//  VCAnimationSticker.swift
+//  VCLottieTrackDescription.swift
 //  VideoClap
 //
-//  Created by lai001 on 2020/11/9.
+//  Created by lai001 on 2020/11/22.
 //
 
 import AVFoundation
 import Lottie
 
-public class VCAnimationSticker: NSObject, NSCopying, NSMutableCopying {
+public class VCLottieTrackDescription: NSObject, VCTrackDescriptionProtocol {
     
     public var id: String = ""
+    
+    public var timeRange: CMTimeRange = .zero
     
     public var rect: VCRect = VCRect(normalizeCenter: CGPoint(x: 0.5, y: 0.5), normalizeSize: CGSize(width: 0.5, height: 0.5))
     
     /// 顺时针，弧度制，1.57顺时针旋转90度，3.14顺时针旋转180度
     public var rotateRadian: Float = 0.0
-    
-    public var timeRange: CMTimeRange = .zero
     
     public var animationPlayTime: CMTime = .zero
     
@@ -50,12 +50,16 @@ public class VCAnimationSticker: NSObject, NSCopying, NSMutableCopying {
         }
     }
     
+    public override init() {
+        super.init()
+    }
+    
     public func copy(with zone: NSZone? = nil) -> Any {
         return self
     }
     
     public func mutableCopy(with zone: NSZone? = nil) -> Any {
-        let copyObj = VCAnimationSticker()
+        let copyObj = VCLottieTrackDescription()
         copyObj.id = id
         copyObj.rect = rect
         copyObj.rotateRadian = rotateRadian

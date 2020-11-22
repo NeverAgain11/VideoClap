@@ -8,6 +8,19 @@
 import AVFoundation
 
 public struct VCRequestItem {
-    let frame: CIImage?
-    let id: String
+    var sourceFrameDic: [String : CIImage] = [:]
+    
+    var imageTracks: [VCImageTrackDescription] = []
+    
+    var videoTracks: [VCVideoTrackDescription] = []
+    
+    var audioTracks: [VCAudioTrackDescription] = []
+    
+    var lottieTracks: [VCLottieTrackDescription] = []
+    
+    var laminationTracks: [VCLaminationTrackDescription] = []
+    
+    var transitions: [VCTransition] = []
+    
+    var trajectories: [VCTrajectoryProtocol] = []
 }

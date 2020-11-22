@@ -52,47 +52,42 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
             videoCompositionRequest.finish(with: VCVideoCompositingError.internalError)
             return
         }
-
-        var items: [VCRequestItem] = []
-        for track: VCTrack in instruction.tracks {
-            if track.persistentTrackID == VCVideoCompositor.EmptyVideoTrackID { // 如果是空白的视频轨道，表示音频的时间比视频的时间要长，则不应该再继续处理，应该渲染黑色的画面
-                if let buffer = self.generateFinalBuffer(ciImage: self.blackImage) {
+        var item = VCRequestItem()
+        item.imageTracks = instruction.imageTracks
+        item.videoTracks = instruction.videoTracks
+        item.audioTracks = instruction.audioTracks
+        item.lottieTracks = instruction.lottieTracks
+        item.laminationTracks = instruction.laminationTracks
+        item.transitions = instruction.transitions
+        item.trajectories = instruction.trajectories
+        
+        for (persistentTrackID, videoTrackDescription) in instruction.requiredSourceTrackIDsDic {
+            if let sourceFrame = videoCompositionRequest.sourceFrame(byTrackID: persistentTrackID) {
+                let sourceImage = CIImage(cvPixelBuffer: sourceFrame)
+                item.sourceFrameDic[videoTrackDescription.id] = sourceImage
+            }
+        }
+        
+        if let videoProcessProtocol = instruction.videoProcessProtocol {
+            videoProcessProtocol.handle(item: item,
+                                        compositionTime: videoCompositionRequest.compositionTime,
+                                        blackImage: blackImage) { (optionalImage: CIImage?) in
+                let image = optionalImage ?? self.blackImage
+                if let buffer = self.generateFinalBuffer(ciImage: image) {
                     videoCompositionRequest.finish(withComposedVideoFrame: buffer)
                 } else {
                     videoCompositionRequest.finish(with: VCVideoCompositingError.internalError)
                 }
-                return
             }
-            switch track.trackType {
-            case .stillImage:
-                if let image = trackImage(track: track) {
-                    let item = VCRequestItem(frame: image, id: track.id)
-                    items.append(item)
-                }
-                
-            case .video:
-                if let sourceFrame = videoCompositionRequest.sourceFrame(byTrackID: track.persistentTrackID) {
-                    let sourceImage = CIImage(cvPixelBuffer: sourceFrame)
-                    let item = VCRequestItem(frame: sourceImage, id: track.id)
-                    items.append(item)
-                }
-                
-            default:
-                break
+        } else {
+            let image = self.blackImage
+            if let buffer = self.generateFinalBuffer(ciImage: image) {
+                videoCompositionRequest.finish(withComposedVideoFrame: buffer)
+            } else {
+                videoCompositionRequest.finish(with: VCVideoCompositingError.internalError)
             }
         }
-        
-        instruction.videoProcessProtocol?.handle(items: items,
-                                                 compositionTime: videoCompositionRequest.compositionTime,
-                                                 blackImage: blackImage,
-                                                 finish: { (optionalImage: CIImage?) in
-                                                    let image = optionalImage ?? self.blackImage
-                                                    if let buffer = self.generateFinalBuffer(ciImage: image) {
-                                                        videoCompositionRequest.finish(withComposedVideoFrame: buffer)
-                                                    } else {
-                                                        videoCompositionRequest.finish(with: VCVideoCompositingError.internalError)
-                                                    }
-                                                 })
+
     }
  
     private func generateFinalBuffer(ciImage: CIImage) -> CVPixelBuffer? {
@@ -110,20 +105,6 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
         self.blackImage = renderer.ciImage { (context) in
             UIColor.black.setFill()
             UIRectFill(renderer.rendererRect)
-        }
-    }
-    
-    private func trackImage(track: VCTrack) -> CIImage? {
-        if let url = track.mediaURL {
-            if let cacheImage = VCImageCache.share.image(forKey: track.id) {
-                return cacheImage
-            } else {
-                let image = CIImage(contentsOf: url)
-                VCImageCache.share.storeImage(toMemory: image, forKey: track.id)
-                return image
-            }
-        } else {
-            return nil
         }
     }
     
