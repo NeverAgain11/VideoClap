@@ -63,6 +63,7 @@ internal class VCVideoCompositor: NSObject {
         
         let existVideoTrackDic = addVideoTracks(persistentTrackHeaderID: VCVideoCompositor.MediaTrackIDHeader,
                                                 videoTracks: videoDescription.videoTracks,
+                                                compositionVideoDuration: videoDuration,
                                                 composition: composition)
         
         var audioTrackHeaderID: CMPersistentTrackID = VCVideoCompositor.MediaTrackIDHeader
@@ -71,6 +72,7 @@ internal class VCVideoCompositor: NSObject {
         }
         let existAudioTrackDic = addAudioTracks(persistentTrackHeaderID: audioTrackHeaderID,
                                                 audioTracks: videoDescription.audioTracks,
+                                                compositionVideoDuration: videoDuration,
                                                 composition: composition)
         
         var audioMixInputParametersGroup: [AVMutableAudioMixInputParameters] = []
@@ -143,25 +145,30 @@ internal class VCVideoCompositor: NSObject {
     
     private func addVideoTracks(persistentTrackHeaderID: CMPersistentTrackID,
                                 videoTracks: [VCVideoTrackDescription],
+                                compositionVideoDuration: CMTime,
                                 composition: AVMutableComposition) -> [CMPersistentTrackID : [TrackInfo]] {
         return addMediaTracks(persistentTrackHeaderID: persistentTrackHeaderID,
                               mediaTracks: videoTracks,
                               mediaType: .video,
+                              compositionVideoDuration: compositionVideoDuration,
                               composition: composition)
     }
     
     private func addAudioTracks(persistentTrackHeaderID: CMPersistentTrackID,
                                 audioTracks: [VCAudioTrackDescription],
+                                compositionVideoDuration: CMTime,
                                 composition: AVMutableComposition) -> [CMPersistentTrackID : [TrackInfo]] {
         return addMediaTracks(persistentTrackHeaderID: persistentTrackHeaderID,
                               mediaTracks: audioTracks,
                               mediaType: .audio,
+                              compositionVideoDuration: compositionVideoDuration,
                               composition: composition)
     }
     
     private func addMediaTracks(persistentTrackHeaderID: CMPersistentTrackID,
                                 mediaTracks: [VCMediaTrackDescriptionProtocol],
                                 mediaType: AVMediaType,
+                                compositionVideoDuration: CMTime,
                                 composition: AVMutableComposition) -> [CMPersistentTrackID : [TrackInfo]] {
         
         var persistentTrackID = persistentTrackHeaderID
@@ -189,7 +196,12 @@ internal class VCVideoCompositor: NSObject {
                             var fixEnd: CMTime = .zero
                             fixStart = min(max(CMTime.zero, mediaTrack.mediaClipTimeRange.start), assetDuration)
                             fixEnd = min(max(fixStart, mediaTrack.mediaClipTimeRange.end), assetDuration)
-                            let fixClipTimeRange: CMTimeRange = CMTimeRange(start: fixStart, end: fixEnd)
+                            var fixClipTimeRange: CMTimeRange = CMTimeRange(start: fixStart, end: fixEnd)
+                            
+                            let maxClipDuration = compositionVideoDuration - mediaTrack.timeRange.start
+                            if fixClipTimeRange.duration > maxClipDuration {
+                                fixClipTimeRange = CMTimeRange(start: fixClipTimeRange.start, duration: maxClipDuration)
+                            }
                             
                             try compositionTrack.insertTimeRange(fixClipTimeRange, of: bestVideoTrack, at: mediaTrack.timeRange.start)
                             if var trackInfos = existTrackInfoDic[persistentTrackID] {

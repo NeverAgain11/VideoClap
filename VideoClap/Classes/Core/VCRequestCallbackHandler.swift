@@ -163,7 +163,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
     }
     
-    func processTransions(item: VCRequestItem, compositionTime: CMTime) -> CIImage? {
+    func processTransions(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage) -> CIImage? {
         let transitionImageIDs = Set(item.transitions.flatMap({ [$0.transition.fromId, $0.transition.toId] }))
         let excludeTransitionImages = transitionImageIDs.symmetricDifference(preprocessFinishedImages.map({ $0.key }))  // 没有过渡的图片ID集合
         var excludeTransitionImage: CIImage? // 没有过渡的图片合成一张图片
@@ -178,8 +178,8 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             if let fromImage = preprocessFinishedImages[transition.transition.fromId], let toImage = preprocessFinishedImages[transition.transition.toId] {
                 if let image = transition.transition.transition(renderSize: renderSize,
                                                                 progress: Float(progress),
-                                                                fromImage: fromImage,
-                                                                toImage: toImage) {
+                                                                fromImage: fromImage.composited(over: blackImage),
+                                                                toImage: toImage.composited(over: blackImage)) {
                     if let transitionImage = optionalTransitionImage {
                         optionalTransitionImage = transitionImage.composited(over: image)
                     } else {
@@ -309,7 +309,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         
         processTrajectories(item: item, compositionTime: compositionTime)
         
-        let transionImage = processTransions(item: item, compositionTime: compositionTime)
+        let transionImage = processTransions(item: item, compositionTime: compositionTime, blackImage: blackImage)
         let laminationImage = processLamination(item: item, compositionTime: compositionTime)
         let lottieImage = processLottie(item: item, compositionTime: compositionTime)
         
