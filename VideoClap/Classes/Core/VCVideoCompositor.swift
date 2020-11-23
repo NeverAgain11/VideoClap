@@ -237,6 +237,7 @@ internal class VCVideoCompositor: NSObject {
     }
     
     private func buildVideoInstruction(videoTrackInfos: [TrackInfo], audioTrackInfos: [TrackInfo]) -> [VCVideoInstruction] {
+        let locker = VCLocker()
         
         let imageTracks = videoDescription.imageTracks
         let videoTracks = videoTrackInfos.map({ $0.mediaTrack }) as? [VCVideoTrackDescription] ?? []
@@ -253,7 +254,9 @@ internal class VCVideoCompositor: NSObject {
         
         var transitions: [VCTransition] = []
         
-        for transition in videoDescription.transitions {
+        (videoDescription.transitions as NSArray).enumerateObjects(options: .concurrent) { (obj, index, outStop) in
+            guard let transition = obj as? VCTransitionProtocol else { return }
+            
             if enumor[transition.fromId] != nil || enumor[transition.toId] != nil {
                 if let fromTrack = enumor[transition.fromId], let toTrack = enumor[transition.toId], fromTrack.timeRange.end >= toTrack.timeRange.start {
                     
@@ -261,15 +264,20 @@ internal class VCVideoCompositor: NSObject {
                         // 两个轨道没有重叠，但是需要过渡动画，根据 'range' 计算出过渡时间
                         let start: CMTime = CMTime(seconds: fromTrack.timeRange.end.seconds - fromTrack.timeRange.duration.seconds * Double(transition.range.left))
                         let end: CMTime = CMTime(seconds: toTrack.timeRange.start.seconds + toTrack.timeRange.duration.seconds * Double(transition.range.right))
+                        locker.object(forKey: "transitions").lock()
                         transitions.append(VCTransition(timeRange: CMTimeRange(start: start, end: end),
                                                        transition: transition))
+                        locker.object(forKey: "transitions").unlock()
                     } else if fromTrack.timeRange.end > toTrack.timeRange.start {
                         // 两个轨道有重叠
+                        locker.object(forKey: "transitions").lock()
                         transitions.append(VCTransition(timeRange: CMTimeRange(start: toTrack.timeRange.start, end: fromTrack.timeRange.end),
                                                        transition: transition))
+                        locker.object(forKey: "transitions").unlock()
                     }
                 }
             }
+            
         }
         
         var instructions: [VCVideoInstruction] = []
@@ -284,7 +292,14 @@ internal class VCVideoCompositor: NSObject {
         allKeyTime.append(contentsOf: audioTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
         allKeyTime.append(contentsOf: transitions.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
         
-        allKeyTime.sort()
+        func removeDuplicates(times: [CMTime]) -> [CMTime] {
+            var fastEnum: [String:CMTime] = [:]
+            for item in times {
+                fastEnum["\(item.value) -- \(item.timescale)"] = item
+            }
+            return fastEnum.map({ $0.value })
+        }
+        allKeyTime = removeDuplicates(times: allKeyTime)
         
         while true {
             let ts = allKeyTime.filter({ $0 > cursor })
@@ -296,8 +311,6 @@ internal class VCVideoCompositor: NSObject {
                 break
             }
         }
-        
-        let locker = NSLock()
         
         (timeRanges as NSArray).enumerateObjects(options: .concurrent) { (obj: Any, _, _) in
             guard let timeRange = obj as? CMTimeRange else { return }
@@ -366,10 +379,14 @@ internal class VCVideoCompositor: NSObject {
 
             instruction.timeRange = timeRange
             instruction.videoProcessProtocol = self.requestCallbackHandler
-
-            locker.lock()
+            
+            locker.object(forKey: "instructions").lock()
             instructions.append(instruction)
-            locker.unlock()
+            locker.object(forKey: "instructions").unlock()
+        }
+        
+        instructions = instructions.sorted { (lhs, rhs) -> Bool in
+            return lhs.timeRange.start < rhs.timeRange.start
         }
         
         return instructions

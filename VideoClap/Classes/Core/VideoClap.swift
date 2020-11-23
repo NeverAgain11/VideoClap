@@ -47,6 +47,10 @@ open class VideoClap: NSObject {
     }
     
     @objc private func receiveMemoryWarning(_ sender: Notification) {
+        clearMemory()
+    }
+    
+    public func clearMemory() {
         VCImageCache.share.clearMemory()
     }
     

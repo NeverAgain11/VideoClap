@@ -14,9 +14,7 @@ import CoreAudioKit
 
 open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol {
     
-    private var lockerDic: [String : NSLock] = [:]
-    
-    private var locker: NSLock = NSLock()
+    private let locker = VCLocker()
     
     public var videoDescription: VCVideoDescription = VCVideoDescription()
     
@@ -64,7 +62,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
     }
     
-    func preprocess(image: CIImage, trackID: String) {
+    private func preprocess(image: CIImage, trackID: String) {
         guard let mediaTrack = imageTrackEnumor[trackID] ?? videoTrackEnumor[trackID] else { return }
         let renderSize = videoDescription.renderSize
         var frame = image
@@ -163,7 +161,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
     }
     
-    func processTransions(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage) -> CIImage? {
+    private func processTransions(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage) -> CIImage? {
         let transitionImageIDs = Set(item.transitions.flatMap({ [$0.transition.fromId, $0.transition.toId] }))
         let excludeTransitionImages = transitionImageIDs.symmetricDifference(preprocessFinishedImages.map({ $0.key }))  // 没有过渡的图片ID集合
         var excludeTransitionImage: CIImage? // 没有过渡的图片合成一张图片
@@ -202,7 +200,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return optionalTransitionImage
     }
     
-    func processTrajectories(item: VCRequestItem, compositionTime: CMTime) {
+    private func processTrajectories(item: VCRequestItem, compositionTime: CMTime) {
         let renderSize = videoDescription.renderSize
         for trajectory in item.trajectories {
             let progress = (compositionTime.seconds - trajectory.timeRange.start.seconds) / trajectory.timeRange.duration.seconds
@@ -218,7 +216,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
     }
     
-    func processLamination(item: VCRequestItem, compositionTime: CMTime) -> CIImage? {
+    private func processLamination(item: VCRequestItem, compositionTime: CMTime) -> CIImage? {
         var optionalLaminationImage: CIImage? // 所有叠层合成一张图片
         let renderSize = videoDescription.renderSize
         for laminationTrack in item.laminationTracks {
@@ -236,7 +234,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return optionalLaminationImage
     }
     
-    func processLottie(item: VCRequestItem, compositionTime: CMTime) -> CIImage? {
+    private func processLottie(item: VCRequestItem, compositionTime: CMTime) -> CIImage? {
         let renderSize = videoDescription.renderSize
         
         let animationStickers = item.lottieTracks
@@ -278,7 +276,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return compositionSticker
     }
     
-    func processWaterMark() -> CIImage? {
+    private func processWaterMark() -> CIImage? {
         let renderSize = videoDescription.renderSize
         if let url = videoDescription.waterMarkImageURL, var waterMarkImage = watermarkImage(url: url), let waterMarkRect = videoDescription.waterMarkRect {
             let width = renderSize.width * waterMarkRect.normalizeWidth // 水印宽度，基于像素
@@ -301,7 +299,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return nil
     }
     
-    open func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
+    public func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
         preprocessFinishedImages.removeAll()
         var finalFrame: CIImage?
         
@@ -408,12 +406,10 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     }
     
     public func trackImage(trackID: String) -> CIImage? {
-        let locker = self.locker(forKey: #function)
-        locker.lock()
+        locker.object(forKey: #function).lock()
         defer {
-            locker.unlock()
+            locker.object(forKey: #function).unlock()
         }
-        
         if let imageTrack = imageTrackEnumor[trackID] {
             if let url = imageTrack.mediaURL {
                 return image(url: url)
@@ -423,10 +419,9 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     }
     
     public func trackFrame(trackID: String) -> CIImage? {
-        let locker = self.locker(forKey: #function)
-        locker.lock()
+        locker.object(forKey: #function).lock()
         defer {
-            locker.unlock()
+            locker.object(forKey: #function).unlock()
         }
         if let videoTrack = videoTrackEnumor[trackID] {
             
@@ -456,25 +451,15 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     }
     
     public func reloadFrame(player: AVPlayer) {
+        locker.object(forKey: #function).lock()
+        defer {
+            locker.object(forKey: #function).unlock()
+        }
         guard player.rate == 0 else { return }
         guard let item = player.currentItem else { return }
         contextChanged()
         let videoComposition = item.videoComposition?.mutableCopy() as? AVVideoComposition
         item.videoComposition = videoComposition
-    }
-    
-    private func locker(forKey key: String) -> NSLock {
-        locker.lock()
-        defer {
-            locker.unlock()
-        }
-        if let locker = lockerDic[key] {
-            return locker
-        } else {
-            let locker = NSLock()
-            lockerDic[key] = locker
-            return locker
-        }
     }
     
 }
