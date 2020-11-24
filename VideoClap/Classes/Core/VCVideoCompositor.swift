@@ -94,8 +94,17 @@ internal class VCVideoCompositor: NSObject {
             audioMix?.inputParameters = audioMixInputParametersGroup
         }
         
-        let instructions = buildVideoInstruction(videoTrackInfos: existVideoTrackDic.flatMap({ $0.value }),
+        var instructions = buildVideoInstruction(videoTrackInfos: existVideoTrackDic.flatMap({ $0.value }),
                                                  audioTrackInfos: existAudioTrackDic.flatMap({ $0.value }))
+        
+        if instructions.isEmpty {
+            let emptyInstruction = VCVideoInstruction()
+            emptyInstruction.timeRange = CMTimeRange(start: .zero, duration: videoDuration)
+            emptyInstruction.requiredSourceTrackIDs = [VCVideoCompositor.EmptyVideoTrackID as NSValue]
+            emptyInstruction.videoProcessProtocol = self.requestCallbackHandler
+            instructions.append(emptyInstruction)
+        }
+        
         let videoComposition = buildVideoComposition(videoDescription: videoDescription, instructions: instructions)
         
         let newPlayerItem = AVPlayerItem(asset: composition)
@@ -113,7 +122,7 @@ internal class VCVideoCompositor: NSObject {
         let duration = tracks.max { (lhs, rhs) -> Bool in
             return lhs.timeRange.end < rhs.timeRange.end
         }?.timeRange.end ?? .zero
-        return duration
+        return CMTime(seconds: duration.seconds)
     }
     
     private func allTracks() -> [VCTrackDescriptionProtocol] {
@@ -435,8 +444,8 @@ internal class VCVideoCompositor: NSObject {
         }
         var insertDescriptions: [InsertDescription] = []
         
-        var timeRangeDurationValue = timeRange.duration.value
-        let blackVideoDurationValue = blackVideoAsset.duration.value
+        var timeRangeDurationValue = CMTime(seconds: timeRange.duration.seconds).value
+        let blackVideoDurationValue = CMTime(seconds: blackVideoAsset.duration.seconds).value
         
         var append: Bool = false
         while timeRangeDurationValue - blackVideoDurationValue > 0 {

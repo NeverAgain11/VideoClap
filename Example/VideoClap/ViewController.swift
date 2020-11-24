@@ -62,8 +62,12 @@ class ViewController: UIViewController {
         return button
     }()
     
+    let reverseVideo = VCReverseVideo()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        VideoClap.cleanExportFolder()
+        
         PHPhotoLibrary.requestAuthorization { (_) in
             
         }
@@ -144,17 +148,13 @@ class ViewController: UIViewController {
             videoDescription.lottieTracks.append(animationSticker)
         }
         
-//        let reverseVideo = VCReverseVideo()
-//        reverseVideo.exportUrl = FileManager.default.temporaryDirectory.appendingPathComponent("tmp.mp4")
-//        reverseVideo.inputUrl = Bundle.main.url(forResource: "video1", withExtension: "mp4", subdirectory: "Mat")
-//        LLog(reverseVideo.exportUrl)
-//        do {
-//            try reverseVideo.prepare()
-//            try reverseVideo.start()
-//        } catch let error {
-//            LLog(error)
-//        }
         
+        reverseVideo.reverse(input: Bundle.main.url(forResource: "video0", withExtension: "mp4", subdirectory: "Mat")!) { (progress: Progress) in
+            LLog(progress.fractionCompleted)
+        } completionCallback: { (url, error) in
+            
+        }
+
 //        initPlay()
 //        export(fileName: nil) { }
         
