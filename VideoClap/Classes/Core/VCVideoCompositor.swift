@@ -334,7 +334,10 @@ internal class VCVideoCompositor: NSObject {
             if instruction.videoTracks.isEmpty {
                 instruction.requiredSourceTrackIDs = [VCVideoCompositor.EmptyVideoTrackID as NSValue]
             } else {
-                instruction.requiredSourceTrackIDsDic = videoTrackInfos.reduce([:]) { (result, trackInfo) -> [CMPersistentTrackID : VCVideoTrackDescription] in
+                let trackInfos = videoTrackInfos.filter { (trackinfo: TrackInfo) -> Bool in
+                    return instruction.videoTracks.contains(where: { $0.id == trackinfo.mediaTrack.id })
+                }
+                instruction.requiredSourceTrackIDsDic = trackInfos.reduce([:]) { (result, trackInfo: TrackInfo) -> [CMPersistentTrackID : VCVideoTrackDescription] in
                     var mutable = result
                     mutable[trackInfo.persistentTrackID] = trackInfo.mediaTrack as? VCVideoTrackDescription
                     return mutable
