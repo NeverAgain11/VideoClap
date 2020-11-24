@@ -11,21 +11,25 @@ import CoreImage
 
 open class VCBlurTransition: NSObject, VCTransitionProtocol {
     
+    /// default value is VCRange(left: 0, right: 0)
     public var range: VCRange = VCRange(left: 0, right: 0)
     
     public var fromId: String = ""
     
     public var toId: String = ""
     
+    /// default value is 1000.0
+    public var increasement: Float = 1000.0
+    
     public func transition(renderSize: CGSize, progress: Float, fromImage: CIImage, toImage: CIImage) -> CIImage? {
         var finalImage: CIImage?
         
         if progress < 0.5 {
-            if let slideImage = gaussianBlurCompositing(inputImage: fromImage, radius: NSNumber(value: progress * 1000)) {
+            if let slideImage = gaussianBlurCompositing(inputImage: fromImage, radius: NSNumber(value: progress * increasement)) {
                 finalImage = slideImage
             }
         } else {
-            if let slideImage = gaussianBlurCompositing(inputImage: toImage, radius: NSNumber(value: 1000 - progress * 1000)) {
+            if let slideImage = gaussianBlurCompositing(inputImage: toImage, radius: NSNumber(value: increasement - progress * increasement)) {
                 finalImage = slideImage
             }
         }
