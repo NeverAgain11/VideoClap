@@ -9,6 +9,8 @@ import AVFoundation
 
 public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescriptionProtocol {
     
+    public var associationInfo: MediaTrackAssociationInfo = .init()
+    
     public var mediaClipTimeRange: CMTimeRange = .zero
     
     public override init() {

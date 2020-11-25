@@ -14,6 +14,21 @@ public protocol VCTrajectoryProtocol: NSObject {
     
     var timeRange: CMTimeRange { get set }
     
+    var associationInfo: TrajectoryAssociationInfo { get set }
+    
     func transition(renderSize: CGSize, progress: CGFloat, image: CIImage) -> CIImage?
     
+}
+
+public class TrajectoryAssociationInfo: NSObject {
+    
+    internal var fixClipTimeRange: CMTimeRange?
+    
+}
+
+internal extension VCTrajectoryProtocol {
+    internal var fixClipTimeRange: CMTimeRange? {
+        get { return associationInfo.fixClipTimeRange }
+        set { associationInfo.fixClipTimeRange = newValue }
+    }
 }

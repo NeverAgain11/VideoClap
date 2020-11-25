@@ -21,6 +21,8 @@ public enum MovementType {
 
 open class VCMovementTrajectory: NSObject, VCTrajectoryProtocol {
     
+    public var associationInfo: TrajectoryAssociationInfo = .init()
+    
     public var id: String = ""
     
     public var timeRange: CMTimeRange = .zero

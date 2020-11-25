@@ -9,6 +9,8 @@ import AVFoundation
 
 public class VCAudioTrackDescription: NSObject, VCTrackDescriptionProtocol, VCMediaTrackDescriptionProtocol {
     
+    public var associationInfo: MediaTrackAssociationInfo = .init()
+    
     public var audioVolumeRampDescriptions: [VCAudioVolumeRampDescription] = []
     
     public var prefferdTransform: CGAffineTransform? = nil

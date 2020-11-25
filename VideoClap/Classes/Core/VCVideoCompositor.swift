@@ -19,18 +19,6 @@ internal enum VCVideoCompositorError: Error {
     case internalError
 }
 
-class TrackInfo: NSObject {
-    var persistentTrackID: CMPersistentTrackID
-    var compositionTrack: AVMutableCompositionTrack
-    var mediaTrack: VCMediaTrackDescriptionProtocol
-    
-    init(persistentTrackID: CMPersistentTrackID, compositionTrack: AVMutableCompositionTrack, mediaTrack: VCMediaTrackDescriptionProtocol) {
-        self.compositionTrack = compositionTrack
-        self.persistentTrackID = persistentTrackID
-        self.mediaTrack = mediaTrack
-    }
-}
-
 internal class VCVideoCompositor: NSObject {
     
     internal static let EmptyVideoTrackID = CMPersistentTrackID(3000 - 1)
@@ -78,10 +66,10 @@ internal class VCVideoCompositor: NSObject {
         var audioMixInputParametersGroup: [AVMutableAudioMixInputParameters] = []
         
         for (_, trackInfos) in existAudioTrackDic {
-            for trackInfo in trackInfos {
-                if let audioTrack = trackInfo.mediaTrack as? VCAudioTrackDescription,
-                   let inputParameters = addAudioMix(audioTrack: trackInfo.compositionTrack,
-                                                     audioTrackID: trackInfo.persistentTrackID,
+            for audioTrack in trackInfos {
+                if let compositionTrack = audioTrack.compositionTrack,
+                    let inputParameters = addAudioMix(audioTrack: compositionTrack,
+                                                     audioTrackID: audioTrack.persistentTrackID,
                                                      track: audioTrack) {
                     audioMixInputParametersGroup.append(inputParameters)
                 }
@@ -94,8 +82,8 @@ internal class VCVideoCompositor: NSObject {
             audioMix?.inputParameters = audioMixInputParametersGroup
         }
         
-        var instructions = buildVideoInstruction(videoTrackInfos: existVideoTrackDic.flatMap({ $0.value }),
-                                                 audioTrackInfos: existAudioTrackDic.flatMap({ $0.value }))
+        var instructions = buildVideoInstruction(videoTracks: existVideoTrackDic.flatMap({ $0.value }),
+                                                 audioTracks: existAudioTrackDic.flatMap({ $0.value }))
         
         if instructions.isEmpty {
             let emptyInstruction = VCVideoInstruction()
@@ -155,34 +143,34 @@ internal class VCVideoCompositor: NSObject {
     private func addVideoTracks(persistentTrackHeaderID: CMPersistentTrackID,
                                 videoTracks: [VCVideoTrackDescription],
                                 compositionVideoDuration: CMTime,
-                                composition: AVMutableComposition) -> [CMPersistentTrackID : [TrackInfo]] {
+                                composition: AVMutableComposition) -> [CMPersistentTrackID : [VCVideoTrackDescription]] {
         return addMediaTracks(persistentTrackHeaderID: persistentTrackHeaderID,
                               mediaTracks: videoTracks,
                               mediaType: .video,
                               compositionVideoDuration: compositionVideoDuration,
-                              composition: composition)
+                              composition: composition) as! [CMPersistentTrackID : [VCVideoTrackDescription]] 
     }
     
     private func addAudioTracks(persistentTrackHeaderID: CMPersistentTrackID,
                                 audioTracks: [VCAudioTrackDescription],
                                 compositionVideoDuration: CMTime,
-                                composition: AVMutableComposition) -> [CMPersistentTrackID : [TrackInfo]] {
+                                composition: AVMutableComposition) -> [CMPersistentTrackID : [VCAudioTrackDescription]] {
         return addMediaTracks(persistentTrackHeaderID: persistentTrackHeaderID,
                               mediaTracks: audioTracks,
                               mediaType: .audio,
                               compositionVideoDuration: compositionVideoDuration,
-                              composition: composition)
+                              composition: composition) as! [CMPersistentTrackID : [VCAudioTrackDescription]]
     }
     
     private func addMediaTracks(persistentTrackHeaderID: CMPersistentTrackID,
                                 mediaTracks: [VCMediaTrackDescriptionProtocol],
                                 mediaType: AVMediaType,
                                 compositionVideoDuration: CMTime,
-                                composition: AVMutableComposition) -> [CMPersistentTrackID : [TrackInfo]] {
+                                composition: AVMutableComposition) -> [CMPersistentTrackID : [VCMediaTrackDescriptionProtocol]] {
         
         var persistentTrackID = persistentTrackHeaderID
         
-        var existTrackInfoDic: [CMPersistentTrackID : [TrackInfo]] = [:]
+        var existTrackInfoDic: [CMPersistentTrackID : [VCMediaTrackDescriptionProtocol]] = [:]
         
         for mediaTrack in mediaTracks {
             if let mediaURL = mediaTrack.mediaURL {
@@ -191,7 +179,7 @@ internal class VCVideoCompositor: NSObject {
                 if let bestVideoTrack = asset.tracks(withMediaType: mediaType).first, let assetDuration = bestVideoTrack.asset?.duration {
                     
                     if let trackInfos = existTrackInfoDic[persistentTrackID] {
-                        let existTimeRanges = trackInfos.map({ $0.mediaTrack.timeRange })
+                        let existTimeRanges = trackInfos.map({ $0.timeRange })
                         if canInsertTimeRange(mediaTrack.timeRange, atExistingTimeRanges: existTimeRanges) {
                              
                         } else {
@@ -214,15 +202,16 @@ internal class VCVideoCompositor: NSObject {
                             
                             try compositionTrack.insertTimeRange(fixClipTimeRange, of: bestVideoTrack, at: mediaTrack.timeRange.start)
                             if var trackInfos = existTrackInfoDic[persistentTrackID] {
-                                trackInfos.append(TrackInfo(persistentTrackID: persistentTrackID,
-                                                           compositionTrack: compositionTrack,
-                                                           mediaTrack: mediaTrack))
+                                mediaTrack.fixClipTimeRange = fixClipTimeRange
+                                mediaTrack.persistentTrackID = persistentTrackID
+                                mediaTrack.compositionTrack = compositionTrack
+                                trackInfos.append(mediaTrack)
                                 existTrackInfoDic[persistentTrackID] = trackInfos
                             } else {
-                                let trackInfo = TrackInfo(persistentTrackID: persistentTrackID,
-                                                          compositionTrack: compositionTrack,
-                                                          mediaTrack: mediaTrack)
-                                existTrackInfoDic[persistentTrackID] = [trackInfo]
+                                mediaTrack.fixClipTimeRange = fixClipTimeRange
+                                mediaTrack.persistentTrackID = persistentTrackID
+                                mediaTrack.compositionTrack = compositionTrack
+                                existTrackInfoDic[persistentTrackID] = [mediaTrack]
                             }
                         } catch let error {
                             log.error(error)
@@ -245,12 +234,10 @@ internal class VCVideoCompositor: NSObject {
         return optionalCompositionTrack
     }
     
-    private func buildVideoInstruction(videoTrackInfos: [TrackInfo], audioTrackInfos: [TrackInfo]) -> [VCVideoInstruction] {
+    private func buildVideoInstruction(videoTracks: [VCVideoTrackDescription], audioTracks: [VCAudioTrackDescription]) -> [VCVideoInstruction] {
         let locker = VCLocker()
         
         let imageTracks = videoDescription.imageTracks
-        let videoTracks = videoTrackInfos.map({ $0.mediaTrack }) as? [VCVideoTrackDescription] ?? []
-        let audioTracks = audioTrackInfos.map({ $0.mediaTrack }) as? [VCAudioTrackDescription] ?? []
         let lottieTracks = videoDescription.lottieTracks
         let laminationTracks = videoDescription.laminationTracks
         
@@ -261,30 +248,54 @@ internal class VCVideoCompositor: NSObject {
             return mutable
         }
         
+        let fixClipTimeRanges = videoTracks.reduce([:]) { (result, trackInfo) -> [String : CMTimeRange] in
+            var mutable = result
+            mutable[trackInfo.id] = trackInfo.fixClipTimeRange
+            return mutable
+        }
+        
+        let trajectoriesDic = videoDescription.trajectories.reduce([:]) { (result, trajectory) -> [String : VCTrajectoryProtocol] in
+            var mutable = result
+            mutable[trajectory.id] = trajectory
+            return mutable
+        }
+        
         var transitions: [VCTransition] = []
         
         (videoDescription.transitions as NSArray).enumerateObjects(options: .concurrent) { (obj, index, outStop) in
             guard let transition = obj as? VCTransitionProtocol else { return }
-            
-            if enumor[transition.fromId] != nil || enumor[transition.toId] != nil {
-                if let fromTrack = enumor[transition.fromId], let toTrack = enumor[transition.toId], fromTrack.timeRange.end >= toTrack.timeRange.start {
-                    
-                    if fromTrack.timeRange.end == toTrack.timeRange.start {
-                        // 两个轨道没有重叠，但是需要过渡动画，根据 'range' 计算出过渡时间
-                        let start: CMTime = CMTime(seconds: fromTrack.timeRange.end.seconds - fromTrack.timeRange.duration.seconds * Double(transition.range.left))
-                        let end: CMTime = CMTime(seconds: toTrack.timeRange.start.seconds + toTrack.timeRange.duration.seconds * Double(transition.range.right))
-                        locker.object(forKey: "transitions").lock()
-                        transitions.append(VCTransition(timeRange: CMTimeRange(start: start, end: end),
-                                                       transition: transition))
-                        locker.object(forKey: "transitions").unlock()
-                    } else if fromTrack.timeRange.end > toTrack.timeRange.start {
-                        // 两个轨道有重叠
-                        locker.object(forKey: "transitions").lock()
-                        transitions.append(VCTransition(timeRange: CMTimeRange(start: toTrack.timeRange.start, end: fromTrack.timeRange.end),
-                                                       transition: transition))
-                        locker.object(forKey: "transitions").unlock()
-                    }
+            guard enumor[transition.fromId] != nil || enumor[transition.toId] != nil else { return }
+            guard let fromTrack = enumor[transition.fromId], let toTrack = enumor[transition.toId], fromTrack.timeRange.end >= toTrack.timeRange.start else { return }
+
+            if fromTrack.timeRange.end == toTrack.timeRange.start {
+                // 两个轨道没有重叠，但是需要过渡动画，根据 'range' 计算出过渡时间
+                let start: CMTime = CMTime(seconds: fromTrack.timeRange.end.seconds - fromTrack.timeRange.duration.seconds * Double(transition.range.left))
+                let end: CMTime = CMTime(seconds: toTrack.timeRange.start.seconds + toTrack.timeRange.duration.seconds * Double(transition.range.right))
+                
+                var t: VCTransition = VCTransition(timeRange: CMTimeRange(start: start, end: end), transition: transition)
+                t.isOverlay = false
+                
+                t.fromTrackClipTimeRange = fixClipTimeRanges[fromTrack.id]
+                t.toTrackClipTimeRange = fixClipTimeRanges[toTrack.id]
+                
+                if let trajectory = trajectoriesDic[fromTrack.id] {
+                    trajectory.fixClipTimeRange = CMTimeRange(start: trajectory.timeRange.start, end: end)
                 }
+                
+                if let trajectory = trajectoriesDic[toTrack.id] {
+                    trajectory.fixClipTimeRange = CMTimeRange(start: start, end: trajectory.timeRange.end)
+                }
+                
+                locker.object(forKey: "transitions").lock()
+                transitions.append(t)
+                locker.object(forKey: "transitions").unlock()
+            } else if fromTrack.timeRange.end > toTrack.timeRange.start {
+                // 两个轨道有重叠
+                var t: VCTransition = VCTransition(timeRange: CMTimeRange(start: toTrack.timeRange.start, end: fromTrack.timeRange.end), transition: transition)
+                t.isOverlay = true
+                locker.object(forKey: "transitions").lock()
+                transitions.append(t)
+                locker.object(forKey: "transitions").unlock()
             }
             
         }
@@ -334,12 +345,12 @@ internal class VCVideoCompositor: NSObject {
             if instruction.videoTracks.isEmpty {
                 instruction.requiredSourceTrackIDs = [VCVideoCompositor.EmptyVideoTrackID as NSValue]
             } else {
-                let trackInfos = videoTrackInfos.filter { (trackinfo: TrackInfo) -> Bool in
-                    return instruction.videoTracks.contains(where: { $0.id == trackinfo.mediaTrack.id })
+                let trackInfos = videoTracks.filter { (trackinfo: VCVideoTrackDescription) -> Bool in
+                    return instruction.videoTracks.contains(where: { $0.id == trackinfo.id })
                 }
-                instruction.requiredSourceTrackIDsDic = trackInfos.reduce([:]) { (result, trackInfo: TrackInfo) -> [CMPersistentTrackID : VCVideoTrackDescription] in
+                instruction.requiredSourceTrackIDsDic = trackInfos.reduce([:]) { (result, trackInfo: VCVideoTrackDescription) -> [CMPersistentTrackID : VCVideoTrackDescription] in
                     var mutable = result
-                    mutable[trackInfo.persistentTrackID] = trackInfo.mediaTrack as? VCVideoTrackDescription
+                    mutable[trackInfo.persistentTrackID] = trackInfo
                     return mutable
                 }
                 instruction.requiredSourceTrackIDs = instruction.requiredSourceTrackIDsDic.map({ $0.key as NSValue })
@@ -383,12 +394,13 @@ internal class VCVideoCompositor: NSObject {
                 }
             }
             
-            for trajectory in videoDescription.trajectories {
-                if enumor[trajectory.id] != nil {
+            for (key, trajectory) in trajectoriesDic {
+                let trajectoryTimeRange = trajectory.fixClipTimeRange ?? trajectory.timeRange
+                if enumor[trajectory.id] != nil && trajectoryTimeRange.intersection(timeRange).isEmpty == false {
                     instruction.trajectories.append(trajectory)
                 }
             }
-
+            
             instruction.timeRange = timeRange
             instruction.videoProcessProtocol = self.requestCallbackHandler
             
@@ -400,6 +412,26 @@ internal class VCVideoCompositor: NSObject {
         instructions = instructions.sorted { (lhs, rhs) -> Bool in
             return lhs.timeRange.start < rhs.timeRange.start
         }
+        
+//        for instruction in instructions {
+//            print("---------------- **** --------------------")
+            
+//            print(instruction.timeRange.debugDescription, "\n")
+//
+//            print("videoTracks info: ", instruction.videoTracks, instruction.videoTracks.map({ $0.id }), "\n")
+//
+//            print("videoTracks imageTracks: ", instruction.imageTracks, instruction.imageTracks.map({ $0.id }), "\n")
+//
+//            print(instruction.requiredSourceTrackIDs)
+//
+//            print(instruction.requiredSourceTrackIDsDic.map({ ($0.key, $0.value.id) }))
+//
+//            print("transitions info: ", instruction.transitions.map({ ($0.transition.fromId, $0.transition.toId) }))
+            
+//            print("trajectories info: ", instruction.trajectories, instruction.trajectories.map({ ($0.timeRange, $0.id) }))
+            
+//            print("---------------- **** --------------------\n")
+//        }
         
         return instructions
     }

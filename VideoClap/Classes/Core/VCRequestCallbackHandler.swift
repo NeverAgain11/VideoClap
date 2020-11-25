@@ -142,21 +142,35 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     
     /// 预处理图片或者视频帧 ，自适应或者铺满，水平翻转，添加滤镜
     private func preprocess(item: VCRequestItem, compositionTime: CMTime) {
-        var hasBeenProcessSourceFrames: [String] = []
         for (trackID, sourceFrame) in item.sourceFrameDic {
-            hasBeenProcessSourceFrames.append(trackID)
-            preprocess(image: sourceFrame, trackID: trackID)
-        }
-        
-        for videoTrack in item.videoTracks {
-            if hasBeenProcessSourceFrames.contains(videoTrack.id) == false, let frame = trackFrame(trackID: videoTrack.id) {
-                preprocess(image: frame, trackID: videoTrack.id)
+            if preprocessFinishedImages.keys.contains(trackID) == false {
+                preprocess(image: sourceFrame, trackID: trackID)
             }
         }
         
         for imageTrack in item.imageTracks {
-            if let image = trackImage(trackID: imageTrack.id) {
+            if preprocessFinishedImages.keys.contains(imageTrack.id) == false, let image = trackImage(trackID: imageTrack.id) {
                 preprocess(image: image, trackID: imageTrack.id)
+            }
+        }
+        
+        for videoTrack in item.videoTracks.filter({ preprocessFinishedImages.keys.contains($0.id) == false }) {
+            for transition in item.transitions {
+                if transition.transition.fromId == videoTrack.id {
+                    if let time = transition.fromTrackClipTimeRange?.end {
+                        if preprocessFinishedImages.keys.contains(transition.transition.fromId) == false, let frame = trackFrame(trackID: transition.transition.fromId, at: time) {
+                            preprocess(image: frame, trackID: transition.transition.fromId)
+                        }
+                    }
+                }
+                
+                if transition.transition.toId == videoTrack.id {
+                    if let time = transition.toTrackClipTimeRange?.start {
+                        if preprocessFinishedImages.keys.contains(transition.transition.toId) == false, let frame = trackFrame(trackID: transition.transition.toId, at: time) {
+                            preprocess(image: frame, trackID: transition.transition.toId)
+                        }
+                    }
+                }
             }
         }
     }
@@ -209,6 +223,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             }
             
             if let image = preprocessFinishedImages[trajectory.id] {
+//                print(trajectory.id)
                 if let processImage = trajectory.transition(renderSize: renderSize, progress: CGFloat(progress), image: image) {
                     preprocessFinishedImages[trajectory.id] = processImage
                 }
@@ -300,6 +315,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     }
     
     public func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
+//        print("compositionTime: ", compositionTime.seconds)
         preprocessFinishedImages.removeAll()
         var finalFrame: CIImage?
         
@@ -418,14 +434,14 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return nil
     }
     
-    public func trackFrame(trackID: String) -> CIImage? {
+    public func trackFrame(trackID: String, at time: CMTime = .zero) -> CIImage? {
         locker.object(forKey: #function).lock()
         defer {
             locker.object(forKey: #function).unlock()
         }
         if let videoTrack = videoTrackEnumor[trackID] {
-            
-            let storeKey = trackID + "video_first_frame"
+             
+            let storeKey = trackID + "_\(time.value)_\(time.timescale)"
             if let cacheImage = VCImageCache.share.image(forKey: storeKey) {
                 return cacheImage
             } else if let videoUrl = videoTrack.mediaURL {
@@ -436,7 +452,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                 generator.requestedTimeToleranceAfter = .zero
                 generator.requestedTimeToleranceBefore = .zero
                 do {
-                    let cgimage = try generator.copyCGImage(at: CMTime(seconds: 5.0), actualTime: nil)
+                    let cgimage = try generator.copyCGImage(at: time, actualTime: nil)
                     let ciimage = CIImage(cgImage: cgimage)
                     VCImageCache.share.storeImage(toMemory: ciimage, forKey: storeKey)
                     frame = ciimage
