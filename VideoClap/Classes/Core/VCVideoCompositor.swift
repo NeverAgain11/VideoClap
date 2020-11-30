@@ -300,14 +300,14 @@ internal class VCVideoCompositor: NSObject {
         var instructions: [VCVideoInstruction] = []
         var timeRanges: [CMTimeRange] = []
         var cursor: CMTime = .zero
-        var allKeyTime: [CMTime] = []
+        var keyTimes: [CMTime] = []
         
-        allKeyTime.append(contentsOf: imageTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
-        allKeyTime.append(contentsOf: videoTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
-        allKeyTime.append(contentsOf: lottieTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
-        allKeyTime.append(contentsOf: laminationTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
-        allKeyTime.append(contentsOf: audioTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
-        allKeyTime.append(contentsOf: transitions.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
+        keyTimes.append(contentsOf: imageTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
+        keyTimes.append(contentsOf: videoTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
+        keyTimes.append(contentsOf: lottieTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
+        keyTimes.append(contentsOf: laminationTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
+        keyTimes.append(contentsOf: audioTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
+        keyTimes.append(contentsOf: transitions.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
         
         func removeDuplicates(times: [CMTime]) -> [CMTime] {
             var fastEnum: [String:CMTime] = [:]
@@ -316,11 +316,11 @@ internal class VCVideoCompositor: NSObject {
             }
             return fastEnum.map({ $0.value })
         }
-        allKeyTime = removeDuplicates(times: allKeyTime)
+        keyTimes = removeDuplicates(times: keyTimes)
         
         while true {
-            let ts = allKeyTime.filter({ $0 > cursor })
-            if let minTime = ts.min() {
+            let greaterThanCursorTimes = keyTimes.filter({ $0 > cursor })
+            if let minTime = greaterThanCursorTimes.min() {
                 let range = CMTimeRange(start: cursor, end: minTime)
                 timeRanges.append(range)
                 cursor = minTime
@@ -342,10 +342,7 @@ internal class VCVideoCompositor: NSObject {
             if instruction.videoTracks.isEmpty {
                 instruction.requiredSourceTrackIDs = [VCVideoCompositor.EmptyVideoTrackID as NSValue]
             } else {
-                let trackInfos = videoTracks.filter { (trackinfo: VCVideoTrackDescription) -> Bool in
-                    return instruction.videoTracks.contains(where: { $0.id == trackinfo.id })
-                }
-                instruction.requiredSourceTrackIDsDic = trackInfos.reduce([:]) { (result, trackInfo: VCVideoTrackDescription) -> [CMPersistentTrackID : VCVideoTrackDescription] in
+                instruction.requiredSourceTrackIDsDic = instruction.videoTracks.reduce([:]) { (result, trackInfo: VCVideoTrackDescription) -> [CMPersistentTrackID : VCVideoTrackDescription] in
                     var mutable = result
                     mutable[trackInfo.persistentTrackID] = trackInfo
                     return mutable
