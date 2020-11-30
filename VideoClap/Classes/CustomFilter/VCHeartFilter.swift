@@ -13,17 +13,19 @@ open class VCHeartFilter: CIFilter {
     
     private static let sourceCode = """
 
-    float inHeart (vec2 p, vec2 center, float size) {
+    float inHeart (vec2 p, vec2 center, float size, float2 renderSize) {
         if (size==0.0) return 0.0;
+        float ratio = renderSize.x / renderSize.y;
+            
         vec2 o = (p-center)/(1.6*size);
-        float a = o.x*o.x+o.y*o.y-0.3;
+        o.x *= ratio;
+        float a = o.x*o.x+o.y*o.y - 0.3;
         return step(a*a*a, o.x*o.x*o.y*o.y*o.y);
     }
 
-    kernel vec4 transition (sampler inputImage, sampler inputTargetImage, float progress) {
+    kernel vec4 transition (sampler inputImage, sampler inputTargetImage, float progress, float2 renderSize) {
         vec2 uv0 = samplerCoord(inputImage);
         vec2 uv1 = samplerCoord(inputTargetImage);
-
 
         vec4 texture0Color = sample(inputImage, uv0);
         vec4 texture1Color = sample(inputTargetImage, uv1);
@@ -31,7 +33,7 @@ open class VCHeartFilter: CIFilter {
         return mix(
             texture0Color,
             texture1Color,
-            inHeart(uv0, vec2(0.5, 0.4), progress)
+            inHeart(uv0, vec2(0.5, 0.4), progress, renderSize)
         );
     }
 
@@ -47,6 +49,8 @@ open class VCHeartFilter: CIFilter {
     
     @objc public var inputTime: NSNumber = 1.0
     
+    @objc public var renderSize: CIVector = CIVector(x: 0.0, y: 0.0)
+    
     public override var outputImage: CIImage? {
         guard let kernel = VCHeartFilter.kernel else { return nil }
         guard let inputImage = self.inputImage else { return nil }
@@ -55,7 +59,7 @@ open class VCHeartFilter: CIFilter {
         
         finalFrame = kernel.apply(extent: finalFrame.extent, roiCallback: { (index, destRect) -> CGRect in
             return destRect
-        }, arguments: [finalFrame, inputTargetImage, inputTime.floatValue]) ?? finalFrame
+        }, arguments: [finalFrame, inputTargetImage, inputTime.floatValue, renderSize]) ?? finalFrame
         
         return finalFrame
     }

@@ -23,6 +23,7 @@ open class VCHeartTransition: NSObject, VCTransitionProtocol {
         let filter = VCHeartFilter()
         filter.inputImage = fromImage
         filter.inputTargetImage = toImage
+        filter.renderSize = CIVector(x: renderSize.width, y: renderSize.height)
         filter.inputTime = NSNumber(value: progress)
         
         if let image = filter.outputImage {
