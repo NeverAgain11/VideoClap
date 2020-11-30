@@ -62,6 +62,42 @@ public class VCHelper: NSObject {
         }
     }
     
+    public static func applyLutFilter(lutImageURL: URL, intensity: Float, at image: UIImage) -> UIImage? {
+        let lutFilter = VCLutFilter()
+        lutFilter.inputIntensity = NSNumber(value: intensity)
+        
+        if let ciImage = image.ciImage {
+            lutFilter.inputImage = ciImage
+        } else if let cgImage = image.cgImage {
+            let ciImage = CIImage(cgImage: cgImage)
+            lutFilter.inputImage = ciImage
+        } else {
+            return nil
+        }
+        
+        let key = lutImageURL.path
+        var lutImage: CIImage?
+        
+        if let image = VCImageCache.share.image(forKey: key) {
+            lutImage = image
+        } else {
+            lutImage = CIImage(contentsOf: lutImageURL)
+            VCImageCache.share.storeImage(toMemory: lutImage, forKey: key)
+        }
+        
+        if let lutImage = lutImage {
+            lutFilter.lookupImage = lutImage
+        } else {
+            return nil
+        }
+        
+        if let outputImage = lutFilter.outputImage {
+            return UIImage(ciImage: outputImage)
+        } else {
+            return nil
+        }
+    }
+    
 }
 
 extension VCHelper {

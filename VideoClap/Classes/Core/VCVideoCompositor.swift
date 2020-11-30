@@ -201,16 +201,13 @@ internal class VCVideoCompositor: NSObject {
                             }
                             
                             try compositionTrack.insertTimeRange(fixClipTimeRange, of: bestVideoTrack, at: mediaTrack.timeRange.start)
+                            mediaTrack.fixClipTimeRange = fixClipTimeRange
+                            mediaTrack.persistentTrackID = persistentTrackID
+                            mediaTrack.compositionTrack = compositionTrack
                             if var trackInfos = existTrackInfoDic[persistentTrackID] {
-                                mediaTrack.fixClipTimeRange = fixClipTimeRange
-                                mediaTrack.persistentTrackID = persistentTrackID
-                                mediaTrack.compositionTrack = compositionTrack
                                 trackInfos.append(mediaTrack)
                                 existTrackInfoDic[persistentTrackID] = trackInfos
                             } else {
-                                mediaTrack.fixClipTimeRange = fixClipTimeRange
-                                mediaTrack.persistentTrackID = persistentTrackID
-                                mediaTrack.compositionTrack = compositionTrack
                                 existTrackInfoDic[persistentTrackID] = [mediaTrack]
                             }
                         } catch let error {
