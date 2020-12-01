@@ -138,8 +138,12 @@ open class VideoClap: NSObject {
                     progressHandler(progress)
                 }
             }
-            RunLoop.current.run()
-            timer.fire()
+            if Thread.current.isMainThread {
+                
+            } else {
+                timer.start(modes: .default)
+                RunLoop.current.run()
+            }
         }
     }
     
