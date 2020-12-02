@@ -51,9 +51,16 @@ open class VCVortexTransition: NSObject, VCTransitionProtocol {
             let radius: Float = Float(CGFloat(progress) * fromImage.extent.width) * 1.2 * radiusRatio
             let angle: Float = Float(progress * 260.0) * 5.0
             if let image = vortexDistortionCompositing(inputImage: fromImage, inputCenter: CIVector(cgPoint: center), inputRadius: radius, inputAngle: angle) {
-                let alpha: CGFloat = CGFloat((1.0 - progress))
-                
-                finalImage = VCHelper.alphaCompositing(alphaValue: alpha, inputImage: image.composited(over: toImage))
+                let threshold: Float = 0.35
+                if progress > threshold {
+                    let mixFilter = VCMixFilter()
+                    mixFilter.mix = NSNumber(value: progress.map(from: CGFloat(threshold)...1.0, to: 0.0...1.0))
+                    mixFilter.inputImage = image
+                    mixFilter.inputTargetImage = toImage
+                    finalImage = mixFilter.outputImage
+                } else {
+                    finalImage = image
+                }
             }
             
         }
