@@ -53,13 +53,7 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
             return
         }
         var item = VCRequestItem()
-        item.imageTracks = instruction.imageTracks
-        item.videoTracks = instruction.videoTracks
-        item.audioTracks = instruction.audioTracks
-        item.lottieTracks = instruction.lottieTracks
-        item.laminationTracks = instruction.laminationTracks
-        item.transitions = instruction.transitions
-        item.trajectories = instruction.trajectories
+        item.instruction = instruction
         
         for (persistentTrackID, videoTrackDescription) in instruction.requiredSourceTrackIDsDic {
             if let sourceFrame = videoCompositionRequest.sourceFrame(byTrackID: persistentTrackID) {

@@ -42,6 +42,9 @@ TODO: Add long description of the pod here.
   end
   
   s.subspec 'Model' do |ss|
+    ss.subspec 'Tracks' do |sss|
+        sss.source_files = 'VideoClap/Classes/Model/Tracks/**/*'
+    end
     ss.source_files = 'VideoClap/Classes/Model/**/*'
   end
   

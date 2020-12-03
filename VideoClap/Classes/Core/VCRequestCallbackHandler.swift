@@ -30,6 +30,14 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     
     private var preprocessFinishedImages: [String:CIImage] = [:] // 预处理完的图片
     
+    private var item: VCRequestItem = .init()
+    
+    private var compositionTime: CMTime = .zero
+    
+    private var blackImage: CIImage = .init()
+    
+    private var instruction: VCVideoInstruction = .init()
+    
     public func contextChanged() {
         imageTrackEnumor = videoDescription.imageTracks.reduce([:]) { (result, imageTrack) -> [String : VCImageTrackDescription] in
             var mutable = result
@@ -141,21 +149,21 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     }
     
     /// 预处理图片或者视频帧 ，自适应或者铺满，水平翻转，添加滤镜
-    private func preprocess(item: VCRequestItem, compositionTime: CMTime) {
+    private func preprocess() {
         for (trackID, sourceFrame) in item.sourceFrameDic {
             if preprocessFinishedImages.keys.contains(trackID) == false {
                 preprocess(image: sourceFrame, trackID: trackID)
             }
         }
         
-        for imageTrack in item.imageTracks {
+        for imageTrack in instruction.imageTracks {
             if preprocessFinishedImages.keys.contains(imageTrack.id) == false, let image = trackImage(trackID: imageTrack.id) {
                 preprocess(image: image, trackID: imageTrack.id)
             }
         }
         
-        for videoTrack in item.videoTracks.filter({ preprocessFinishedImages.keys.contains($0.id) == false }) {
-            for transition in item.transitions {
+        for videoTrack in instruction.videoTracks.filter({ preprocessFinishedImages.keys.contains($0.id) == false }) {
+            for transition in instruction.transitions {
                 if transition.transition.fromId == videoTrack.id {
                     if let time = transition.fromTrackClipTimeRange?.end {
                         if preprocessFinishedImages.keys.contains(transition.transition.fromId) == false, let frame = trackFrame(trackID: transition.transition.fromId, at: time) {
@@ -175,14 +183,14 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
     }
     
-    private func processTransions(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage) -> CIImage? {
-        let transitionImageIDs = Set(item.transitions.flatMap({ [$0.transition.fromId, $0.transition.toId] }))
+    private func processTransions() -> CIImage? {
+        let transitionImageIDs = Set(instruction.transitions.flatMap({ [$0.transition.fromId, $0.transition.toId] }))
         let excludeTransitionImages = transitionImageIDs.symmetricDifference(preprocessFinishedImages.map({ $0.key }))  // 没有过渡的图片ID集合
         var excludeTransitionImage: CIImage? // 没有过渡的图片合成一张图片
         var optionalTransitionImage: CIImage? // 过渡的图片合成一张图片
         
         let renderSize = videoDescription.renderSize
-        for transition in item.transitions {
+        for transition in instruction.transitions {
             let progress = (compositionTime.seconds - transition.timeRange.start.seconds) / transition.timeRange.duration.seconds
             guard progress.isInfinite == false, progress.isNaN == false else {
                 continue
@@ -214,9 +222,9 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return optionalTransitionImage
     }
     
-    private func processTrajectories(item: VCRequestItem, compositionTime: CMTime) {
+    private func processTrajectories() {
         let renderSize = videoDescription.renderSize
-        for trajectory in item.trajectories {
+        for trajectory in instruction.trajectories {
             let progress = (compositionTime.seconds - trajectory.timeRange.start.seconds) / trajectory.timeRange.duration.seconds
             guard progress.isInfinite == false, progress.isNaN == false else {
                 continue
@@ -231,10 +239,10 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
     }
     
-    private func processLamination(item: VCRequestItem, compositionTime: CMTime) -> CIImage? {
+    private func processLamination() -> CIImage? {
         var optionalLaminationImage: CIImage? // 所有叠层合成一张图片
         let renderSize = videoDescription.renderSize
-        for laminationTrack in item.laminationTracks {
+        for laminationTrack in instruction.laminationTracks {
             if let url = laminationTrack.mediaURL, var image = laminationImage(url: url) {
                 let scaleX = renderSize.width / image.extent.width
                 let scaleY = renderSize.height / image.extent.height
@@ -249,10 +257,10 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return optionalLaminationImage
     }
     
-    private func processLottie(item: VCRequestItem, compositionTime: CMTime) -> CIImage? {
+    private func processLottie() -> CIImage? {
         let renderSize = videoDescription.renderSize
         
-        let animationStickers = item.lottieTracks
+        let animationStickers = instruction.lottieTracks
         var compositionSticker: CIImage?
         let group = DispatchGroup()
         for animationSticker in animationStickers {
@@ -315,17 +323,21 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     }
     
     public func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
+        self.item = item
+        self.compositionTime = compositionTime
+        self.blackImage = blackImage
+        self.instruction = item.instruction
 //        print("compositionTime: ", compositionTime.seconds)
         preprocessFinishedImages.removeAll()
         var finalFrame: CIImage?
         
-        preprocess(item: item, compositionTime: compositionTime)
+        preprocess()
         
-        processTrajectories(item: item, compositionTime: compositionTime)
+        processTrajectories()
         
-        let transionImage = processTransions(item: item, compositionTime: compositionTime, blackImage: blackImage)
-        let laminationImage = processLamination(item: item, compositionTime: compositionTime)
-        let lottieImage = processLottie(item: item, compositionTime: compositionTime)
+        let transionImage = processTransions()
+        let laminationImage = processLamination()
+        let lottieImage = processLottie()
         
         if let transionImage = transionImage {
             finalFrame = transionImage
@@ -388,7 +400,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     }
 
     // 校正视频方向
-    public func correctingTransform(image: CIImage, prefferdTransform optionalPrefferdTransform: CGAffineTransform?) -> CIImage {
+    private func correctingTransform(image: CIImage, prefferdTransform optionalPrefferdTransform: CGAffineTransform?) -> CIImage {
         if var prefferdTransform = optionalPrefferdTransform {
             let extent = image.extent
             let transform = CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: extent.origin.y * 2 + extent.height)
@@ -420,6 +432,10 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             return image
         }
     }
+    
+}
+
+public extension VCRequestCallbackHandler {
     
     public func trackImage(trackID: String) -> CIImage? {
         locker.object(forKey: #function).lock()

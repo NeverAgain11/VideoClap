@@ -75,7 +75,7 @@ class ViewController: UIViewController {
         setupUI()
         
         videoDescription.fps = 24.0
-        videoDescription.renderSize = CGSize(width: 720, height: 720)
+        videoDescription.renderSize = CGSize(width: 1280 / 2, height: 720 / 2)
         videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
         videoDescription.waterMarkImageURL = Bundle.main.url(forResource: "test3", withExtension: "jpg", subdirectory: "Mat")
         
@@ -104,7 +104,7 @@ class ViewController: UIViewController {
         do {
             let track = VCAudioTrackDescription()
             track.id = "audioTrack"
-            track.timeRange = CMTimeRange(start: 0.0, duration: 4 * 60)
+            track.timeRange = CMTimeRange(start: 0.0, duration: 10)
             track.mediaURL = Bundle.main.url(forResource: "02.Ellis - Clear My Head (Radio Edit) [NCS]", withExtension: "mp3", subdirectory: "Mat")
             
             track.mediaClipTimeRange = CMTimeRange(start: 0.0, duration: 3 * 60 + 37)
@@ -133,7 +133,7 @@ class ViewController: UIViewController {
         do {
             let lamination = VCLaminationTrackDescription()
             lamination.id = "laminationTrack"
-            lamination.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 5 * 60))
+            lamination.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10))
             lamination.mediaURL = Bundle.main.url(forResource: "Anniversary1", withExtension: "png", subdirectory: "Mat")
             videoDescription.laminationTracks.append(lamination)
         }
@@ -142,18 +142,18 @@ class ViewController: UIViewController {
             let animationSticker = VCLottieTrackDescription()
             animationSticker.id = "animationSticker"
             animationSticker.rect = VCRect(normalizeCenter: CGPoint(x: 0.25, y: 0.2), normalizeSize: CGSize(width: 0.35, height: 0.35))
-            animationSticker.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10 * 60))
+            animationSticker.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10))
             animationSticker.setAnimationView("Watermelon", subdirectory: "Mat/LottieAnimations")
             animationSticker.animationView?.frame = CGRect(origin: .zero, size: CGSize(width: 200, height: 200))
             videoDescription.lottieTracks.append(animationSticker)
         }
         
         
-        reverseVideo.reverse(input: Bundle.main.url(forResource: "video0", withExtension: "mp4", subdirectory: "Mat")!) { (progress: Progress) in
-            LLog(progress.fractionCompleted)
-        } completionCallback: { (url, error) in
-            
-        }
+//        reverseVideo.reverse(input: Bundle.main.url(forResource: "video0", withExtension: "mp4", subdirectory: "Mat")!) { (progress: Progress) in
+//            LLog(progress.fractionCompleted)
+//        } completionCallback: { (url, error) in
+//            
+//        }
 
 //        initPlay()
 //        export(fileName: nil) { }

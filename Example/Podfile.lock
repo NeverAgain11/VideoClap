@@ -52,6 +52,12 @@ PODS:
     - SDWebImage
     - SwiftyBeaver
     - SwiftyTimer
+    - VideoClap/Model/Tracks (= 0.1.0)
+  - VideoClap/Model/Tracks (0.1.0):
+    - lottie-ios
+    - SDWebImage
+    - SwiftyBeaver
+    - SwiftyTimer
   - VideoClap/Protocol (0.1.0):
     - lottie-ios
     - SDWebImage
@@ -105,7 +111,7 @@ SPEC CHECKSUMS:
   SSPlayer: 6299c67bde2d7a5f64292dccac0e6ddd45bfdd91
   SwiftyBeaver: b8239f6bfe9e1ea3303e6139abc8c24228081d84
   SwiftyTimer: 02dd6cf10cbc71cbf67cec494f6e5eb782102543
-  VideoClap: 077a56f37d797a431d715e4de792e57eaab0f1a7
+  VideoClap: a3ecddf80f094bf585858efb8a65aeff8b4d2f6f
 
 PODFILE CHECKSUM: c6034d572cd8bb4839743dd25b88c712eac5d9d3
 
