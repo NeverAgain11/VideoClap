@@ -11,6 +11,11 @@ private var tokens: Set<VCTapToken> = {
     return []
 }()
 
+public enum VCAudioProcessingTapError: Error {
+    case initError
+    case timeRangeError
+}
+
 extension AVMutableAudioMixInputParameters {
 
     func setAudioProcessingTap(cookie: VCTapToken) throws {
