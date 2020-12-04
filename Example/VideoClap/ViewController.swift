@@ -78,6 +78,7 @@ class ViewController: UIViewController {
         videoDescription.renderSize = CGSize(width: 1280 / 2, height: 720 / 2)
         videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
         videoDescription.waterMarkImageURL = Bundle.main.url(forResource: "test3", withExtension: "jpg", subdirectory: "Mat")
+        let trackBundle = videoDescription.trackBundle
         
         do {
             let track = VCVideoTrackDescription()
@@ -87,7 +88,7 @@ class ViewController: UIViewController {
             track.mediaURL = Bundle.main.url(forResource: "video1", withExtension: "mp4", subdirectory: "Mat")
             track.mediaClipTimeRange = CMTimeRange(start: 5.0, duration: 5.0)
             track.lutImageURL = Bundle.main.url(forResource: "lut_filter_27", withExtension: "jpg", subdirectory: "Mat")
-            videoDescription.videoTracks.append(track)
+            trackBundle.videoTracks.append(track)
         }
         
         do {
@@ -98,7 +99,7 @@ class ViewController: UIViewController {
             track.mediaURL = Bundle.main.url(forResource: "test4", withExtension: "jpg", subdirectory: "Mat")
             track.isFit = true
 //            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
-            videoDescription.imageTracks.append(track)
+            trackBundle.imageTracks.append(track)
         }
         
         do {
@@ -115,7 +116,7 @@ class ViewController: UIViewController {
                                                     endVolume: 1.0,
                                                     timeRange: CMTimeRange(start: 0.0, duration: 10.0))
             track.audioVolumeRampDescriptions = [desc]
-            videoDescription.audioTracks.append(track)
+            trackBundle.audioTracks.append(track)
         }
         
         do {
@@ -135,7 +136,7 @@ class ViewController: UIViewController {
             lamination.id = "laminationTrack"
             lamination.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10))
             lamination.mediaURL = Bundle.main.url(forResource: "Anniversary1", withExtension: "png", subdirectory: "Mat")
-            videoDescription.laminationTracks.append(lamination)
+            trackBundle.laminationTracks.append(lamination)
         }
         
         do {
@@ -145,7 +146,7 @@ class ViewController: UIViewController {
             animationSticker.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10))
             animationSticker.setAnimationView("Watermelon", subdirectory: "Mat/LottieAnimations")
             animationSticker.animationView?.frame = CGRect(origin: .zero, size: CGSize(width: 200, height: 200))
-            videoDescription.lottieTracks.append(animationSticker)
+            trackBundle.lottieTracks.append(animationSticker)
         }
         
         

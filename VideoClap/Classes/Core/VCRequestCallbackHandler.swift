@@ -22,10 +22,6 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     
     private var videoTrackEnumor: [String : VCVideoTrackDescription] = [:]
     
-    private var lottieTrackEnumor: [String : VCLottieTrackDescription] = [:]
-    
-    private var laminationTrackEnumor: [String : VCLaminationTrackDescription] = [:]
-    
     private var audioTrackEnumor: [String : VCAudioTrackDescription] = [:]
     
     private var preprocessFinishedImages: [String:CIImage] = [:] // 预处理完的图片
@@ -39,31 +35,20 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     private var instruction: VCVideoInstruction = .init()
     
     public func contextChanged() {
-        imageTrackEnumor = videoDescription.imageTracks.reduce([:]) { (result, imageTrack) -> [String : VCImageTrackDescription] in
+        let trackBundle = videoDescription.trackBundle
+        imageTrackEnumor = trackBundle.imageTracks.reduce([:]) { (result, imageTrack) -> [String : VCImageTrackDescription] in
             var mutable = result
             mutable[imageTrack.id] = imageTrack
             return mutable
         }
         
-        videoTrackEnumor = videoDescription.videoTracks.reduce([:]) { (result, imageTrack) -> [String : VCVideoTrackDescription] in
+        videoTrackEnumor = trackBundle.videoTracks.reduce([:]) { (result, imageTrack) -> [String : VCVideoTrackDescription] in
             var mutable = result
             mutable[imageTrack.id] = imageTrack
             return mutable
         }
         
-        lottieTrackEnumor = videoDescription.lottieTracks.reduce([:]) { (result, imageTrack) -> [String : VCLottieTrackDescription] in
-            var mutable = result
-            mutable[imageTrack.id] = imageTrack
-            return mutable
-        }
-        
-        laminationTrackEnumor = videoDescription.laminationTracks.reduce([:]) { (result, imageTrack) -> [String : VCLaminationTrackDescription] in
-            var mutable = result
-            mutable[imageTrack.id] = imageTrack
-            return mutable
-        }
-        
-        audioTrackEnumor = videoDescription.audioTracks.reduce([:]) { (result, imageTrack) -> [String : VCAudioTrackDescription] in
+        audioTrackEnumor = trackBundle.audioTracks.reduce([:]) { (result, imageTrack) -> [String : VCAudioTrackDescription] in
             var mutable = result
             mutable[imageTrack.id] = imageTrack
             return mutable

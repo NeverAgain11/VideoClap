@@ -26,6 +26,10 @@ public class MediaTrackAssociationInfo: NSObject {
     internal var compositionTrack: AVMutableCompositionTrack?
     internal var fixClipTimeRange: CMTimeRange = .zero
     
+    internal override init() {
+        super.init()
+    }
+    
 }
 
 internal extension VCMediaTrackDescriptionProtocol {

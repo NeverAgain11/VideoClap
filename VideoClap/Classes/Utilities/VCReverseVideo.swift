@@ -142,7 +142,7 @@ public class VCReverseVideo: NSObject {
         videoTrackDes.id = "reverse"
         videoTrackDes.timeRange = CMTimeRange(start: .zero, duration: asset.duration)
         
-        videoClap.videoDescription.videoTracks.append(videoTrackDes)
+        videoClap.videoDescription.trackBundle.videoTracks.append(videoTrackDes)
         
         videoClap.exportToVideo { (progress: Progress) in
             progressCallback(progress)

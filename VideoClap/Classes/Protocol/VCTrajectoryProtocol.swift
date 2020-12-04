@@ -24,6 +24,10 @@ public class TrajectoryAssociationInfo: NSObject {
     
     internal var fixClipTimeRange: CMTimeRange?
     
+    internal override init() {
+        super.init()
+    }
+    
 }
 
 internal extension VCTrajectoryProtocol {

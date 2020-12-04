@@ -44,13 +44,13 @@ internal class VCVideoCompositor: NSObject {
         let composition = AVMutableComposition(urlAssetInitializationOptions: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
         
         let videoDuration = estimateVideoDuration()
-        guard let compositionTrack = self.getCompositionTrack(at: composition, withMediaType: .video, trackID: VCVideoCompositor.EmptyVideoTrackID) else {
+        guard let compositionTrack = self.compositionTrack(at: composition, withMediaType: .video, trackID: VCVideoCompositor.EmptyVideoTrackID) else {
             throw VCVideoCompositorError.internalError
         }
         try addEmptyTrack(timeRange: CMTimeRange(start: .zero, duration: videoDuration), onCompositionTrack: compositionTrack)
-        
+        let trackBundle = videoDescription.trackBundle
         let existVideoTrackDic = addVideoTracks(persistentTrackHeaderID: VCVideoCompositor.MediaTrackIDHeader,
-                                                videoTracks: videoDescription.videoTracks,
+                                                videoTracks: trackBundle.videoTracks,
                                                 compositionVideoDuration: videoDuration,
                                                 composition: composition)
         
@@ -59,7 +59,7 @@ internal class VCVideoCompositor: NSObject {
             audioTrackHeaderID = videoTrackTailID + 1
         }
         let existAudioTrackDic = addAudioTracks(persistentTrackHeaderID: audioTrackHeaderID,
-                                                audioTracks: videoDescription.audioTracks,
+                                                audioTracks: trackBundle.audioTracks,
                                                 compositionVideoDuration: videoDuration,
                                                 composition: composition)
         
@@ -106,21 +106,12 @@ internal class VCVideoCompositor: NSObject {
     }
     
     internal func estimateVideoDuration() -> CMTime {
-        let tracks = allTracks()
+        let trackBundle = videoDescription.trackBundle
+        let tracks = trackBundle.allTracks()
         let duration = tracks.max { (lhs, rhs) -> Bool in
             return lhs.timeRange.end < rhs.timeRange.end
         }?.timeRange.end ?? .zero
         return CMTime(seconds: duration.seconds)
-    }
-    
-    private func allTracks() -> [VCTrackDescriptionProtocol] {
-        var tracks: [VCTrackDescriptionProtocol] = []
-        tracks.append(contentsOf: videoDescription.imageTracks)
-        tracks.append(contentsOf: videoDescription.videoTracks)
-        tracks.append(contentsOf: videoDescription.lottieTracks)
-        tracks.append(contentsOf: videoDescription.laminationTracks)
-        tracks.append(contentsOf: videoDescription.audioTracks)
-        return tracks
     }
     
     private func canInsertTimeRange(_ timeRange: CMTimeRange, atExistingTimeRanges existingTimeRanges: [CMTimeRange]) -> Bool {
@@ -187,7 +178,7 @@ internal class VCVideoCompositor: NSObject {
                         }
                     }
                     
-                    if let compositionTrack = getCompositionTrack(at: composition, withMediaType: mediaType, trackID: persistentTrackID) {
+                    if let compositionTrack = compositionTrack(at: composition, withMediaType: mediaType, trackID: persistentTrackID) {
                         do {
                             var fixStart: CMTime = .zero
                             var fixEnd: CMTime = .zero
@@ -223,7 +214,7 @@ internal class VCVideoCompositor: NSObject {
         return existTrackInfoDic
     }
     
-    private func getCompositionTrack(at composition: AVMutableComposition, withMediaType mediaType: AVMediaType, trackID: CMPersistentTrackID) -> AVMutableCompositionTrack? {
+    private func compositionTrack(at composition: AVMutableComposition, withMediaType mediaType: AVMediaType, trackID: CMPersistentTrackID) -> AVMutableCompositionTrack? {
         var optionalCompositionTrack = composition.track(withTrackID: trackID)
         if optionalCompositionTrack == nil {
             optionalCompositionTrack = composition.addMutableTrack(withMediaType: mediaType, preferredTrackID: trackID)
@@ -233,10 +224,10 @@ internal class VCVideoCompositor: NSObject {
     
     private func buildVideoInstruction(videoTracks: [VCVideoTrackDescription], audioTracks: [VCAudioTrackDescription]) -> [VCVideoInstruction] {
         let locker = VCLocker()
-        
-        let imageTracks = videoDescription.imageTracks
-        let lottieTracks = videoDescription.lottieTracks
-        let laminationTracks = videoDescription.laminationTracks
+        let trackBundle = videoDescription.trackBundle
+        let imageTracks = trackBundle.imageTracks
+        let lottieTracks = trackBundle.lottieTracks
+        let laminationTracks = trackBundle.laminationTracks
         
         let trackDescriptions: [VCTrackDescriptionProtocol] = imageTracks + videoTracks
         let enumor = trackDescriptions.reduce([:]) { (result, track) -> [String : VCTrackDescriptionProtocol] in
@@ -447,10 +438,22 @@ internal class VCVideoCompositor: NSObject {
         
         let inputParams = AVMutableAudioMixInputParameters(track: audioTrack)
         inputParams.trackID = audioTrackID
+        var existTimeRanges: [CMTimeRange] = []
         for audioVolumeRampDescription in track.audioVolumeRampDescriptions {
+            guard audioVolumeRampDescription.timeRange.isValid else {
+                continue
+            }
+            
+            for existTimeRange in existTimeRanges {
+                if existTimeRange.intersection(audioVolumeRampDescription.timeRange).isEmpty == false {
+                    continue
+                }
+            }
+            
             inputParams.setVolumeRamp(fromStartVolume: audioVolumeRampDescription.startVolume,
                                       toEndVolume: audioVolumeRampDescription.endVolume,
                                       timeRange: audioVolumeRampDescription.timeRange)
+            existTimeRanges.append(audioVolumeRampDescription.timeRange)
         }
         
         do {
