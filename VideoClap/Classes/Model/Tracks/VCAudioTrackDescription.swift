@@ -35,13 +35,13 @@ public class VCAudioTrackDescription: NSObject, VCTrackDescriptionProtocol, VCMe
     
     public func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCAudioTrackDescription()
-        copyObj.mediaURL = mediaURL
-        copyObj.id = id
-        copyObj.timeRange = timeRange
-        copyObj.prefferdTransform = prefferdTransform
-        copyObj.mediaClipTimeRange = mediaClipTimeRange
+        copyObj.mediaURL                    = mediaURL
+        copyObj.id                          = id
+        copyObj.timeRange                   = timeRange
+        copyObj.prefferdTransform           = prefferdTransform
+        copyObj.mediaClipTimeRange          = mediaClipTimeRange
         copyObj.audioVolumeRampDescriptions = audioVolumeRampDescriptions
-        copyObj.audioEffectProvider = audioEffectProvider
+        copyObj.audioEffectProvider         = audioEffectProvider
         return copyObj
     }
     

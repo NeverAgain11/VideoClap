@@ -99,7 +99,7 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
         self.blackImage = renderer.ciImage { (context) in
             UIColor.black.setFill()
             UIRectFill(renderer.rendererRect)
-        }
+        } ?? self.blackImage
     }
     
 }

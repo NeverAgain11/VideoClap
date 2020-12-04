@@ -152,13 +152,13 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             preprocess(image: sourceFrame, trackID: trackID)
         }
         
-        for imageTrack in instruction.imageTracks {
+        for imageTrack in instruction.trackBundle.imageTracks {
             if let image = trackImage(trackID: imageTrack.id) {
                 preprocess(image: image, trackID: imageTrack.id)
             }
         }
         
-        for videoTrack in instruction.videoTracks {
+        for videoTrack in instruction.trackBundle.videoTracks {
             for transition in instruction.transitions {
                 if transition.transition.fromId == videoTrack.id {
                     if let time = transition.fromTrackClipTimeRange?.end {
@@ -221,7 +221,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     private func processLamination() -> CIImage? {
         var optionalLaminationImage: CIImage? // 所有叠层合成一张图片
         let renderSize = videoDescription.renderSize
-        for laminationTrack in instruction.laminationTracks {
+        for laminationTrack in instruction.trackBundle.laminationTracks {
             if let url = laminationTrack.mediaURL, var image = laminationImage(url: url) {
                 let scaleX = renderSize.width / image.extent.width
                 let scaleY = renderSize.height / image.extent.height
@@ -239,7 +239,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     private func processLottie() -> CIImage? {
         let renderSize = videoDescription.renderSize
         
-        let animationStickers = instruction.lottieTracks
+        let animationStickers = instruction.trackBundle.lottieTracks
         var compositionSticker: CIImage?
         let group = DispatchGroup()
         for animationSticker in animationStickers {
@@ -301,6 +301,56 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return nil
     }
     
+    private func processText() -> CIImage? {
+        let renderSize = videoDescription.renderSize
+        let textTracks = instruction.trackBundle.textTracks
+        var compositionTextImage: CIImage?
+        let renderer = VCGraphicsRenderer()
+        
+        compositionTextImage = textTracks.reduce(compositionTextImage) { (result: CIImage?, textTrack: VCTextTrackDescription) -> CIImage? in
+            renderer.rendererRect.size = textTrack.text.size()
+            
+            var renderText: NSAttributedString?
+            
+            if textTrack.isTypewriter {
+                let progress = (compositionTime.seconds - textTrack.timeRange.start.seconds) / textTrack.timeRange.duration.seconds
+                if progress.isNaN == false && progress.isInfinite == false {
+                    renderText = textTrack.text.attributedSubstring(from: NSRange(location: 0, length: Int(ceil(Double(textTrack.text.length) * progress))))
+                }
+            } else {
+                renderText = textTrack.text
+            }
+            
+            if let renderText = renderText, var textImage = renderer.ciImage(actions: { (context: CGContext) in
+                renderText.draw(in: renderer.rendererRect)
+            }) {
+                var transform = CGAffineTransform.identity
+                
+                let moveFrameCenterToRenderRectOrigin = CGAffineTransform(translationX: -textImage.extent.midX, y: -textImage.extent.midY)
+                transform = transform.concatenating(moveFrameCenterToRenderRectOrigin)
+                
+                if textTrack.rotateRadian.isZero == false {
+                    let angle = -textTrack.rotateRadian // 转为负数，变成顺时针旋转
+                    let rotationTransform = CGAffineTransform(rotationAngle: angle)
+                    transform = transform.concatenating(rotationTransform)
+                }
+                
+                let center = CGPoint(x: textTrack.center.x * renderSize.width, y: textTrack.center.y * renderSize.height)
+                transform = transform.concatenating(CGAffineTransform(translationX: center.x, y: center.y))
+                textImage = textImage.transformed(by: transform)
+                
+                if let result = result {
+                    return textImage.composited(over: result)
+                } else {
+                    return textImage
+                }
+            }
+            return result
+        }
+        
+        return compositionTextImage
+    }
+    
     public func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
         self.item = item
         self.compositionTime = compositionTime
@@ -316,6 +366,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         let transionImage = processTransions()
         let laminationImage = processLamination()
         let lottieImage = processLottie()
+        let textImage = processText()
         
         if let transionImage = transionImage {
             finalFrame = transionImage
@@ -335,6 +386,12 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             finalFrame = laminationImage.composited(over: frame)
         } else if let laminationImage = laminationImage {
             finalFrame = laminationImage
+        }
+        
+        if let frame = finalFrame, let textImage = textImage {
+            finalFrame = textImage.composited(over: frame)
+        } else if let textImage = textImage {
+            finalFrame = textImage
         }
         
         if let waterMark = processWaterMark() {

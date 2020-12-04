@@ -20,16 +20,19 @@ public class VCTextTrackDescription: NSObject, VCTrackDescriptionProtocol {
     /// 顺时针，弧度制，1.57顺时针旋转90度，3.14顺时针旋转180度
     public var rotateRadian: CGFloat = 0.0
     
+    public var isTypewriter: Bool = false
+    
     public func copy(with zone: NSZone? = nil) -> Any {
         return self
     }
     
     public func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCTextTrackDescription()
-        copyObj.id = id
-        copyObj.timeRange = timeRange
+        copyObj.id           = id
+        copyObj.timeRange    = timeRange
         copyObj.rotateRadian = rotateRadian
-        copyObj.text = text.mutableCopy() as! NSAttributedString
+        copyObj.text         = text.mutableCopy() as! NSAttributedString
+        copyObj.isTypewriter = isTypewriter
         return self
     }
     

@@ -59,16 +59,17 @@ public class VCLottieTrackDescription: NSObject, VCTrackDescriptionProtocol {
     }
     
     public func mutableCopy(with zone: NSZone? = nil) -> Any {
-        let copyObj = VCLottieTrackDescription()
-        copyObj.id = id
-        copyObj.rect = rect
-        copyObj.rotateRadian = rotateRadian
-        copyObj.timeRange = timeRange
-        copyObj.animationPlayTime = animationPlayTime
+        let copyAnimationView = AnimationView()
+        copyAnimationView.contentMode = self.animationView?.contentMode ?? .scaleAspectFit
+        copyAnimationView.animation   = self.animationView?.animation
         
-        copyObj.animationView = AnimationView()
-        copyObj.animationView?.contentMode = self.animationView?.contentMode ?? .scaleAspectFit
-        copyObj.animationView?.animation = self.animationView?.animation
+        let copyObj = VCLottieTrackDescription()
+        copyObj.id                = id
+        copyObj.rect              = rect
+        copyObj.rotateRadian      = rotateRadian
+        copyObj.timeRange         = timeRange
+        copyObj.animationPlayTime = animationPlayTime
+        copyObj.animationView     = copyAnimationView
         return copyObj
     }
     

@@ -15,15 +15,15 @@ public class VCGraphicsRenderer: NSObject {
     
     public var opaque: Bool = false
     
-    public func jpegData(withCompressionQuality compressionQuality: CGFloat, actions: (CGContext) -> Void) -> Data {
-        return self.image(actions: actions).jpegData(compressionQuality: compressionQuality) ?? Data()
+    public func jpegData(withCompressionQuality compressionQuality: CGFloat, actions: (CGContext) -> Void) -> Data? {
+        return self.image(actions: actions)?.jpegData(compressionQuality: compressionQuality)
     }
     
-    public func pngData(actions: (CGContext) -> Void) -> Data {
-        return self.image(actions: actions).pngData() ?? Data()
+    public func pngData(actions: (CGContext) -> Void) -> Data? {
+        return self.image(actions: actions)?.pngData()
     }
     
-    public func image(actions: (CGContext) -> Void) -> UIImage {
+    public func image(actions: (CGContext) -> Void) -> UIImage? {
         if #available(iOS 10.0, *) {
             let format = UIGraphicsImageRendererFormat()
             format.opaque = opaque
@@ -45,17 +45,20 @@ public class VCGraphicsRenderer: NSObject {
                     return currentImage
                 }
             }
-            
-            return UIImage()
+        }
+        return nil
+    }
+    
+    public func ciImage(options: [CIImageOption : Any]? = nil, actions: (CGContext) -> Void) -> CIImage? {
+        if let uiImage = image(actions: actions) {
+            return CIImage(image: uiImage, options: options)
+        } else {
+            return nil
         }
     }
     
-    public func ciImage(options: [CIImageOption : Any]? = nil, actions: (CGContext) -> Void) -> CIImage {
-        return CIImage(image: image(actions: actions), options: options) ?? CIImage()
-    }
-    
     public func cgImage(actions: (CGContext) -> Void) -> CGImage? {
-        return self.image(actions: actions).cgImage
+        return self.image(actions: actions)?.cgImage
     }
     
 }

@@ -228,6 +228,7 @@ internal class VCVideoCompositor: NSObject {
         let imageTracks = trackBundle.imageTracks
         let lottieTracks = trackBundle.lottieTracks
         let laminationTracks = trackBundle.laminationTracks
+        let textTracks = trackBundle.textTracks
         
         let trackDescriptions: [VCImageTrackDescription] = imageTracks + videoTracks
         let enumor = trackDescriptions.reduce([:]) { (result, track) -> [String : VCImageTrackDescription] in
@@ -306,6 +307,7 @@ internal class VCVideoCompositor: NSObject {
         keyTimes.append(contentsOf: laminationTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
         keyTimes.append(contentsOf: audioTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
         keyTimes.append(contentsOf: transitions.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
+        keyTimes.append(contentsOf: textTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
         
         func removeDuplicates(times: [CMTime]) -> [CMTime] {
             var fastEnum: [String:CMTime] = [:]
@@ -329,18 +331,21 @@ internal class VCVideoCompositor: NSObject {
         
         (timeRanges as NSArray).enumerateObjects(options: .concurrent) { (obj: Any, _, _) in
             guard let timeRange = obj as? CMTimeRange else { return }
-
+            let trackBundle = VCTrackBundle()
             let instruction = VCVideoInstruction()
-            instruction.imageTracks = imageTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
-            instruction.videoTracks = videoTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
-            instruction.lottieTracks = lottieTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
-            instruction.laminationTracks = laminationTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
-            instruction.audioTracks = audioTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
+            instruction.trackBundle = trackBundle
             
-            if instruction.videoTracks.isEmpty {
+            trackBundle.imageTracks = imageTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
+            trackBundle.videoTracks = videoTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
+            trackBundle.lottieTracks = lottieTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
+            trackBundle.laminationTracks = laminationTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
+            trackBundle.audioTracks = audioTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
+            trackBundle.textTracks = textTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
+            
+            if trackBundle.videoTracks.isEmpty {
                 instruction.requiredSourceTrackIDs = [VCVideoCompositor.EmptyVideoTrackID as NSValue]
             } else {
-                instruction.requiredSourceTrackIDsDic = instruction.videoTracks.reduce([:]) { (result, trackInfo: VCVideoTrackDescription) -> [CMPersistentTrackID : VCVideoTrackDescription] in
+                instruction.requiredSourceTrackIDsDic = trackBundle.videoTracks.reduce([:]) { (result, trackInfo: VCVideoTrackDescription) -> [CMPersistentTrackID : VCVideoTrackDescription] in
                     var mutable = result
                     mutable[trackInfo.persistentTrackID] = trackInfo
                     return mutable
@@ -357,13 +362,13 @@ internal class VCVideoCompositor: NSObject {
                 
                 switch fromTrack {
                 case let track as VCVideoTrackDescription:
-                    if instruction.videoTracks.contains(where: { track.id == $0.id }) == false {
-                        instruction.videoTracks.append(track)
+                    if trackBundle.videoTracks.contains(where: { track.id == $0.id }) == false {
+                        trackBundle.videoTracks.append(track)
                     }
                     
                 case let track as VCImageTrackDescription:
-                    if instruction.imageTracks.contains(where: { track.id == $0.id }) == false {
-                        instruction.imageTracks.append(track)
+                    if trackBundle.imageTracks.contains(where: { track.id == $0.id }) == false {
+                        trackBundle.imageTracks.append(track)
                     }
                     
                 default:
@@ -372,13 +377,13 @@ internal class VCVideoCompositor: NSObject {
                 
                 switch toTrack {
                 case let track as VCVideoTrackDescription:
-                    if instruction.videoTracks.contains(where: { track.id == $0.id }) == false {
-                        instruction.videoTracks.append(track)
+                    if trackBundle.videoTracks.contains(where: { track.id == $0.id }) == false {
+                        trackBundle.videoTracks.append(track)
                     }
                     
                 case let track as VCImageTrackDescription:
-                    if instruction.imageTracks.contains(where: { track.id == $0.id }) == false {
-                        instruction.imageTracks.append(track)
+                    if trackBundle.imageTracks.contains(where: { track.id == $0.id }) == false {
+                        trackBundle.imageTracks.append(track)
                     }
                     
                 default:

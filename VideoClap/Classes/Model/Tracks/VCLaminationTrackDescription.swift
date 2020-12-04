@@ -25,9 +25,9 @@ public class VCLaminationTrackDescription: NSObject, VCTrackDescriptionProtocol 
     
     public func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCLaminationTrackDescription()
-        copyObj.id           = self.id
-        copyObj.timeRange    = self.timeRange
-        copyObj.mediaURL     = self.mediaURL
+        copyObj.id        = self.id
+        copyObj.timeRange = self.timeRange
+        copyObj.mediaURL  = self.mediaURL
         return copyObj
     }
     

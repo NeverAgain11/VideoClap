@@ -23,18 +23,8 @@ internal class VCVideoInstruction: NSObject, AVVideoCompositionInstructionProtoc
     
     var videoProcessProtocol: VCVideoProcessProtocol?
     
-    var imageTracks: [VCImageTrackDescription] = []
-    
-    var videoTracks: [VCVideoTrackDescription] = []
-    
-    var audioTracks: [VCAudioTrackDescription] = []
-    
-    var lottieTracks: [VCLottieTrackDescription] = []
-    
-    var laminationTracks: [VCLaminationTrackDescription] = []
+    var trackBundle: VCTrackBundle = VCTrackBundle()
     
     var transitions: [VCTransition] = []
-    
-    var trajectories: [VCTrajectoryProtocol] = []
     
 }

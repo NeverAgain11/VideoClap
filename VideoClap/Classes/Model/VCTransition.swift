@@ -14,7 +14,7 @@ internal class VCTransition: NSObject {
     var toTrackClipTimeRange: CMTimeRange?
     
     init(timeRange: CMTimeRange, transition: VCTransitionProtocol) {
-        self.timeRange = timeRange
+        self.timeRange  = timeRange
         self.transition = transition
     }
 }

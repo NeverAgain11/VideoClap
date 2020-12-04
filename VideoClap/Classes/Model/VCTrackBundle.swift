@@ -19,6 +19,8 @@ open class VCTrackBundle: NSObject, NSCopying, NSMutableCopying {
     
     public var laminationTracks: [VCLaminationTrackDescription] = []
     
+    public var textTracks: [VCTextTrackDescription] = []
+    
     internal func allTracks() -> [VCTrackDescriptionProtocol] {
         var tracks: [VCTrackDescriptionProtocol] = []
         tracks.append(contentsOf: imageTracks)
@@ -26,6 +28,7 @@ open class VCTrackBundle: NSObject, NSCopying, NSMutableCopying {
         tracks.append(contentsOf: lottieTracks)
         tracks.append(contentsOf: laminationTracks)
         tracks.append(contentsOf: audioTracks)
+        tracks.append(contentsOf: textTracks)
         return tracks
     }
     
@@ -40,6 +43,7 @@ open class VCTrackBundle: NSObject, NSCopying, NSMutableCopying {
         copyObj.audioTracks      = audioTracks.map({ $0.mutableCopy() as! VCAudioTrackDescription })
         copyObj.lottieTracks     = lottieTracks.map({ $0.mutableCopy() as! VCLottieTrackDescription })
         copyObj.laminationTracks = laminationTracks.map({ $0.mutableCopy() as! VCLaminationTrackDescription })
+        copyObj.textTracks       = textTracks.map({ $0.mutableCopy() as! VCTextTrackDescription })
         return copyObj
     }
     

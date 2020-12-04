@@ -43,16 +43,16 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
     
     public func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCImageTrackDescription()
-        copyObj.mediaURL = mediaURL
-        copyObj.id = id
-        copyObj.timeRange = timeRange
-        copyObj.isFit = isFit
+        copyObj.mediaURL         = mediaURL
+        copyObj.id               = id
+        copyObj.timeRange        = timeRange
+        copyObj.isFit            = isFit
         copyObj.isFlipHorizontal = isFlipHorizontal
-        copyObj.filterIntensity = filterIntensity
-        copyObj.lutImageURL = lutImageURL
-        copyObj.rotateRadian = rotateRadian
-        copyObj.cropedRect = cropedRect
-        copyObj.trajectory = trajectory
+        copyObj.filterIntensity  = filterIntensity
+        copyObj.lutImageURL      = lutImageURL
+        copyObj.rotateRadian     = rotateRadian
+        copyObj.cropedRect       = cropedRect
+        copyObj.trajectory       = trajectory
         return copyObj
     }
     

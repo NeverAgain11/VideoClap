@@ -73,9 +73,10 @@ class ViewController: UIViewController {
         }
         NotificationCenter.default.addObserver(self, selector: #selector(transitionChange), name: TransitionNotification, object: nil)
         setupUI()
-        let ratio: CIVector = CIVector(x: 9.0, y: 16.0)
+        let ratio: CIVector = CIVector(x: 9.0, y: 12.0)
+        let size: CGFloat = 100
         videoDescription.fps = 24.0
-        videoDescription.renderSize = CGSize(width: ratio.x * 50, height: ratio.y * 50)
+        videoDescription.renderSize = CGSize(width: ratio.x * size, height: ratio.y * size)
         videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
         videoDescription.waterMarkImageURL = Bundle.main.url(forResource: "test3", withExtension: "jpg", subdirectory: "Mat")
         let trackBundle = videoDescription.trackBundle
@@ -131,13 +132,6 @@ class ViewController: UIViewController {
         }
         
         do {
-//            let trajectory = VCMovementTrajectory()
-//            trajectory.id = "imageTrack"
-//            trajectory.timeRange = CMTimeRange(start: CMTime(seconds: 2), end: CMTime(seconds: 30))
-//            videoDescription.trajectories.append(trajectory)
-        }
-        
-        do {
             let lamination = VCLaminationTrackDescription()
             lamination.id = "laminationTrack"
             lamination.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10))
@@ -155,6 +149,17 @@ class ViewController: UIViewController {
             trackBundle.lottieTracks.append(animationSticker)
         }
         
+        do {
+            let textTrack = VCTextTrackDescription()
+            textTrack.id = "textTrack"
+            textTrack.center = CGPoint(x: 0.5, y: 0.5)
+            textTrack.timeRange = CMTimeRange(start: 0.0, end: 10.0)
+            textTrack.isTypewriter = true
+            textTrack.rotateRadian = .pi * 0.15
+            textTrack.text = NSAttributedString(string: "按键或把手把字和符号打印在纸上的机械，有手打和电打两种。\n在大多数办公室，电脑已经取代了打字机。\n她拿起一张纸，把它哗哗啦啦地塞到打字机中。",
+                                                attributes: [.foregroundColor : UIColor.red, .font : UIFont.systemFont(ofSize: 30, weight: .bold)])
+            trackBundle.textTracks.append(textTrack)
+        }
         
 //        reverseVideo.reverse(input: Bundle.main.url(forResource: "video0", withExtension: "mp4", subdirectory: "Mat")!) { (progress: Progress) in
 //            LLog(progress.fractionCompleted)
