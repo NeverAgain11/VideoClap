@@ -31,6 +31,8 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
     /// 归一化下裁剪区域，范围（0~1）
     public var cropedRect: CGRect?
     
+    public var trajectory: VCTrajectoryProtocol?
+    
     public override init() {
         super.init()
     }
@@ -50,6 +52,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         copyObj.lutImageURL = lutImageURL
         copyObj.rotateRadian = rotateRadian
         copyObj.cropedRect = cropedRect
+        copyObj.trajectory = trajectory
         return copyObj
     }
     

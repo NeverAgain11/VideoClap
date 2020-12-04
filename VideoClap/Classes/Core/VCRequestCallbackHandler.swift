@@ -56,7 +56,11 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     }
     
     private func preprocess(image: CIImage, trackID: String) {
+        guard preprocessFinishedImages.keys.contains(trackID) == false else {
+            return
+        }
         guard let mediaTrack = imageTrackEnumor[trackID] ?? videoTrackEnumor[trackID] else { return }
+        let trajectory: VCTrajectoryProtocol? = mediaTrack.trajectory
         let renderSize = videoDescription.renderSize
         var frame = image
         let id = mediaTrack.id
@@ -129,29 +133,36 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             }
         }
         
+        if let trajectory = trajectory {
+            let progress = (compositionTime.seconds - trajectory.timeRange.start.seconds) / trajectory.timeRange.duration.seconds
+            if progress.isInfinite == false, progress.isNaN == false {
+                if let image = trajectory.transition(renderSize: renderSize, progress: CGFloat(progress), image: frame) {
+                    frame = image
+                }
+            }
+        }
+        
         preprocessFinishedImages[id] = frame
         
     }
     
-    /// 预处理图片或者视频帧 ，自适应或者铺满，水平翻转，添加滤镜
+    /// 预处理图片或者视频帧 ，自适应或者铺满，水平翻转，添加滤镜，轨迹
     private func preprocess() {
         for (trackID, sourceFrame) in item.sourceFrameDic {
-            if preprocessFinishedImages.keys.contains(trackID) == false {
-                preprocess(image: sourceFrame, trackID: trackID)
-            }
+            preprocess(image: sourceFrame, trackID: trackID)
         }
         
         for imageTrack in instruction.imageTracks {
-            if preprocessFinishedImages.keys.contains(imageTrack.id) == false, let image = trackImage(trackID: imageTrack.id) {
+            if let image = trackImage(trackID: imageTrack.id) {
                 preprocess(image: image, trackID: imageTrack.id)
             }
         }
         
-        for videoTrack in instruction.videoTracks.filter({ preprocessFinishedImages.keys.contains($0.id) == false }) {
+        for videoTrack in instruction.videoTracks {
             for transition in instruction.transitions {
                 if transition.transition.fromId == videoTrack.id {
                     if let time = transition.fromTrackClipTimeRange?.end {
-                        if preprocessFinishedImages.keys.contains(transition.transition.fromId) == false, let frame = trackFrame(trackID: transition.transition.fromId, at: time) {
+                        if let frame = trackFrame(trackID: transition.transition.fromId, at: time) {
                             preprocess(image: frame, trackID: transition.transition.fromId)
                         }
                     }
@@ -159,7 +170,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                 
                 if transition.transition.toId == videoTrack.id {
                     if let time = transition.toTrackClipTimeRange?.start {
-                        if preprocessFinishedImages.keys.contains(transition.transition.toId) == false, let frame = trackFrame(trackID: transition.transition.toId, at: time) {
+                        if let frame = trackFrame(trackID: transition.transition.toId, at: time) {
                             preprocess(image: frame, trackID: transition.transition.toId)
                         }
                     }
@@ -205,23 +216,6 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
         
         return optionalTransitionImage
-    }
-    
-    private func processTrajectories() {
-        let renderSize = videoDescription.renderSize
-        for trajectory in instruction.trajectories {
-            let progress = (compositionTime.seconds - trajectory.timeRange.start.seconds) / trajectory.timeRange.duration.seconds
-            guard progress.isInfinite == false, progress.isNaN == false else {
-                continue
-            }
-            
-            if let image = preprocessFinishedImages[trajectory.id] {
-//                print(trajectory.id)
-                if let processImage = trajectory.transition(renderSize: renderSize, progress: CGFloat(progress), image: image) {
-                    preprocessFinishedImages[trajectory.id] = processImage
-                }
-            }
-        }
     }
     
     private func processLamination() -> CIImage? {
@@ -318,7 +312,6 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         
         preprocess()
         
-        processTrajectories()
         
         let transionImage = processTransions()
         let laminationImage = processLamination()

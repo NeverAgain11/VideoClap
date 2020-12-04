@@ -14,6 +14,7 @@ import SwiftyTimer
 internal let log: SwiftyBeaver.Type = {
     #if DEBUG
     let console = ConsoleDestination()
+    console.asynchronously = false
     console.format = "$C$L$c $n[$l] > $F: \(Thread.current) $T\n$M"
     SwiftyBeaver.addDestination(console)
     #endif

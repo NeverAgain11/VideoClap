@@ -229,8 +229,8 @@ internal class VCVideoCompositor: NSObject {
         let lottieTracks = trackBundle.lottieTracks
         let laminationTracks = trackBundle.laminationTracks
         
-        let trackDescriptions: [VCTrackDescriptionProtocol] = imageTracks + videoTracks
-        let enumor = trackDescriptions.reduce([:]) { (result, track) -> [String : VCTrackDescriptionProtocol] in
+        let trackDescriptions: [VCImageTrackDescription] = imageTracks + videoTracks
+        let enumor = trackDescriptions.reduce([:]) { (result, track) -> [String : VCImageTrackDescription] in
             var mutable = result
             mutable[track.id] = track
             return mutable
@@ -242,13 +242,15 @@ internal class VCVideoCompositor: NSObject {
             return mutable
         }
         
-        let trajectoriesDic = videoDescription.trajectories.reduce([:]) { (result, trajectory) -> [String : VCTrajectoryProtocol] in
-            var mutable = result
-            mutable[trajectory.id] = trajectory
-            return mutable
-        }
-        
         var transitions: [VCTransition] = []
+        
+        for track in trackDescriptions {
+            if let trajectory = track.trajectory {
+                let start =  track.timeRange.start.seconds + TimeInterval(trajectory.range.left) * track.timeRange.duration.seconds
+                let end =  track.timeRange.start.seconds + TimeInterval(trajectory.range.right) * track.timeRange.duration.seconds
+                trajectory.timeRange = CMTimeRange(start: start, end: end)
+            }
+        }
         
         (videoDescription.transitions as NSArray).enumerateObjects(options: .concurrent) { (obj, index, outStop) in
             guard let transition = obj as? VCTransitionProtocol else { return }
@@ -260,18 +262,24 @@ internal class VCVideoCompositor: NSObject {
                 let start: CMTime = CMTime(seconds: fromTrack.timeRange.end.seconds - fromTrack.timeRange.duration.seconds * Double(transition.range.left))
                 let end: CMTime = CMTime(seconds: toTrack.timeRange.start.seconds + toTrack.timeRange.duration.seconds * Double(transition.range.right))
                 
-                var t: VCTransition = VCTransition(timeRange: CMTimeRange(start: start, end: end), transition: transition)
-                t.isOverlay = false
+                let t: VCTransition = VCTransition(timeRange: CMTimeRange(start: start, end: end), transition: transition)
                 
                 t.fromTrackClipTimeRange = fixClipTimeRanges[fromTrack.id]
                 t.toTrackClipTimeRange = fixClipTimeRanges[toTrack.id]
                 
-                if let trajectory = trajectoriesDic[fromTrack.id] {
-                    trajectory.fixClipTimeRange = CMTimeRange(start: trajectory.timeRange.start, end: end)
+                if let trajectory = fromTrack.trajectory {
+                    let duration = (end - fromTrack.timeRange.start).seconds
+                    let start =  fromTrack.timeRange.start.seconds + TimeInterval(trajectory.range.left) * duration
+                    let end =  fromTrack.timeRange.start.seconds + TimeInterval(trajectory.range.right) * duration
+                    trajectory.timeRange = CMTimeRange(start: start, end: end)
                 }
                 
-                if let trajectory = trajectoriesDic[toTrack.id] {
-                    trajectory.fixClipTimeRange = CMTimeRange(start: start, end: trajectory.timeRange.end)
+                if let trajectory = toTrack.trajectory {
+                    let duration = (toTrack.timeRange.end - start).seconds
+                    let trajectoryStart = start.seconds + TimeInterval(trajectory.range.left) * duration
+                    let trajectoryEnd = start.seconds + TimeInterval(trajectory.range.right) * duration
+                    trajectory.timeRange = CMTimeRange(start: trajectoryStart,
+                                                       end: trajectoryEnd)
                 }
                 
                 locker.object(forKey: "transitions").lock()
@@ -279,8 +287,7 @@ internal class VCVideoCompositor: NSObject {
                 locker.object(forKey: "transitions").unlock()
             } else if fromTrack.timeRange.end > toTrack.timeRange.start {
                 // 两个轨道有重叠
-                var t: VCTransition = VCTransition(timeRange: CMTimeRange(start: toTrack.timeRange.start, end: fromTrack.timeRange.end), transition: transition)
-                t.isOverlay = true
+                let t: VCTransition = VCTransition(timeRange: CMTimeRange(start: toTrack.timeRange.start, end: fromTrack.timeRange.end), transition: transition)
                 locker.object(forKey: "transitions").lock()
                 transitions.append(t)
                 locker.object(forKey: "transitions").unlock()
@@ -376,13 +383,6 @@ internal class VCVideoCompositor: NSObject {
                     
                 default:
                     break
-                }
-            }
-            
-            for (key, trajectory) in trajectoriesDic {
-                let trajectoryTimeRange = trajectory.fixClipTimeRange ?? trajectory.timeRange
-                if enumor[trajectory.id] != nil && trajectoryTimeRange.intersection(timeRange).isEmpty == false {
-                    instruction.trajectories.append(trajectory)
                 }
             }
             

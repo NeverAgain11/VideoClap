@@ -10,9 +10,7 @@ import AVFoundation
 
 open class VCScaleUpTrajectory: NSObject, VCTrajectoryProtocol {
     
-    public var associationInfo: TrajectoryAssociationInfo = .init()
-    
-    public var id: String = ""
+    public var range: VCRange = .init(left: 0.0, right: 1.0)
     
     public var timeRange: CMTimeRange = .zero
     

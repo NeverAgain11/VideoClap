@@ -73,15 +73,18 @@ class ViewController: UIViewController {
         }
         NotificationCenter.default.addObserver(self, selector: #selector(transitionChange), name: TransitionNotification, object: nil)
         setupUI()
-        
+        let ratio: CIVector = CIVector(x: 9.0, y: 16.0)
         videoDescription.fps = 24.0
-        videoDescription.renderSize = CGSize(width: 1280 / 2, height: 720 / 2)
+        videoDescription.renderSize = CGSize(width: ratio.x * 50, height: ratio.y * 50)
         videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
         videoDescription.waterMarkImageURL = Bundle.main.url(forResource: "test3", withExtension: "jpg", subdirectory: "Mat")
         let trackBundle = videoDescription.trackBundle
         
         do {
+            let trajectory = VCMovementTrajectory()
+            trajectory.movementRatio = 0.1
             let track = VCVideoTrackDescription()
+            track.trajectory = trajectory
             track.id = "videoTrack"
             track.timeRange = CMTimeRange(start: 5.0, duration: 5.0)
             track.isFit = false
@@ -92,7 +95,10 @@ class ViewController: UIViewController {
         }
         
         do {
+            let trajectory = VCMovementTrajectory()
+            trajectory.movementRatio = 0.1
             let track = VCImageTrackDescription()
+            track.trajectory = trajectory
             track.id = "imageTrack"
             track.timeRange = CMTimeRange(start: 0.0, duration: 5.0)
             
@@ -125,9 +131,9 @@ class ViewController: UIViewController {
         }
         
         do {
-            let trajectory = VCMovementTrajectory()
-            trajectory.id = "imageTrack"
-            trajectory.timeRange = CMTimeRange(start: CMTime(seconds: 2), end: CMTime(seconds: 30))
+//            let trajectory = VCMovementTrajectory()
+//            trajectory.id = "imageTrack"
+//            trajectory.timeRange = CMTimeRange(start: CMTime(seconds: 2), end: CMTime(seconds: 30))
 //            videoDescription.trajectories.append(trajectory)
         }
         
@@ -184,7 +190,9 @@ class ViewController: UIViewController {
         case .Swirl:
             transition = VCSwirlTransition()
         case .Vortex:
-            transition = VCVortexTransition()
+            let v = VCVortexTransition()
+            v.type = .single
+            transition = v
         case .Wave:
             transition = VCWaveTransition()
         case .Wipe:
@@ -368,7 +376,7 @@ class ViewController: UIViewController {
         nf.minimumIntegerDigits = 1
         timelabel.text = nf.string(from: NSNumber(value: currentTime.seconds))
         
-        if CMTimeCompare(currentTime, duration) == 0 {
+        if currentTime >= duration {
             player.pause()
             playButton.isSelected = false
         }
@@ -381,6 +389,9 @@ class ViewController: UIViewController {
         } else {
             player.play()
             playButton.isSelected = true
+            player.observePlayingTime { (time: CMTime) in
+                self.timer()
+            }
         }
     }
 
