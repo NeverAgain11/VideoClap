@@ -17,7 +17,7 @@ VideoClap is available through [CocoaPods](https://cocoapods.org). To install
 it, simply add the following line to your Podfile:
 
 ```ruby
-pod 'VideoClap'
+pod 'VideoClap', :git => 'https://github.com/lai001/VideoClap.git', :commit => 'db12328faed93fbaa71bf5d449b2da3e7a68565f'
 ```
 
 ## Author
