@@ -33,6 +33,8 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
     
     public var trajectory: VCTrajectoryProtocol?
     
+    public var canvasStyle: VCCanvasStyle = .pureColor(UIColor.black)
+    
     public override init() {
         super.init()
     }
@@ -53,6 +55,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         copyObj.rotateRadian     = rotateRadian
         copyObj.cropedRect       = cropedRect
         copyObj.trajectory       = trajectory
+        copyObj.canvasStyle      = canvasStyle
         return copyObj
     }
     

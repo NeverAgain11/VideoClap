@@ -83,8 +83,9 @@ class ViewController: UIViewController {
         
         do {
             let trajectory = VCMovementTrajectory()
-            trajectory.movementRatio = 0.1
+            trajectory.movementRatio = 0.9
             let track = VCVideoTrackDescription()
+            track.canvasStyle = .image(Bundle.main.url(forResource: "test1", withExtension: "jpg", subdirectory: "Mat")!)
             track.trajectory = trajectory
             track.id = "videoTrack"
             track.timeRange = CMTimeRange(start: 5.0, duration: 5.0)
@@ -99,6 +100,7 @@ class ViewController: UIViewController {
             let trajectory = VCMovementTrajectory()
             trajectory.movementRatio = 0.1
             let track = VCImageTrackDescription()
+            track.canvasStyle = .image(Bundle.main.url(forResource: "test1", withExtension: "jpg", subdirectory: "Mat")!)
             track.trajectory = trajectory
             track.id = "imageTrack"
             track.timeRange = CMTimeRange(start: 0.0, duration: 5.0)

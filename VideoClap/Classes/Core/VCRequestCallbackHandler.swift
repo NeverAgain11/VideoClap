@@ -30,7 +30,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     
     private var compositionTime: CMTime = .zero
     
-    private var blackImage: CIImage = .init()
+    private var blackImage: CIImage = CIImage()
     
     private var instruction: VCVideoInstruction = .init()
     
@@ -142,6 +142,10 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             }
         }
         
+        if let canvasImage = canvasImage(imageTrack: mediaTrack) {
+            frame = frame.composited(over: canvasImage)
+        }
+        
         preprocessFinishedImages[id] = frame
         
     }
@@ -192,10 +196,11 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                 continue
             }
             if let fromImage = preprocessFinishedImages[transition.transition.fromId], let toImage = preprocessFinishedImages[transition.transition.toId] {
+                let overImage = blackImage
                 if let image = transition.transition.transition(renderSize: renderSize,
                                                                 progress: Float(progress),
-                                                                fromImage: fromImage.composited(over: blackImage),
-                                                                toImage: toImage.composited(over: blackImage)) {
+                                                                fromImage: fromImage.composited(over: overImage),
+                                                                toImage: toImage.composited(over: overImage)) {
                     if let transitionImage = optionalTransitionImage {
                         optionalTransitionImage = transitionImage.composited(over: image)
                     } else {
@@ -351,6 +356,49 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return compositionTextImage
     }
     
+    private func canvasImage(imageTrack: VCImageTrackDescription) -> CIImage? {
+        let renderSize = videoDescription.renderSize
+        let renderer = VCGraphicsRenderer()
+        
+        var canvasImage: CIImage?
+        
+        switch imageTrack.canvasStyle {
+        case .pureColor(let color):
+            renderer.rendererRect.size = renderSize
+            return renderer.ciImage { (context) in
+                color.setFill()
+                UIRectFill(renderer.rendererRect)
+            }
+            
+        case .image(let url):
+            canvasImage = image(url: url)
+            
+        case .trackImage(let trackID):
+            canvasImage = trackImage(trackID: trackID)
+        }
+        
+        if let canvasImage = canvasImage {
+            var transform = CGAffineTransform.identity
+            let moveFrameCenterToRenderRectOrigin = CGAffineTransform(translationX: -canvasImage.extent.midX, y: -canvasImage.extent.midY)
+            transform = transform.concatenating(moveFrameCenterToRenderRectOrigin)
+            
+
+            let extent = canvasImage.extent
+            let widthRatio = renderSize.width /  extent.width
+            let heightRatio = renderSize.height / extent.height
+            let ratio: CGFloat = max(widthRatio, heightRatio)
+            let scaleTransform = CGAffineTransform(scaleX: ratio, y: ratio)
+            transform = transform.concatenating(scaleTransform)
+            
+            let moveFrameCenterToRenderRectCenter = CGAffineTransform(translationX: renderSize.width / 2.0, y: renderSize.height / 2.0)
+            transform = transform.concatenating(moveFrameCenterToRenderRectCenter)
+            
+            return canvasImage.transformed(by: transform)
+        } else {
+            return nil
+        }
+    }
+    
     public func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
         self.item = item
         self.compositionTime = compositionTime
@@ -361,7 +409,6 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         var finalFrame: CIImage?
         
         preprocess()
-        
         
         let transionImage = processTransions()
         let laminationImage = processLamination()
