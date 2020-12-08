@@ -237,12 +237,6 @@ internal class VCVideoCompositor: NSObject {
             return mutable
         }
         
-        let fixClipTimeRanges = videoTracks.reduce([:]) { (result, trackInfo) -> [String : CMTimeRange] in
-            var mutable = result
-            mutable[trackInfo.id] = trackInfo.fixClipTimeRange
-            return mutable
-        }
-        
         var transitions: [VCTransition] = []
         
         for track in trackDescriptions {
@@ -265,8 +259,8 @@ internal class VCVideoCompositor: NSObject {
                 
                 let t: VCTransition = VCTransition(timeRange: CMTimeRange(start: start, end: end), transition: transition)
                 
-                t.fromTrackClipTimeRange = fixClipTimeRanges[fromTrack.id]
-                t.toTrackClipTimeRange = fixClipTimeRanges[toTrack.id]
+                t.fromTrackClipTimeRange = (fromTrack as? VCVideoTrackDescription)?.fixClipTimeRange
+                t.toTrackClipTimeRange = (toTrack as? VCVideoTrackDescription)?.fixClipTimeRange
                 
                 if let trajectory = fromTrack.trajectory {
                     let duration = (end - fromTrack.timeRange.start).seconds
