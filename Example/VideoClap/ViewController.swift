@@ -15,23 +15,31 @@ import SSPlayer
 
 class ViewController: UIViewController {
 
+    lazy var requestCallbackHandler: VCPreviewRequestCallbackHandler = {
+        return VCPreviewRequestCallbackHandler()
+    }()
+    
     var videoDescription: VCVideoDescription {
-        return videoClap.requestCallbackHandler.videoDescription
+        return requestCallbackHandler.videoDescription
     }
     
     lazy var videoClap: VideoClap = {
         let videoClap = VideoClap()
+        videoClap.requestCallbackHandler = requestCallbackHandler
         return videoClap
     }()
     
-    lazy var player: SSPlayer = {
-        let player = SSPlayer()
-        return player
-    }()
+    var player: SSPlayer {
+        return requestCallbackHandler.player
+    }
     
-    lazy var playerView: SSPlayerView = {
-        let playerView = SSPlayerView(frame: .zero, player: player)
-        return playerView
+    var containerView: UIView {
+        return requestCallbackHandler.containerView
+    }
+    
+    lazy var queue: DispatchQueue = {
+        let queue: DispatchQueue = DispatchQueue(label: "play", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
+        return queue
     }()
     
     lazy var slider: UISlider = {
@@ -39,7 +47,7 @@ class ViewController: UIViewController {
         slider.minimumValue = 0
         slider.maximumValue = 1
         slider.value = 0
-        slider.addTarget(self, action: #selector(durationSliderValueChanged(slider:event:)), for: .valueChanged)
+//        slider.addTarget(self, action: #selector(durationSliderValueChanged(slider:event:)), for: .valueChanged)
         let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(sliderTapped(gestureRecognizer:)))
         slider.addGestureRecognizer(tapGestureRecognizer)
         slider.addTarget(self, action: #selector(durationSliderValueChanged(slider:event:)), for: .valueChanged)
@@ -64,6 +72,8 @@ class ViewController: UIViewController {
     
     let reverseVideo = VCReverseVideo()
     
+    let ratio: CGFloat = 9.0 / 16.0
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         VideoClap.cleanExportFolder()
@@ -73,25 +83,23 @@ class ViewController: UIViewController {
         }
         NotificationCenter.default.addObserver(self, selector: #selector(transitionChange), name: TransitionNotification, object: nil)
         setupUI()
-        let ratio: CIVector = CIVector(x: 9.0, y: 12.0)
-        let size: CGFloat = 100
         videoDescription.fps = 24.0
-        videoDescription.renderSize = CGSize(width: ratio.x * size, height: ratio.y * size)
+        videoDescription.renderSize = CGSize(width: view.bounds.width * ratio, height: view.bounds.width)
         videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
         videoDescription.waterMarkImageURL = Bundle.main.url(forResource: "test3", withExtension: "jpg", subdirectory: "Mat")
         let trackBundle = videoDescription.trackBundle
         
         do {
             let trajectory = VCMovementTrajectory()
-            trajectory.movementRatio = 0.9
+            trajectory.movementRatio = 0.1
             let track = VCVideoTrackDescription()
             track.canvasStyle = .image(Bundle.main.url(forResource: "test1", withExtension: "jpg", subdirectory: "Mat")!)
             track.trajectory = trajectory
             track.id = "videoTrack"
-            track.timeRange = CMTimeRange(start: 5.0, duration: 5.0)
-            track.isFit = false
+            track.timeRange = CMTimeRange(start: 2.5, end: 10.0)
+            track.isFit = true
             track.mediaURL = Bundle.main.url(forResource: "video1", withExtension: "mp4", subdirectory: "Mat")
-            track.mediaClipTimeRange = CMTimeRange(start: 5.0, duration: 5.0)
+            track.mediaClipTimeRange = CMTimeRange(start: 15.0, duration: track.timeRange.duration.seconds)
             track.lutImageURL = Bundle.main.url(forResource: "lut_filter_27", withExtension: "jpg", subdirectory: "Mat")
             trackBundle.videoTracks.append(track)
         }
@@ -129,7 +137,7 @@ class ViewController: UIViewController {
         }
         
         do {
-            let trasition = VCBounceTransition()
+            let trasition = VCBarsSwipeTransition()
             addTransition(trasition)
         }
         
@@ -142,13 +150,16 @@ class ViewController: UIViewController {
         }
         
         do {
-            let animationSticker = VCLottieTrackDescription()
-            animationSticker.id = "animationSticker"
-            animationSticker.rect = VCRect(normalizeCenter: CGPoint(x: 0.25, y: 0.2), normalizeSize: CGSize(width: 0.35, height: 0.35))
-            animationSticker.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10))
-            animationSticker.setAnimationView("Watermelon", subdirectory: "Mat/LottieAnimations")
-            animationSticker.animationView?.frame = CGRect(origin: .zero, size: CGSize(width: 200, height: 200))
-            trackBundle.lottieTracks.append(animationSticker)
+            for index in 0..<2 {
+                let animationSticker = VCLottieTrackDescription()
+                animationSticker.id = "animationSticker\(index)"
+                let size: CGSize = CGSize(width: 0.35 / ratio, height: 0.35)
+                animationSticker.rect = VCRect(normalizeCenter: CGPoint(x: CGFloat.random(in: 0.0...1.0), y: CGFloat.random(in: 0.0...1.0)),
+                                               normalizeSize: size)
+                animationSticker.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10))
+                animationSticker.setAnimationView("Watermelon", subdirectory: "Mat/LottieAnimations")
+                trackBundle.lottieTracks.append(animationSticker)
+            }
         }
         
         do {
@@ -163,13 +174,31 @@ class ViewController: UIViewController {
             trackBundle.textTracks.append(textTrack)
         }
         
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            do {
+                self.requestCallbackHandler.stopRenderFlag = true
+                self.player.pause()
+                let track = VCImageTrackDescription()
+                track.id = "imageTrack1"
+                track.timeRange = CMTimeRange(start: 10.0, duration: 5.0)
+                track.mediaURL = Bundle.main.url(forResource: "test4", withExtension: "jpg", subdirectory: "Mat")
+                track.isFit = true
+                trackBundle.imageTracks.append(track)
+                let newPlayerItem = self.videoClap.playerItemForPlay()
+                newPlayerItem.seek(to: self.requestCallbackHandler.compositionTime, toleranceBefore: .zero, toleranceAfter: .zero) { (_) in
+                    self.player.replaceCurrentItem(with: newPlayerItem)
+                    self.requestCallbackHandler.stopRenderFlag = false
+                }
+            }
+        }
+        
 //        reverseVideo.reverse(input: Bundle.main.url(forResource: "video0", withExtension: "mp4", subdirectory: "Mat")!) { (progress: Progress) in
 //            LLog(progress.fractionCompleted)
 //        } completionCallback: { (url, error) in
 //            
 //        }
 
-//        initPlay()
+        initPlay()
 //        export(fileName: nil) { }
         
 //        allCasesExportVideo()
@@ -336,14 +365,15 @@ class ViewController: UIViewController {
             
         case .ended:
             if Scope.cacheIsPlaying {
-                player.observePlayingTime { (time: CMTime) in
+                player.observePlayingTime(queue: queue) { (time: CMTime) in
                     self.timer()
                 }
                 player.play()
             }
             
         case .moved:
-            let time = CMTime(seconds: (player.currentItem?.duration.seconds ?? 0) * Double(slider.value))
+            let duration = player.currentItem?.asset.duration ?? CMTime(seconds: 1.0)
+            let time = CMTime(seconds: duration.seconds * Double(slider.value))
             player.seekSmoothly(to: time) {
                 self.timer()
             }
@@ -375,17 +405,25 @@ class ViewController: UIViewController {
     @objc func timer() {
         let currentTime: CMTime = player.currentItem?.currentTime() ?? .zero
         let duration = player.currentItem?.duration ?? CMTime(seconds: 1.0)
-        slider.value = Float(currentTime.seconds / duration.seconds)
-        playButton.isSelected = player.isPlaying
+        let value = Float(currentTime.seconds / duration.seconds)
+        let isSelected = player.isPlaying
         let nf = NumberFormatter()
         nf.maximumFractionDigits = 2
         nf.minimumFractionDigits = 2
         nf.minimumIntegerDigits = 1
-        timelabel.text = nf.string(from: NSNumber(value: currentTime.seconds))
+        let timelabelText = nf.string(from: NSNumber(value: currentTime.seconds))! + " / " + nf.string(from: NSNumber(value: duration.seconds))!
         
         if currentTime >= duration {
             player.pause()
-            playButton.isSelected = false
+            DispatchQueue.main.async {
+                self.playButton.isSelected = false
+            }
+        }
+        
+        DispatchQueue.main.async {
+            self.timelabel.text = timelabelText
+            self.playButton.isSelected = isSelected
+            self.slider.value = value
         }
     }
     
@@ -396,7 +434,7 @@ class ViewController: UIViewController {
         } else {
             player.play()
             playButton.isSelected = true
-            player.observePlayingTime { (time: CMTime) in
+            player.observePlayingTime(queue: queue) { (time: CMTime) in
                 self.timer()
             }
         }
@@ -407,12 +445,14 @@ class ViewController: UIViewController {
 extension ViewController {
     
     func setupUI() {
-        view.addSubview(playerView)
+        view.addSubview(containerView)
         view.addSubview(slider)
         view.addSubview(playButton)
         view.addSubview(timelabel)
-        playerView.snp.makeConstraints { (make) in
-            make.edges.equalToSuperview()
+        containerView.snp.makeConstraints { (make) in
+            make.top.equalToSuperview().offset(20)
+            make.left.right.equalToSuperview()
+            make.height.equalTo(containerView.snp.width)
         }
         slider.snp.makeConstraints { (make) in
             make.height.equalTo(44)

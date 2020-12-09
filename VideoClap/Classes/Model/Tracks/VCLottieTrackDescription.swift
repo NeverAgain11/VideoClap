@@ -28,6 +28,7 @@ public class VCLottieTrackDescription: NSObject, VCTrackDescriptionProtocol {
         animationView = AnimationView()
         animationView?.contentMode = .scaleAspectFit
         animationView?.animation = animation
+        animationView?.frame = CGRect(origin: .zero, size: CGSize(width: 200, height: 200))
     }
     
     func animationFrame(handler: @escaping (_ frame: CIImage?) -> Void) {
@@ -62,6 +63,7 @@ public class VCLottieTrackDescription: NSObject, VCTrackDescriptionProtocol {
         let copyAnimationView = AnimationView()
         copyAnimationView.contentMode = self.animationView?.contentMode ?? .scaleAspectFit
         copyAnimationView.animation   = self.animationView?.animation
+        copyAnimationView.frame       = self.animationView?.frame ?? CGRect(origin: .zero, size: CGSize(width: 200, height: 200))
         
         let copyObj = VCLottieTrackDescription()
         copyObj.id                = id

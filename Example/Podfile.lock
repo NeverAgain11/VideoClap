@@ -10,6 +10,8 @@ PODS:
   - VideoClap (0.1.0):
     - lottie-ios
     - SDWebImage
+    - SnapKit
+    - SSPlayer
     - SwiftyBeaver
     - SwiftyTimer
     - VideoClap/AudioEffects (= 0.1.0)
@@ -21,61 +23,91 @@ PODS:
     - VideoClap/Protocol (= 0.1.0)
     - VideoClap/Trajectory (= 0.1.0)
     - VideoClap/Transition (= 0.1.0)
+    - VideoClap/UI (= 0.1.0)
     - VideoClap/Utilities (= 0.1.0)
   - VideoClap/AudioEffects (0.1.0):
     - lottie-ios
     - SDWebImage
+    - SnapKit
+    - SSPlayer
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Core (0.1.0):
     - lottie-ios
     - SDWebImage
+    - SnapKit
+    - SSPlayer
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/CustomFilter (0.1.0):
     - lottie-ios
     - SDWebImage
+    - SnapKit
+    - SSPlayer
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Extension (0.1.0):
     - lottie-ios
     - SDWebImage
+    - SnapKit
+    - SSPlayer
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/MetalLibs (0.1.0):
     - lottie-ios
     - SDWebImage
+    - SnapKit
+    - SSPlayer
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Model (0.1.0):
     - lottie-ios
     - SDWebImage
+    - SnapKit
+    - SSPlayer
     - SwiftyBeaver
     - SwiftyTimer
     - VideoClap/Model/Tracks (= 0.1.0)
   - VideoClap/Model/Tracks (0.1.0):
     - lottie-ios
     - SDWebImage
+    - SnapKit
+    - SSPlayer
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Protocol (0.1.0):
     - lottie-ios
     - SDWebImage
+    - SnapKit
+    - SSPlayer
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Trajectory (0.1.0):
     - lottie-ios
     - SDWebImage
+    - SnapKit
+    - SSPlayer
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Transition (0.1.0):
     - lottie-ios
     - SDWebImage
+    - SnapKit
+    - SSPlayer
+    - SwiftyBeaver
+    - SwiftyTimer
+  - VideoClap/UI (0.1.0):
+    - lottie-ios
+    - SDWebImage
+    - SnapKit
+    - SSPlayer
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Utilities (0.1.0):
     - lottie-ios
     - SDWebImage
+    - SnapKit
+    - SSPlayer
     - SwiftyBeaver
     - SwiftyTimer
 
@@ -111,7 +143,7 @@ SPEC CHECKSUMS:
   SSPlayer: 6299c67bde2d7a5f64292dccac0e6ddd45bfdd91
   SwiftyBeaver: b8239f6bfe9e1ea3303e6139abc8c24228081d84
   SwiftyTimer: 02dd6cf10cbc71cbf67cec494f6e5eb782102543
-  VideoClap: a3ecddf80f094bf585858efb8a65aeff8b4d2f6f
+  VideoClap: c864d5d51af10e4c2b393385b8b923fb2ec76b10
 
 PODFILE CHECKSUM: c6034d572cd8bb4839743dd25b88c712eac5d9d3
 

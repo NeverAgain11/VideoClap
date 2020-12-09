@@ -31,6 +31,8 @@ TODO: Add long description of the pod here.
   s.dependency 'lottie-ios'
   s.dependency 'SwiftyTimer'
   s.dependency 'SDWebImage'
+  s.dependency 'SSPlayer'
+  s.dependency 'SnapKit'
   
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
@@ -78,6 +80,10 @@ TODO: Add long description of the pod here.
   
   s.subspec 'AudioEffects' do |ss|
       ss.source_files = 'VideoClap/Classes/AudioEffects/**/*'
+  end
+  
+  s.subspec 'UI' do |ss|
+      ss.source_files = 'VideoClap/Classes/UI/**/*'
   end
   
   s.pod_target_xcconfig = {

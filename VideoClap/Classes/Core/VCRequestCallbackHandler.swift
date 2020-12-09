@@ -14,25 +14,25 @@ import CoreAudioKit
 
 open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol {
     
-    private let locker = VCLocker()
+    internal let locker = VCLocker()
     
     public var videoDescription: VCVideoDescription = VCVideoDescription()
     
-    private var imageTrackEnumor: [String : VCImageTrackDescription] = [:]
+    internal var imageTrackEnumor: [String : VCImageTrackDescription] = [:]
     
-    private var videoTrackEnumor: [String : VCVideoTrackDescription] = [:]
+    internal var videoTrackEnumor: [String : VCVideoTrackDescription] = [:]
     
-    private var audioTrackEnumor: [String : VCAudioTrackDescription] = [:]
+    internal var audioTrackEnumor: [String : VCAudioTrackDescription] = [:]
     
-    private var preprocessFinishedImages: [String:CIImage] = [:] // 预处理完的图片
+    internal var preprocessFinishedImages: [String:CIImage] = [:] // 预处理完的图片
     
-    private var item: VCRequestItem = .init()
+    internal var item: VCRequestItem = .init()
     
-    private var compositionTime: CMTime = .zero
+    public internal(set) var compositionTime: CMTime = .zero
     
-    private var blackImage: CIImage = CIImage()
+    internal var blackImage: CIImage = CIImage()
     
-    private var instruction: VCVideoInstruction = .init()
+    internal var instruction: VCVideoInstruction = .init()
     
     public func contextChanged() {
         let trackBundle = videoDescription.trackBundle
@@ -55,7 +55,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
     }
     
-    private func preprocess(image: CIImage, trackID: String) {
+    internal func preprocess(image: CIImage, trackID: String) {
         guard preprocessFinishedImages.keys.contains(trackID) == false else {
             return
         }
@@ -151,7 +151,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     }
     
     /// 预处理图片或者视频帧 ，自适应或者铺满，水平翻转，添加滤镜，轨迹
-    private func preprocess() {
+    internal func preprocess() {
         for (trackID, sourceFrame) in item.sourceFrameDic {
             preprocess(image: sourceFrame, trackID: trackID)
         }
@@ -183,7 +183,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
     }
     
-    private func processTransions() -> CIImage? {
+    internal func processTransions() -> CIImage? {
         let transitionImageIDs = Set(instruction.transitions.flatMap({ [$0.transition.fromId, $0.transition.toId] }))
         let excludeTransitionImages = transitionImageIDs.symmetricDifference(preprocessFinishedImages.map({ $0.key }))  // 没有过渡的图片ID集合
         var excludeTransitionImage: CIImage? // 没有过渡的图片合成一张图片
@@ -223,7 +223,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return optionalTransitionImage
     }
     
-    private func processLamination() -> CIImage? {
+    internal func processLamination() -> CIImage? {
         var optionalLaminationImage: CIImage? // 所有叠层合成一张图片
         let renderSize = videoDescription.renderSize
         for laminationTrack in instruction.trackBundle.laminationTracks {
@@ -241,7 +241,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return optionalLaminationImage
     }
     
-    private func processLottie() -> CIImage? {
+    internal func processLottie() -> CIImage? {
         let renderSize = videoDescription.renderSize
         
         let animationStickers = instruction.trackBundle.lottieTracks
@@ -283,7 +283,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return compositionSticker
     }
     
-    private func processWaterMark() -> CIImage? {
+    internal func processWaterMark() -> CIImage? {
         let renderSize = videoDescription.renderSize
         if let url = videoDescription.waterMarkImageURL, var waterMarkImage = watermarkImage(url: url), let waterMarkRect = videoDescription.waterMarkRect {
             let width = renderSize.width * waterMarkRect.normalizeWidth // 水印宽度，基于像素
@@ -306,7 +306,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return nil
     }
     
-    private func processText() -> CIImage? {
+    internal func processText() -> CIImage? {
         let renderSize = videoDescription.renderSize
         let textTracks = instruction.trackBundle.textTracks
         var compositionTextImage: CIImage?
@@ -356,7 +356,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return compositionTextImage
     }
     
-    private func canvasImage(imageTrack: VCImageTrackDescription) -> CIImage? {
+    internal func canvasImage(imageTrack: VCImageTrackDescription) -> CIImage? {
         let renderSize = videoDescription.renderSize
         let renderer = VCGraphicsRenderer()
         
@@ -482,7 +482,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     }
 
     // 校正视频方向
-    private func correctingTransform(image: CIImage, prefferdTransform optionalPrefferdTransform: CGAffineTransform?) -> CIImage {
+    internal func correctingTransform(image: CIImage, prefferdTransform optionalPrefferdTransform: CGAffineTransform?) -> CIImage {
         if var prefferdTransform = optionalPrefferdTransform {
             let extent = image.extent
             let transform = CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: extent.origin.y * 2 + extent.height)
@@ -493,19 +493,19 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
     }
     
-    private func lutImage(url: URL) -> CIImage? {
+    internal func lutImage(url: URL) -> CIImage? {
         return image(url: url)
     }
     
-    private func laminationImage(url: URL) -> CIImage? {
+    internal func laminationImage(url: URL) -> CIImage? {
         return image(url: url)
     }
     
-    private func watermarkImage(url: URL) -> CIImage? {
+    internal func watermarkImage(url: URL) -> CIImage? {
         return image(url: url)
     }
     
-    private func image(url: URL) -> CIImage? {
+    internal func image(url: URL) -> CIImage? {
         if let cacheImage = VCImageCache.share.image(forKey: url.path) {
             return cacheImage
         } else {
