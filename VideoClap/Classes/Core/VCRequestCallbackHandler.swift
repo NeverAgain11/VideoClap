@@ -14,6 +14,16 @@ import CoreAudioKit
 
 open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol {
     
+    internal lazy var ciContext: CIContext = {
+        if let gpu = MTLCreateSystemDefaultDevice() {
+            return CIContext(mtlDevice: gpu)
+        }
+        if let eaglContext = EAGLContext(api: .openGLES3) ?? EAGLContext(api: .openGLES2) {
+            return CIContext(eaglContext: eaglContext)
+        }
+        return CIContext()
+    }()
+    
     internal let locker = VCLocker()
     
     public var videoDescription: VCVideoDescription = VCVideoDescription()
@@ -63,6 +73,17 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         let trajectory: VCTrajectoryProtocol? = mediaTrack.trajectory
         let renderSize = videoDescription.renderSize
         var frame = image
+        
+//        do { // down sample
+//            let maxLength = max(frame.extent.width, frame.extent.height)
+//            let minLength = min(renderSize.width, renderSize.height)
+//            let ratio = minLength / maxLength
+//            frame = frame.transformed(by: CGAffineTransform(scaleX: ratio, y: ratio))
+//            if let cgImage = ciContext.createCGImage(frame, from: CGRect(origin: .zero, size: frame.extent.size)) {
+//                frame = CIImage(cgImage: cgImage)
+//            }
+//        }
+        
         let id = mediaTrack.id
         let isFit = mediaTrack.isFit
         let isFilp = mediaTrack.isFlipHorizontal
@@ -157,7 +178,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
         
         for imageTrack in instruction.trackBundle.imageTracks {
-            if let image = trackImage(trackID: imageTrack.id) {
+            if let image = trackImage(trackID: imageTrack.id, size: videoDescription.renderSize) {
                 preprocess(image: image, trackID: imageTrack.id)
             }
         }
@@ -371,10 +392,12 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             }
             
         case .image(let url):
-            canvasImage = image(url: url)
+            canvasImage = image(url: url, size: downsampleSize(url: url))
             
         case .trackImage(let trackID):
-            canvasImage = trackImage(trackID: trackID)
+            if let url = imageTrackEnumor[trackID]?.mediaURL, let scaleSize = downsampleSize(url: url) {
+                canvasImage = trackImage(trackID: trackID, size: scaleSize)
+            }
         }
         
         if let canvasImage = canvasImage {
@@ -493,25 +516,57 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
     }
     
+    internal func downsampleSize(url: URL) -> CGSize? {
+        guard let imageSize = UIImage(contentsOfFile: url.path)?.size else { return nil }
+        let renderSize = videoDescription.renderSize
+        let scaleSize = renderSize.applying(.init(scaleX: UIScreen.main.scale, y: UIScreen.main.scale))
+        if max(scaleSize.width, scaleSize.height) > max(imageSize.width, imageSize.height) {
+            return nil
+        } else {
+            return scaleSize
+        }
+    }
+    
     internal func lutImage(url: URL) -> CIImage? {
-        return image(url: url)
+        return image(url: url, size: nil)
     }
     
     internal func laminationImage(url: URL) -> CIImage? {
-        return image(url: url)
+        return image(url: url, size: downsampleSize(url: url))
     }
     
     internal func watermarkImage(url: URL) -> CIImage? {
-        return image(url: url)
+        return image(url: url, size: downsampleSize(url: url))
     }
     
-    internal func image(url: URL) -> CIImage? {
-        if let cacheImage = VCImageCache.share.image(forKey: url.path) {
+    /// 获取指定路径图片
+    /// - Parameters:
+    ///   - url: <#url description#>
+    ///   - size: 图片的大小，不应该过大，否则可能会导致内存溢出。当size为nil，会将全尺寸的图片存在内存当中，当size不为nil，会根据size的大小，图片按比例缩放后存在内存当中
+    /// - Returns: <#description#>
+    internal func image(url: URL, size: CGSize?) -> CIImage? {
+        let sizeIdentifier: String
+        if let size = size {
+            sizeIdentifier = "_size_" + size.debugDescription
+        } else {
+            sizeIdentifier = "_fullsize_"
+        }
+        let key = url.path + sizeIdentifier
+        if let cacheImage = VCImageCache.share.image(forKey: key) {
             return cacheImage
         } else {
-            let image = CIImage(contentsOf: url)
-            VCImageCache.share.storeImage(toMemory: image, forKey: url.path)
-            return image
+            var optionalImage = CIImage(contentsOf: url)
+            if let size = size, var frame = optionalImage {
+                let maxLength = max(frame.extent.width, frame.extent.height)
+                let minLength = min(size.width, size.height)
+                let ratio = minLength / maxLength
+                frame = frame.transformed(by: CGAffineTransform(scaleX: ratio, y: ratio))
+                if let cgImage = ciContext.createCGImage(frame, from: CGRect(origin: .zero, size: frame.extent.size)) {
+                    optionalImage = CIImage(cgImage: cgImage)
+                }
+            }
+            VCImageCache.share.storeImage(toMemory: optionalImage, forKey: key)
+            return optionalImage
         }
     }
     
@@ -519,14 +574,14 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
 
 public extension VCRequestCallbackHandler {
     
-    public func trackImage(trackID: String) -> CIImage? {
+    public func trackImage(trackID: String, size: CGSize) -> CIImage? {
         locker.object(forKey: #function).lock()
         defer {
             locker.object(forKey: #function).unlock()
         }
         if let imageTrack = imageTrackEnumor[trackID] {
             if let url = imageTrack.mediaURL {
-                return image(url: url)
+                return image(url: url, size: size)
             }
         }
         return nil

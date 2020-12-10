@@ -93,7 +93,7 @@ class ViewController: UIViewController {
             let trajectory = VCMovementTrajectory()
             trajectory.movementRatio = 0.1
             let track = VCVideoTrackDescription()
-            track.canvasStyle = .image(Bundle.main.url(forResource: "test1", withExtension: "jpg", subdirectory: "Mat")!)
+            track.canvasStyle = .image(Bundle.main.url(forResource: "Giraffe_Clipart_Image.PNG", withExtension: nil, subdirectory: "Mat")!)
             track.trajectory = trajectory
             track.id = "videoTrack"
             track.timeRange = CMTimeRange(start: 2.5, end: 10.0)
@@ -108,12 +108,12 @@ class ViewController: UIViewController {
             let trajectory = VCMovementTrajectory()
             trajectory.movementRatio = 0.1
             let track = VCImageTrackDescription()
-            track.canvasStyle = .image(Bundle.main.url(forResource: "test1", withExtension: "jpg", subdirectory: "Mat")!)
+            track.canvasStyle = .image(Bundle.main.url(forResource: "New-York-City-At-Night-8K.JPG", withExtension: nil, subdirectory: "Mat")!)
             track.trajectory = trajectory
             track.id = "imageTrack"
             track.timeRange = CMTimeRange(start: 0.0, duration: 5.0)
             
-            track.mediaURL = Bundle.main.url(forResource: "test4", withExtension: "jpg", subdirectory: "Mat")
+            track.mediaURL = Bundle.main.url(forResource: "watch-dogs-2-12000x8000-season-pass-hd-4k-8k-3105.JPG", withExtension: nil, subdirectory: "Mat")
             track.isFit = true
 //            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
             trackBundle.imageTracks.append(track)
@@ -137,7 +137,7 @@ class ViewController: UIViewController {
         }
         
         do {
-            let trasition = VCBarsSwipeTransition()
+            let trasition = VCCubeTransition()
             addTransition(trasition)
         }
         
@@ -176,7 +176,10 @@ class ViewController: UIViewController {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             do {
+                self.player.removePlayingTimeObserver()
                 self.requestCallbackHandler.stopRenderFlag = true
+                self.player.currentItem?.cancelPendingSeeks()
+                self.player.cancelPendingPrerolls()
                 self.player.pause()
                 let track = VCImageTrackDescription()
                 track.id = "imageTrack1"
@@ -185,9 +188,14 @@ class ViewController: UIViewController {
                 track.isFit = true
                 trackBundle.imageTracks.append(track)
                 let newPlayerItem = self.videoClap.playerItemForPlay()
-                newPlayerItem.seek(to: self.requestCallbackHandler.compositionTime, toleranceBefore: .zero, toleranceAfter: .zero) { (_) in
+                let seekTime = self.requestCallbackHandler.compositionTime
+                newPlayerItem.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] (_) in
+                    guard let self = self else { return }
                     self.player.replaceCurrentItem(with: newPlayerItem)
                     self.requestCallbackHandler.stopRenderFlag = false
+                    self.player.observePlayingTime(queue: self.queue) { (_) in
+                        self.timer()
+                    }
                 }
             }
         }
@@ -445,6 +453,7 @@ class ViewController: UIViewController {
 extension ViewController {
     
     func setupUI() {
+        view.backgroundColor = .white
         view.addSubview(containerView)
         view.addSubview(slider)
         view.addSubview(playButton)

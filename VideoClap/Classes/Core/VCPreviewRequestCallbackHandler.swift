@@ -11,17 +11,7 @@ import Lottie
 import SnapKit
 
 open class VCPreviewRequestCallbackHandler: VCRequestCallbackHandler {
-    
-    private lazy var ciContext: CIContext = {
-        if let gpu = MTLCreateSystemDefaultDevice() {
-            return CIContext(mtlDevice: gpu)
-        }
-        if let eaglContext = EAGLContext(api: .openGLES3) ?? EAGLContext(api: .openGLES2) {
-            return CIContext(eaglContext: eaglContext)
-        }
-        return CIContext()
-    }()
-    
+
     internal var lottieTrackEnumor: [String : VCLottieTrackDescription] = [:]
     
     public lazy var player: SSPlayer = {
@@ -41,6 +31,12 @@ open class VCPreviewRequestCallbackHandler: VCRequestCallbackHandler {
         return view
     }()
     
+    lazy var laminationImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleToFill
+        return imageView
+    }()
+    
 //    public lazy var playerView: SSPlayerView = {
 //        let playerView = SSPlayerView(frame: .zero, player: player)
 //        playerView.clipsToBounds = true
@@ -49,6 +45,7 @@ open class VCPreviewRequestCallbackHandler: VCRequestCallbackHandler {
     
     public lazy var containerView: UIView = {
         let view = UIView()
+        view.backgroundColor = .lightGray
         return view
     }()
     
@@ -87,6 +84,11 @@ open class VCPreviewRequestCallbackHandler: VCRequestCallbackHandler {
             }
         }
         
+        renderView.addSubview(laminationImageView)
+        
+        laminationImageView.snp.remakeConstraints { (make) in
+            make.edges.equalToSuperview()
+        }
     }
     
     public override func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
@@ -105,7 +107,7 @@ open class VCPreviewRequestCallbackHandler: VCRequestCallbackHandler {
         preprocess()
         
         let transionImage = processTransions()
-//        let laminationImage = processLamination()
+        let laminationImage = processLamination()
 //        let lottieImage = processLottie()
 //        let textImage = processText()
         
@@ -137,6 +139,18 @@ open class VCPreviewRequestCallbackHandler: VCRequestCallbackHandler {
             let cgImage = ciContext.createCGImage(ciImage, from: CGRect(origin: .zero, size: self.videoDescription.renderSize))
             DispatchQueue.main.async {
                 self.renderView.layer.contents = cgImage
+            }
+        }
+        
+        if let laminationImage = laminationImage {
+            let image = UIImage(ciImage: laminationImage)
+            DispatchQueue.main.async {
+                self.laminationImageView.isHidden = false
+                self.laminationImageView.image = image
+            }
+        } else {
+            DispatchQueue.main.async {
+                self.laminationImageView.isHidden = true
             }
         }
 
