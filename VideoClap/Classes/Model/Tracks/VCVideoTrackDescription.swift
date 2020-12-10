@@ -13,6 +13,16 @@ public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescr
     
     public var mediaClipTimeRange: CMTimeRange = .zero
     
+    internal var naturalSize: CGSize? {
+        if let mediaURL = mediaURL {
+            let asset = AVAsset(url: mediaURL)
+            if asset.isPlayable && asset.tracks(withMediaType: .video).isEmpty == false {
+                return asset.tracks.first?.naturalSize
+            }
+        }
+        return nil
+    }
+    
     public override init() {
         super.init()
     }

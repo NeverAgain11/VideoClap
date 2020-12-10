@@ -98,7 +98,7 @@ class ViewController: UIViewController {
             track.id = "videoTrack"
             track.timeRange = CMTimeRange(start: 2.5, end: 10.0)
             track.isFit = true
-            track.mediaURL = Bundle.main.url(forResource: "video1", withExtension: "mp4", subdirectory: "Mat")
+            track.mediaURL = Bundle.main.url(forResource: "video0.mp4", withExtension: nil, subdirectory: "Mat")
             track.mediaClipTimeRange = CMTimeRange(start: 15.0, duration: track.timeRange.duration.seconds)
             track.lutImageURL = Bundle.main.url(forResource: "lut_filter_27", withExtension: "jpg", subdirectory: "Mat")
             trackBundle.videoTracks.append(track)

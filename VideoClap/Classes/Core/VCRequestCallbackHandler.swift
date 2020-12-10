@@ -74,15 +74,22 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         let renderSize = videoDescription.renderSize
         var frame = image
         
-//        do { // down sample
-//            let maxLength = max(frame.extent.width, frame.extent.height)
-//            let minLength = min(renderSize.width, renderSize.height)
-//            let ratio = minLength / maxLength
-//            frame = frame.transformed(by: CGAffineTransform(scaleX: ratio, y: ratio))
-//            if let cgImage = ciContext.createCGImage(frame, from: CGRect(origin: .zero, size: frame.extent.size)) {
-//                frame = CIImage(cgImage: cgImage)
-//            }
-//        }
+        do { // 对视频帧降采样
+            if let naturalSize = videoTrackEnumor[trackID]?.naturalSize {
+                let scaleSize = renderSize.applying(.init(scaleX: UIScreen.main.scale, y: UIScreen.main.scale))
+                if max(scaleSize.width, scaleSize.height) > max(naturalSize.width, naturalSize.height) {
+                    
+                } else {
+                    let maxLength = max(frame.extent.width, frame.extent.height)
+                    let minLength = min(scaleSize.width, scaleSize.height)
+                    let ratio = minLength / maxLength
+                    frame = frame.transformed(by: CGAffineTransform(scaleX: ratio, y: ratio))
+                    if let cgImage = ciContext.createCGImage(frame, from: CGRect(origin: .zero, size: frame.extent.size)) {
+                        frame = CIImage(cgImage: cgImage)
+                    }
+                }
+            }
+        }
         
         let id = mediaTrack.id
         let isFit = mediaTrack.isFit
