@@ -29,17 +29,19 @@ public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescr
     
     public override func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCVideoTrackDescription()
-        copyObj.mediaURL            = mediaURL
-        copyObj.id                  = id
-        copyObj.timeRange           = timeRange
-        copyObj.isFit               = isFit
-        copyObj.isFlipHorizontal    = isFlipHorizontal
-        copyObj.filterIntensity     = filterIntensity
-        copyObj.lutImageURL         = lutImageURL
-        copyObj.rotateRadian        = rotateRadian
-        copyObj.cropedRect          = cropedRect
-        copyObj.prefferdTransform   = prefferdTransform
-        copyObj.mediaClipTimeRange  = mediaClipTimeRange
+        copyObj.mediaURL           = mediaURL
+        copyObj.id                 = id
+        copyObj.timeRange          = timeRange
+        copyObj.isFit              = isFit
+        copyObj.isFlipHorizontal   = isFlipHorizontal
+        copyObj.filterIntensity    = filterIntensity
+        copyObj.lutImageURL        = lutImageURL
+        copyObj.rotateRadian       = rotateRadian
+        copyObj.cropedRect         = cropedRect
+        copyObj.trajectory         = trajectory
+        copyObj.canvasStyle        = canvasStyle
+        copyObj.associationInfo    = associationInfo
+        copyObj.mediaClipTimeRange = mediaClipTimeRange
         return copyObj
     }
     

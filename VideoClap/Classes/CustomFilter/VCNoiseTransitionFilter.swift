@@ -2,7 +2,7 @@
 //  VCNoiseTransitionFilter.swift
 //  VideoClap
 //
-//  Created by laimincong on 2020/11/12.
+//  Created by lai001 on 2020/11/12.
 //
 
 import Foundation

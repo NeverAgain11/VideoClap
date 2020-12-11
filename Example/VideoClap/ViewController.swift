@@ -13,6 +13,10 @@ import Photos
 import VideoClap
 import SSPlayer
 
+class NavigationController: UINavigationController {
+    
+}
+
 class ViewController: UIViewController {
 
     lazy var requestCallbackHandler: VCPreviewRequestCallbackHandler = {
@@ -68,6 +72,11 @@ class ViewController: UIViewController {
         button.setImage(UIImage(color: .red, size: CGSize(width: 44, height: 44)), for: .selected)
         button.addTarget(self, action: #selector(playButtonDidTap), for: .touchUpInside)
         return button
+    }()
+    
+    lazy var exportButton: UIBarButtonItem = {
+        let item = UIBarButtonItem(title: "导出", style: .plain, target: self, action: #selector(exportButtonDidTap))
+        return item
     }()
     
     let reverseVideo = VCReverseVideo()
@@ -449,18 +458,47 @@ class ViewController: UIViewController {
         }
     }
 
+    @objc func exportButtonDidTap(_ sender: UIBarButtonItem) {
+        player.pause()
+        playButton.isSelected = false
+        let videoClap = VideoClap()
+        videoClap.videoDescription = self.videoDescription.mutableCopy() as! VCVideoDescription
+        let scale = CGFloat(videoClap.videoDescription.renderScale)
+        videoClap.videoDescription.renderSize = videoClap.videoDescription.renderSize.applying(.init(scaleX: scale, y: scale))
+        videoClap.videoDescription.renderScale = 1.0
+        videoClap.exportToVideo { (progress) in
+            LLog(progress.fractionCompleted)
+        } completionHandler: { (url, error) in
+            if let url = url {
+                PHPhotoLibrary.shared().performChanges {
+                    PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+                } completionHandler: { _, _ in
+                    
+                }
+            } else if let error = error {
+                LLog(error)
+            }
+        }
+    }
+    
 }
 
 extension ViewController {
     
+    func setupNavBar() {
+        navigationItem.rightBarButtonItem = exportButton
+    }
+    
     func setupUI() {
+        setupNavBar()
+        edgesForExtendedLayout = []
         view.backgroundColor = .white
         view.addSubview(containerView)
         view.addSubview(slider)
         view.addSubview(playButton)
         view.addSubview(timelabel)
         containerView.snp.makeConstraints { (make) in
-            make.top.equalToSuperview().offset(20)
+            make.top.equalToSuperview().offset(2)
             make.left.right.equalToSuperview()
             make.height.equalTo(containerView.snp.width)
         }

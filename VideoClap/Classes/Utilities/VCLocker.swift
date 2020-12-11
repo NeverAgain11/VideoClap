@@ -2,7 +2,7 @@
 //  VCLocker.swift
 //  VideoClap
 //
-//  Created by laimincong on 2020/11/23.
+//  Created by lai001 on 2020/11/23.
 //
 
 import Foundation

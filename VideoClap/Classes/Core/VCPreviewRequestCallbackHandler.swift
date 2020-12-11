@@ -2,7 +2,7 @@
 //  VCPreviewRequestCallbackHandler.swift
 //  VideoClap
 //
-//  Created by laimincong on 2020/12/7.
+//  Created by lai001 on 2020/12/7.
 //
 
 import AVFoundation

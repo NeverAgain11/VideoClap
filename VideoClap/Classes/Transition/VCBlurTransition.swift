@@ -2,7 +2,7 @@
 //  VCBlurTransition.swift
 //  VideoClap
 //
-//  Created by 赖敏聪 on 2020/10/29.
+//  Created by lai001 on 2020/10/29.
 //
 
 import Foundation

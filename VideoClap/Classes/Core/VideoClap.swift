@@ -35,7 +35,12 @@ open class VideoClap: NSObject {
     public var requestCallbackHandler: VCRequestCallbackHandler = VCRequestCallbackHandler()
     
     public var videoDescription: VCVideoDescription {
-        return requestCallbackHandler.videoDescription
+        get {
+            return requestCallbackHandler.videoDescription
+        }
+        set {
+            requestCallbackHandler.videoDescription = newValue
+        }
     }
     
     deinit {

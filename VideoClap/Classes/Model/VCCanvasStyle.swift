@@ -2,7 +2,7 @@
 //  VCCanvasStyle.swift
 //  VideoClap
 //
-//  Created by laimincong on 2020/12/4.
+//  Created by lai001 on 2020/12/4.
 //
 
 import AVFoundation

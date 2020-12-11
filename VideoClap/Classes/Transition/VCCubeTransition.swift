@@ -2,7 +2,7 @@
 //  VCCubeTransition.swift
 //  VideoClap
 //
-//  Created by laimincong on 2020/11/11.
+//  Created by lai001 on 2020/11/11.
 //
 
 import AVFoundation

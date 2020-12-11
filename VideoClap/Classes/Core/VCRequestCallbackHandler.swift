@@ -87,7 +87,6 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                     frame = frame.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
                     if let cgImage = ciContext.createCGImage(frame, from: CGRect(origin: .zero, size: frame.extent.size)) {
                         frame = CIImage(cgImage: cgImage)
-                        log.debug(frame.extent)
                     }
                 }
             }
@@ -409,6 +408,8 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             if let url = imageTrackEnumor[trackID]?.mediaURL, let scaleSize = downsampleSize(url: url) {
                 canvasImage = trackImage(trackID: trackID, size: scaleSize)
             }
+        case .none:
+            return nil
         }
         
         if let canvasImage = canvasImage {

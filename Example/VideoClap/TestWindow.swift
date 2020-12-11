@@ -2,8 +2,8 @@
 //  TestWindow.swift
 //  CopyData
 //
-//  Created by 赖敏聪 on 2020/9/4.
-//  Copyright © 2020 赖敏聪. All rights reserved.
+//  Created by lai001 on 2020/9/4.
+//  Copyright © 2020 lai001. All rights reserved.
 //
 
 import UIKit

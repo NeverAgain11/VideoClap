@@ -33,7 +33,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
     
     public var trajectory: VCTrajectoryProtocol?
     
-    public var canvasStyle: VCCanvasStyle = .pureColor(UIColor.black)
+    public var canvasStyle: VCCanvasStyle?
     
     public override init() {
         super.init()

@@ -2,7 +2,7 @@
 //  Util.swift
 //  VideoClap_Example
 //
-//  Created by laimincong on 2020/11/3.
+//  Created by lai001 on 2020/11/3.
 //  Copyright © 2020 CocoaPods. All rights reserved.
 //
 

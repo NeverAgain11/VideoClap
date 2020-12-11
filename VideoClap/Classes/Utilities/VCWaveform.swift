@@ -2,7 +2,7 @@
 //  VCWaveform.swift
 //  VideoClap
 //
-//  Created by laimincong on 2020/12/8.
+//  Created by lai001 on 2020/12/8.
 //
 
 import AVFoundation
