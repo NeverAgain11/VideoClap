@@ -96,14 +96,14 @@ class ViewController: UIViewController {
         videoDescription.renderScale = Float(UIScreen.main.scale)
         videoDescription.renderSize = CGSize(width: view.bounds.width * ratio, height: view.bounds.width)
         videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
-        videoDescription.waterMarkImageURL = Bundle.main.url(forResource: "test3", withExtension: "jpg", subdirectory: "Mat")
+        videoDescription.waterMarkImageURL = Bundle.main.url(forResource: "test3.jpg", withExtension: nil, subdirectory: "Mat")
         let trackBundle = videoDescription.trackBundle
         
         do {
             let trajectory = VCMovementTrajectory()
             trajectory.movementRatio = 0.1
             let track = VCVideoTrackDescription()
-            track.canvasStyle = .image(Bundle.main.url(forResource: "Giraffe_Clipart_Image.PNG", withExtension: nil, subdirectory: "Mat")!)
+            track.canvasStyle = .image(Bundle.main.url(forResource: "test1.jpg", withExtension: nil, subdirectory: "Mat")!)
             track.trajectory = trajectory
             track.id = "videoTrack"
             track.timeRange = CMTimeRange(start: 2.5, end: 10.0)
@@ -118,12 +118,12 @@ class ViewController: UIViewController {
             let trajectory = VCMovementTrajectory()
             trajectory.movementRatio = 0.1
             let track = VCImageTrackDescription()
-            track.canvasStyle = .image(Bundle.main.url(forResource: "New-York-City-At-Night-8K.JPG", withExtension: nil, subdirectory: "Mat")!)
+            track.canvasStyle = .image(Bundle.main.url(forResource: "test4.jpg", withExtension: nil, subdirectory: "Mat")!)
             track.trajectory = trajectory
             track.id = "imageTrack"
             track.timeRange = CMTimeRange(start: 0.0, duration: 5.0)
             
-            track.mediaURL = Bundle.main.url(forResource: "watch-dogs-2-12000x8000-season-pass-hd-4k-8k-3105.JPG", withExtension: nil, subdirectory: "Mat")
+            track.mediaURL = Bundle.main.url(forResource: "test3.jpg", withExtension: nil, subdirectory: "Mat")
             track.isFit = true
 //            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
             trackBundle.imageTracks.append(track)

@@ -21,14 +21,14 @@ public class VCLottieTrackDescription: NSObject, VCTrackDescriptionProtocol {
     
     public var animationPlayTime: CMTime = .zero
     
-    public var animationView: AnimationView?
+    internal var animationView: AnimationView?
     
     public func setAnimationView(_ name: String, subdirectory: String) {
         let animation = Animation.named(name, subdirectory: subdirectory)
         animationView = AnimationView()
         animationView?.contentMode = .scaleAspectFit
         animationView?.animation = animation
-        animationView?.frame = CGRect(origin: .zero, size: CGSize(width: 200, height: 200))
+        animationView?.frame = CGRect(origin: .zero, size: CGSize(width: 100, height: 100))
     }
     
     func animationFrame(handler: @escaping (_ frame: CIImage?) -> Void) {
@@ -37,7 +37,12 @@ public class VCLottieTrackDescription: NSObject, VCTrackDescriptionProtocol {
                 handler(nil)
                 return
             }
-            animationView.currentProgress = CGFloat(self.animationPlayTime.seconds.truncatingRemainder(dividingBy: animation.duration)).map(from: 0...CGFloat(animation.duration), to: 0...1)
+            let progress = CGFloat(self.animationPlayTime.seconds.truncatingRemainder(dividingBy: animation.duration)).map(from: 0...CGFloat(animation.duration), to: 0...1)
+            if progress.isNaN && progress.isInfinite {
+                handler(nil)
+                return
+            }
+            animationView.currentProgress = progress
             let bounds = animationView.layer.bounds
             let snapshotLayer = animationView.layer
             DispatchQueue.global().async {
@@ -60,18 +65,20 @@ public class VCLottieTrackDescription: NSObject, VCTrackDescriptionProtocol {
     }
     
     public func mutableCopy(with zone: NSZone? = nil) -> Any {
-        let copyAnimationView = AnimationView()
-        copyAnimationView.contentMode = self.animationView?.contentMode ?? .scaleAspectFit
-        copyAnimationView.animation   = self.animationView?.animation
-        copyAnimationView.frame       = self.animationView?.frame ?? CGRect(origin: .zero, size: CGSize(width: 200, height: 200))
-        
         let copyObj = VCLottieTrackDescription()
         copyObj.id                = id
         copyObj.rect              = rect
         copyObj.rotateRadian      = rotateRadian
         copyObj.timeRange         = timeRange
         copyObj.animationPlayTime = animationPlayTime
-        copyObj.animationView     = copyAnimationView
+        
+        if let animationView = animationView {
+            let copyAnimationView = AnimationView()
+            copyAnimationView.contentMode = animationView.contentMode
+            copyAnimationView.animation   = animationView.animation
+            copyAnimationView.frame       = animationView.frame
+            copyObj.animationView         = copyAnimationView
+        }
         return copyObj
     }
     

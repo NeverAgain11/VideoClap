@@ -37,12 +37,6 @@ open class VCPreviewRequestCallbackHandler: VCRequestCallbackHandler {
         return imageView
     }()
     
-//    public lazy var playerView: SSPlayerView = {
-//        let playerView = SSPlayerView(frame: .zero, player: player)
-//        playerView.clipsToBounds = true
-//        return playerView
-//    }()
-    
     public lazy var containerView: UIView = {
         let view = UIView()
         view.backgroundColor = .lightGray
@@ -62,6 +56,10 @@ open class VCPreviewRequestCallbackHandler: VCRequestCallbackHandler {
         let trackBundle = videoDescription.trackBundle
         lottieTrackEnumor = trackBundle.lottieTracks.reduce([:]) { (result, track) in
             var mutable = result
+            if let animationView = track.animationView {
+                let scle = CGFloat(videoDescription.renderScale)
+                animationView.frame.size = CGSize(width: 100, height: 100).applying(.init(scaleX: scle, y: scle))
+            }
             mutable[track.id] = track
             return mutable
         }
@@ -74,13 +72,15 @@ open class VCPreviewRequestCallbackHandler: VCRequestCallbackHandler {
         }
         
         do {
-            lottiePreviewDic.forEach({ $0.value.removeFromSuperview() })
-            lottiePreviewDic = [:]
             for lottieTrack in trackBundle.lottieTracks {
-                let preview = VCLottiePreview()
-                renderView.addSubview(preview)
-                preview.setup(lottieTrack: lottieTrack, renderSize: videoDescription.renderSize)
-                lottiePreviewDic[lottieTrack.id] = preview
+                if let _ = lottiePreviewDic[lottieTrack.id] {
+                    
+                } else {
+                    let preview = VCLottiePreview()
+                    renderView.addSubview(preview)
+                    preview.setup(lottieTrack: lottieTrack, renderSize: videoDescription.renderSize)
+                    lottiePreviewDic[lottieTrack.id] = preview
+                }
             }
         }
         
@@ -112,16 +112,19 @@ open class VCPreviewRequestCallbackHandler: VCRequestCallbackHandler {
 //        let textImage = processText()
         
         for (id, lottiePreview) in lottiePreviewDic {
-            DispatchQueue.main.async {
-                if let track = item.instruction.trackBundle.lottieTracks.first(where: { $0.id == id }),
-                   let view = track.animationView,
-                   let animation = view.animation
-                {
-                    let animationPlayTime = compositionTime - track.timeRange.start
-                    let progress = CGFloat(animationPlayTime.seconds.truncatingRemainder(dividingBy: animation.duration)).map(from: 0...CGFloat(animation.duration), to: 0...1)
-                    view.currentProgress = progress
-                    lottiePreview.isHidden = false
-                } else {
+            if let track = item.instruction.trackBundle.lottieTracks.first(where: { $0.id == id }) {
+                let animationPlayTime = compositionTime - track.timeRange.start
+                track.animationPlayTime = animationPlayTime
+                track.animationFrame { (image: CIImage?) in
+                    if let image = image {
+                        DispatchQueue.main.async {
+                            lottiePreview.imageView.image = UIImage(ciImage: image)
+                            lottiePreview.isHidden = false
+                        }
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
                     lottiePreview.isHidden = true
                 }
             }
