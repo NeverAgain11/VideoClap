@@ -84,6 +84,7 @@ class ViewController: UIViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(transitionChange), name: TransitionNotification, object: nil)
         setupUI()
         videoDescription.fps = 24.0
+        videoDescription.renderScale = Float(UIScreen.main.scale)
         videoDescription.renderSize = CGSize(width: view.bounds.width * ratio, height: view.bounds.width)
         videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
         videoDescription.waterMarkImageURL = Bundle.main.url(forResource: "test3", withExtension: "jpg", subdirectory: "Mat")

@@ -76,16 +76,18 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         
         do { // 对视频帧降采样
             if let naturalSize = videoTrackEnumor[trackID]?.naturalSize {
-                let scaleSize = renderSize.applying(.init(scaleX: UIScreen.main.scale, y: UIScreen.main.scale))
+                let scale: CGFloat = CGFloat(videoDescription.renderScale)
+                let scaleSize = renderSize.applying(.init(scaleX: scale, y: scale))
                 if max(scaleSize.width, scaleSize.height) > max(naturalSize.width, naturalSize.height) {
                     
                 } else {
-                    let maxLength = max(frame.extent.width, frame.extent.height)
-                    let minLength = min(scaleSize.width, scaleSize.height)
-                    let ratio = minLength / maxLength
-                    frame = frame.transformed(by: CGAffineTransform(scaleX: ratio, y: ratio))
+                    let widthRatio: CGFloat = scaleSize.width / frame.extent.width
+                    let heightRatio: CGFloat = scaleSize.height / frame.extent.height
+                    let scale = widthRatio < 1.0 ? widthRatio : heightRatio
+                    frame = frame.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
                     if let cgImage = ciContext.createCGImage(frame, from: CGRect(origin: .zero, size: frame.extent.size)) {
                         frame = CIImage(cgImage: cgImage)
+                        log.debug(frame.extent)
                     }
                 }
             }
@@ -185,8 +187,10 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
         
         for imageTrack in instruction.trackBundle.imageTracks {
-            if let image = trackImage(trackID: imageTrack.id, size: videoDescription.renderSize) {
-                preprocess(image: image, trackID: imageTrack.id)
+            if let url = imageTrack.mediaURL, let scaleSize = downsampleSize(url: url) {
+                if let image = trackImage(trackID: imageTrack.id, size: scaleSize) {
+                    preprocess(image: image, trackID: imageTrack.id)
+                }
             }
         }
         
@@ -526,9 +530,10 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     internal func downsampleSize(url: URL) -> CGSize? {
         guard let imageSize = UIImage(contentsOfFile: url.path)?.size else { return nil }
         let renderSize = videoDescription.renderSize
-        let scaleSize = renderSize.applying(.init(scaleX: UIScreen.main.scale, y: UIScreen.main.scale))
+        let scale: CGFloat = CGFloat(videoDescription.renderScale)
+        let scaleSize = renderSize.applying(.init(scaleX: scale, y: scale))
         if max(scaleSize.width, scaleSize.height) > max(imageSize.width, imageSize.height) {
-            return nil
+            return imageSize
         } else {
             return scaleSize
         }
@@ -564,10 +569,10 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         } else {
             var optionalImage = CIImage(contentsOf: url)
             if let size = size, var frame = optionalImage {
-                let maxLength = max(frame.extent.width, frame.extent.height)
-                let minLength = min(size.width, size.height)
-                let ratio = minLength / maxLength
-                frame = frame.transformed(by: CGAffineTransform(scaleX: ratio, y: ratio))
+                let widthRatio: CGFloat = size.width / frame.extent.width
+                let heightRatio: CGFloat = size.height / frame.extent.height
+                let scale = widthRatio < 1.0 ? widthRatio : heightRatio
+                frame = frame.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
                 if let cgImage = ciContext.createCGImage(frame, from: CGRect(origin: .zero, size: frame.extent.size)) {
                     optionalImage = CIImage(cgImage: cgImage)
                 }
