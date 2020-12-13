@@ -10,6 +10,7 @@
 		2BFFF2E8C52CD256CBC889BD /* Pods_VideoClap_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F37C55F6C6452329825B51C3 /* Pods_VideoClap_Example.framework */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
 		607FACD81AFB9204008FA782 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD71AFB9204008FA782 /* ViewController.swift */; };
+		8A0D4E172585E2A100C08E7D /* TestTimeScaleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A0D4E162585E2A100C08E7D /* TestTimeScaleView.swift */; };
 		8A138D692554D55B0088ECA8 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 8A138D5C2554D55B0088ECA8 /* LaunchScreen.xib */; };
 		8A138D6A2554D55B0088ECA8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8A138D5E2554D55B0088ECA8 /* Main.storyboard */; };
 		8A138D6D2554D55B0088ECA8 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A138D622554D55B0088ECA8 /* Images.xcassets */; };
@@ -26,6 +27,7 @@
 		607FACD71AFB9204008FA782 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		63582D203B7662CDBC3A8E75 /* Pods-VideoClap_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VideoClap_Example.debug.xcconfig"; path = "Target Support Files/Pods-VideoClap_Example/Pods-VideoClap_Example.debug.xcconfig"; sourceTree = "<group>"; };
 		715BDF5ABDB427DCF1B874B9 /* VideoClap.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = VideoClap.podspec; path = ../VideoClap.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		8A0D4E162585E2A100C08E7D /* TestTimeScaleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestTimeScaleView.swift; sourceTree = "<group>"; };
 		8A138D5D2554D55B0088ECA8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
 		8A138D5F2554D55B0088ECA8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		8A138D622554D55B0088ECA8 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
@@ -74,6 +76,7 @@
 				8A138D582554D55B0088ECA8 /* Resources */,
 				607FACD51AFB9204008FA782 /* AppDelegate.swift */,
 				607FACD71AFB9204008FA782 /* ViewController.swift */,
+				8A0D4E162585E2A100C08E7D /* TestTimeScaleView.swift */,
 				8AC6948F2551606A00CD1D6D /* TestWindow.swift */,
 				8A8CE53A255176E0002E935C /* Util.swift */,
 			);
@@ -256,6 +259,7 @@
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
 				8AC694902551606A00CD1D6D /* TestWindow.swift in Sources */,
+				8A0D4E172585E2A100C08E7D /* TestTimeScaleView.swift in Sources */,
 				8A8CE53B255176E0002E935C /* Util.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

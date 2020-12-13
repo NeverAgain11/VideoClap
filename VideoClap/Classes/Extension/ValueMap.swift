@@ -13,6 +13,11 @@ extension CGFloat {
         let result = ((self - from.lowerBound) / (from.upperBound - from.lowerBound)) * (to.upperBound - to.lowerBound) + to.lowerBound
         return result
     }
+    
+    func map(from: Range<CGFloat>, to: ClosedRange<CGFloat>) -> CGFloat {
+        let result = ((self - from.lowerBound) / (from.upperBound - from.lowerBound)) * (to.upperBound - to.lowerBound) + to.lowerBound
+        return result
+    }
 
 }
 
