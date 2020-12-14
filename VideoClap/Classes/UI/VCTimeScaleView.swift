@@ -9,16 +9,6 @@ import Foundation
 import AVFoundation
 import SnapKit
 
-func format0(time: CMTime) -> String {
-    let formatter = NumberFormatter()
-    formatter.numberStyle = .none
-    formatter.minimumIntegerDigits = 2
-    let minute = formatter.string(from: NSNumber(value: Int(time.seconds) / 60)) ?? "00"
-    let second = formatter.string(from: NSNumber(value: Int(time.seconds) % 60)) ?? "00"
-    let timeStr = "\(minute):\(second)"
-    return timeStr
-}
-
 public class VCTimeScaleCell: UICollectionViewCell {
     
     private(set) lazy var dotLabel: UILabel = {
@@ -57,33 +47,29 @@ public class VCTimeScaleCell: UICollectionViewCell {
 }
 
 public class VCTimeScaleView: UICollectionView {
-   
-    let timeBase: CMTimeScale = 600
+    
+    public let timeBase: CMTimeScale = 600
     
     let viewLayout: UICollectionViewFlowLayout = {
         let layout = UICollectionViewFlowLayout()
-        layout.minimumLineSpacing = 1
-        layout.minimumInteritemSpacing = 1
+        layout.minimumLineSpacing = 0
+        layout.minimumInteritemSpacing = 0
         layout.scrollDirection = .horizontal
         return layout
     }()
-    
-    lazy var scale: CGFloat = 1
-    
-    lazy var duration: CMTime = CMTime(value: CMTimeValue(timeBase * 75), timescale: timeBase)
     
     internal lazy var pinchGR: UIPinchGestureRecognizer = {
         let pinchGR = UIPinchGestureRecognizer(target: self, action: #selector(pinchGRHandler(_:)))
         return pinchGR
     }()
     
-    lazy var storeScales: [CGFloat] = []
+    internal lazy var storeScales: [CGFloat] = []
     
-    var cellWidth: CGFloat = 0.0
+    internal var cellWidth: CGFloat = 0.0
     
-    var baseValue: CMTimeValue = 40
+    internal var baseValue: CMTimeValue = 40
     
-    var datasourceCount = 0
+    internal var datasourceCount = 0
     
     let range0: Range<CGFloat> = 1..<10
     let range1: Range<CGFloat> = 10..<20
@@ -95,18 +81,22 @@ public class VCTimeScaleView: UICollectionView {
     let range7: Range<CGFloat> = 200..<300
     let range8: ClosedRange<CGFloat> = 300...600
     
-    lazy var label: UILabel = {
-        let label = UILabel()
-        label.text = "00:00"
-        label.sizeToFit()
-        return label
+    public internal(set) lazy var currentTime: CMTime = CMTime(value: 0, timescale: timeBase)
+    
+    public internal(set) lazy var scale: CGFloat = 1
+    
+    public internal(set) lazy var duration: CMTime = CMTime(value: 0, timescale: timeBase)
+    
+    internal var isPinching: Bool = false
+    
+    internal lazy var formatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .none
+        formatter.minimumIntegerDigits = 2
+        return formatter
     }()
     
-    lazy var currentTime: CMTime = CMTime(value: 0, timescale: timeBase)
-    
-    var isPinching: Bool = false
-    
-    convenience init() {
+    public convenience init() {
         self.init(frame: .zero)
     }
     
@@ -124,16 +114,16 @@ public class VCTimeScaleView: UICollectionView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func commitInit() {
-        register(VCTimeScaleCell.self, forCellWithReuseIdentifier: VCTimeScaleCell.description())
+    internal func commitInit() {
+        isDirectionalLockEnabled = true
+        showsHorizontalScrollIndicator = false
+        register(VCTimeScaleCell.self, forCellWithReuseIdentifier: "VCTimeScaleCell")
         delegate = self
         dataSource = self
         addGestureRecognizer(pinchGR)
-        makeDataSource()
-        self.reloadData()
     }
     
-    func makeDataSource() {
+    internal func makeDataSource() {
         let widthPerTimeValue: CGFloat
         
         switch scale {
@@ -186,7 +176,7 @@ public class VCTimeScaleView: UICollectionView {
     }
     
     @objc internal func pinchGRHandler(_ sender: UIPinchGestureRecognizer) {
-        let n = 1
+        let n = 2
         switch sender.state {
         case .began:
             isPinching = true
@@ -195,17 +185,17 @@ public class VCTimeScaleView: UICollectionView {
         case .changed:
 //            storeScales.append(2.0 - sender.scale)
             storeScales.append(sender.scale)
-            NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(delayChanged), object: nil)
+            NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(delayChange), object: nil)
             if storeScales.count % n == 0 {
-                delayChanged()
+                delayChange()
             } else {
-                perform(#selector(delayChanged), with: nil, afterDelay: 0.03)
+                perform(#selector(delayChange), with: nil, afterDelay: 0.03)
             }
             sender.scale = 1.0
             
         case .ended:
             if storeScales.count % n != 0 {
-                delayChanged()
+                delayChange()
             }
             isPinching = false
             
@@ -214,7 +204,7 @@ public class VCTimeScaleView: UICollectionView {
         }
     }
     
-    @objc func delayChanged() {
+    @objc internal func delayChange() {
         let storeScale = storeScales.reduce(1.0) { (result, scale) in
             return result * scale
         }
@@ -222,21 +212,54 @@ public class VCTimeScaleView: UICollectionView {
         setScale(scale * storeScale)
     }
     
-    func setScale(_ v: CGFloat) {
+    public func setScale(_ v: CGFloat) {
         scale = min(600, max(1 , v))
         makeDataSource()
+        if datasourceCount == 0 {
+            return
+        }
         
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        CATransaction.setCompletionBlock {
-            let percentage = self.currentTime.seconds / self.duration.seconds
-            
-            self.contentOffset.x = CGFloat(percentage) * (self.contentSize.width - self.label.bounds.width / 2.0) - self.contentInset.left
+        let contentWidth: CGFloat = cellWidth * CGFloat(datasourceCount)
+        contentSize.width = contentWidth
+        let percentage = currentTime.seconds / duration.seconds
+        let offsetX = CGFloat(percentage) * (contentSize.width) - contentInset.left
+        setContentOffset(CGPoint(x: offsetX, y: 0), animated: false)
+        
+        reloadData()
+    }
+    
+    public func setTime(currentTime: CMTime, duration: CMTime) {
+        if currentTime.isValid == false || duration.isValid == false {
+            return
         }
-        UIView.performWithoutAnimation {
-            self.reloadData()
+        self.duration = max(duration, .zero)
+        self.currentTime = min(max(.zero, currentTime), self.duration)
+        setScale(scale)
+    }
+    
+    public func setTime(currentTime: CMTime) {
+        if currentTime.isValid == false {
+            return
         }
-        CATransaction.commit()
+        self.currentTime = min(max(.zero, currentTime), self.duration)
+        let percentage = self.currentTime.seconds / duration.seconds
+        let offsetX = CGFloat(percentage) * (contentSize.width) - contentInset.left
+        setContentOffset(CGPoint(x: offsetX, y: 0), animated: false)
+    }
+    
+    public func setTime(duration: CMTime) {
+        if duration.isValid == false {
+            return
+        }
+        self.duration = max(duration, .zero)
+        setScale(scale)
+    }
+    
+    internal func format(time: CMTime) -> String {
+        let minute = formatter.string(from: NSNumber(value: Int(time.seconds) / 60)) ?? "00"
+        let second = formatter.string(from: NSNumber(value: Int(time.seconds) % 60)) ?? "00"
+        let timeStr = "\(minute):\(second)"
+        return timeStr
     }
     
 }
@@ -244,17 +267,17 @@ public class VCTimeScaleView: UICollectionView {
 extension VCTimeScaleView: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        contentInset.left = collectionView.bounds.width / 2.0 - label.bounds.width / 2.0
-        contentInset.right = collectionView.bounds.width / 2.0
+        contentInset.left = collectionView.bounds.width / 2.0
+        contentInset.right = contentInset.left
         return datasourceCount
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: VCTimeScaleCell.description(), for: indexPath) as! VCTimeScaleCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "VCTimeScaleCell", for: indexPath) as! VCTimeScaleCell
         let time = CMTime(value: baseValue * Int64(indexPath.item), timescale: timeBase)
         
         if time.value % 600 == 0 {
-            cell.keyTimeLabel.text = format0(time: time)
+            cell.keyTimeLabel.text = format(time: time)
         } else {
             let seconds = time.value / 600
             let remaind = time.value - seconds * 600
@@ -272,8 +295,8 @@ extension VCTimeScaleView: UICollectionViewDataSource, UICollectionViewDelegateF
         if scrollView.contentSize.width.isZero || isPinching {
             return
         }
-        let percentage = (scrollView.contentOffset.x + self.contentInset.left) / (scrollView.contentSize.width - label.bounds.width / 2.0)
-        currentTime = CMTime(seconds: Double(percentage) * duration.seconds, preferredTimescale: 600)
+        let percentage = (scrollView.contentOffset.x + self.contentInset.left) / (scrollView.contentSize.width)
+        currentTime = CMTime(seconds: Double(percentage) * duration.seconds, preferredTimescale: timeBase)
         currentTime = min(max(.zero, currentTime), duration)
     }
     
