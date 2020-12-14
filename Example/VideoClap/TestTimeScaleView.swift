@@ -12,8 +12,8 @@ import AVFoundation
 
 class TestTimeScaleView: UIViewController {
     
-    lazy var timeScaleView: VCTimeScaleView = {
-        let view = VCTimeScaleView()
+    lazy var timeScaleView: VCTimeScaleScrollView = {
+        let view = VCTimeScaleScrollView()
         view.backgroundColor = UIColor.lightGray
         return view
     }()
@@ -32,7 +32,7 @@ class TestTimeScaleView: UIViewController {
         view.layoutIfNeeded()
         timeScaleView.setScale(59.9)
         
-        timeScaleView.setTime(currentTime: .zero, duration: CMTime(seconds: 3600 * 2, preferredTimescale: 600))
+        timeScaleView.setTime(currentTime: .zero, duration: CMTime(seconds: 1000000000000, preferredTimescale: 600))
         
         var start: CMTime = .zero
         
