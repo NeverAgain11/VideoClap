@@ -9,9 +9,15 @@ import AVFoundation
 
 public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescriptionProtocol {
     
+    public var sourceTimeRange: CMTimeRange = .zero
+    
     public var associationInfo: MediaTrackAssociationInfo = .init()
     
     public var mediaClipTimeRange: CMTimeRange = .zero
+    
+    public var speed: Float {
+        return Float(sourceTimeRange.duration.seconds / timeRange.duration.seconds)
+    }
     
     internal var naturalSize: CGSize? {
         if let mediaURL = mediaURL {
@@ -31,6 +37,7 @@ public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescr
         let copyObj = VCVideoTrackDescription()
         copyObj.mediaURL           = mediaURL
         copyObj.id                 = id
+        copyObj.sourceTimeRange    = sourceTimeRange
         copyObj.timeRange          = timeRange
         copyObj.isFit              = isFit
         copyObj.isFlipHorizontal   = isFlipHorizontal
@@ -41,7 +48,6 @@ public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescr
         copyObj.trajectory         = trajectory
         copyObj.canvasStyle        = canvasStyle
         copyObj.associationInfo    = associationInfo
-        copyObj.mediaClipTimeRange = mediaClipTimeRange
         return copyObj
     }
     

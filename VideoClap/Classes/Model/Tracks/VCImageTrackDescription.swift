@@ -7,7 +7,31 @@
 
 import AVFoundation
 
-public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
+protocol VCImagePros: NSObject, NSCopying, NSMutableCopying {
+    
+    var prefferdTransform: CGAffineTransform? { get set }
+    
+    var isFit: Bool { get set }
+    
+    var isFlipHorizontal: Bool { get set }
+    
+    var filterIntensity: NSNumber { get set }
+    
+    var lutImageURL: URL? { get set }
+    
+    /// 顺时针，弧度制，1.57顺时针旋转90度，3.14顺时针旋转180度
+    var rotateRadian: CGFloat { get set }
+    
+    /// 归一化下裁剪区域，范围（0~1）
+    var cropedRect: CGRect? { get set }
+    
+    var trajectory: VCTrajectoryProtocol? { get set }
+    
+    var canvasStyle: VCCanvasStyle? { get set }
+    
+}
+
+public class VCImageTrackDescription: NSObject, VCImagePros, VCTrackDescriptionProtocol {
     
     public var mediaURL: URL? = nil
     

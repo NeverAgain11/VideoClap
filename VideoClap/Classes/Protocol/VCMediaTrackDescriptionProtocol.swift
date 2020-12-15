@@ -7,15 +7,11 @@
 
 import AVFoundation
 
-public protocol VCMediaTrackDescriptionProtocol: VCTrackDescriptionProtocol {
-    
-    var id: String { get set }
-    
-    var timeRange: CMTimeRange { get set }
-    
-    var mediaClipTimeRange: CMTimeRange { get set }
+public protocol VCMediaTrackDescriptionProtocol: VCScaleTrackDescriptionProtocol {
     
     var mediaURL: URL? { get set }
+    
+    var speed: Float { get }
     
     var associationInfo: MediaTrackAssociationInfo { get set }
 }
@@ -24,8 +20,7 @@ public class MediaTrackAssociationInfo: NSObject {
     
     internal var persistentTrackID: CMPersistentTrackID = kCMPersistentTrackID_Invalid
     internal var compositionTrack: AVMutableCompositionTrack?
-    internal var fixClipTimeRange: CMTimeRange = .zero
-    
+
     internal override init() {
         super.init()
     }
@@ -40,9 +35,5 @@ internal extension VCMediaTrackDescriptionProtocol {
     internal var compositionTrack: AVMutableCompositionTrack? {
         get { return associationInfo.compositionTrack }
         set { associationInfo.compositionTrack = newValue }
-    }
-    internal var fixClipTimeRange: CMTimeRange {
-        get { return associationInfo.fixClipTimeRange }
-        set { associationInfo.fixClipTimeRange = newValue }
     }
 }

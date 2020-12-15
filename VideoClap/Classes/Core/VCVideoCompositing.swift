@@ -20,10 +20,10 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
                                           _ blackImage: CIImage,
                                           _ finish: (CIImage?) -> Void) -> Void
     
-    internal let sourcePixelBufferAttributes: [String : Any]? = [String(kCVPixelBufferPixelFormatTypeKey): kCVPixelFormatType_420YpCbCr8BiPlanarFullRange,
+    internal let sourcePixelBufferAttributes: [String : Any]? = [String(kCVPixelBufferPixelFormatTypeKey): kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
                                                                  String(kCVPixelBufferOpenGLESCompatibilityKey): true]
     
-    internal let requiredPixelBufferAttributesForRenderContext: [String : Any] = [String(kCVPixelBufferPixelFormatTypeKey): kCVPixelFormatType_420YpCbCr8BiPlanarFullRange,
+    internal let requiredPixelBufferAttributesForRenderContext: [String : Any] = [String(kCVPixelBufferPixelFormatTypeKey): kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
                                                                                   String(kCVPixelBufferOpenGLESCompatibilityKey): true]
     
     private let colorSpace = CGColorSpaceCreateDeviceRGB()

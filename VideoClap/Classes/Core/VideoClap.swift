@@ -14,7 +14,7 @@ import SwiftyTimer
 internal let log: SwiftyBeaver.Type = {
     #if DEBUG
     let console = ConsoleDestination()
-//    console.asynchronously = false
+    console.asynchronously = false
     console.format = "$C$L$c $n[$l] > $F: \(Thread.current) $T\n$M"
     SwiftyBeaver.addDestination(console)
     #endif
@@ -113,9 +113,10 @@ open class VideoClap: NSObject {
             session.outputURL = exportVideoURL
             session.audioMix = playerItem.audioMix
             session.outputFileType = .mov
-            session.shouldOptimizeForNetworkUse = false
+//            session.shouldOptimizeForNetworkUse = false
             session.videoComposition = playerItem.videoComposition
-            session.timeRange = CMTimeRange(start: CMTime.zero, duration: playerItem.duration)
+            session.timeRange = CMTimeRange(start: 7, end: 10)
+//            session.timeRange = CMTimeRange(start: CMTime.zero, duration: playerItem.duration)
             
             let den: Int64 = 100
             let progress = Progress(totalUnitCount: den)
@@ -165,8 +166,9 @@ open class VideoClap: NSObject {
     }
     
     public func estimateVideoDuration() -> CMTime {
-        let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler)
-        return videoCompositor.estimateVideoDuration()
+        return playerItemForPlay().asset.duration
+//        let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler)
+//        return videoCompositor.estimateVideoDuration()
     }
     
     public static func cleanExportFolder() {

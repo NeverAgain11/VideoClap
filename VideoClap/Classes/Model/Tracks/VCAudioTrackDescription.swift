@@ -7,7 +7,15 @@
 
 import AVFoundation
 
-public class VCAudioTrackDescription: NSObject, VCTrackDescriptionProtocol, VCMediaTrackDescriptionProtocol {
+public class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol {
+    
+    public var sourceTimeRange: CMTimeRange = .zero
+    
+    public var timeRange: CMTimeRange = .zero
+    
+    public var speed: Float {
+        return Float(sourceTimeRange.duration.seconds / timeRange.duration.seconds)
+    }
     
     public var associationInfo: MediaTrackAssociationInfo = .init()
     
@@ -15,13 +23,9 @@ public class VCAudioTrackDescription: NSObject, VCTrackDescriptionProtocol, VCMe
     
     public var prefferdTransform: CGAffineTransform? = nil
     
-    public var mediaClipTimeRange: CMTimeRange = .zero
-    
     public var mediaURL: URL? = nil
     
     public var id: String = ""
-    
-    public var timeRange: CMTimeRange = .zero
     
     public var audioEffectProvider: VCAudioEffectProviderProtocol?
     
@@ -39,9 +43,9 @@ public class VCAudioTrackDescription: NSObject, VCTrackDescriptionProtocol, VCMe
         copyObj.id                          = id
         copyObj.timeRange                   = timeRange
         copyObj.prefferdTransform           = prefferdTransform
-        copyObj.mediaClipTimeRange          = mediaClipTimeRange
         copyObj.audioVolumeRampDescriptions = audioVolumeRampDescriptions
         copyObj.audioEffectProvider         = audioEffectProvider
+        copyObj.sourceTimeRange             = sourceTimeRange
         return copyObj
     }
     

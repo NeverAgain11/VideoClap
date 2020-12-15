@@ -21,13 +21,11 @@ open class VCTrackBundle: NSObject, NSCopying, NSMutableCopying {
     
     public var textTracks: [VCTextTrackDescription] = []
     
-    internal func allTracks() -> [VCTrackDescriptionProtocol] {
+    internal func otherTracks() -> [VCTrackDescriptionProtocol] {
         var tracks: [VCTrackDescriptionProtocol] = []
         tracks.append(contentsOf: imageTracks)
-        tracks.append(contentsOf: videoTracks)
         tracks.append(contentsOf: lottieTracks)
         tracks.append(contentsOf: laminationTracks)
-        tracks.append(contentsOf: audioTracks)
         tracks.append(contentsOf: textTracks)
         return tracks
     }

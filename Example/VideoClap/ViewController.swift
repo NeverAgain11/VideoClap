@@ -106,11 +106,33 @@ class ViewController: UIViewController {
             track.canvasStyle = .image(Bundle.main.url(forResource: "test1.jpg", withExtension: nil, subdirectory: "Mat")!)
             track.trajectory = trajectory
             track.id = "videoTrack"
-            track.timeRange = CMTimeRange(start: 2.5, end: 10.0)
+//            track.speed = 5.0
+            let source = CMTimeRange(start: 5.0, end: 100)
+            let target = CMTimeRange(start: 5.0, end: 6.0)
+            track.timeMapping = CMTimeMapping(source: source, target: target)
+
             track.isFit = true
             track.mediaURL = Bundle.main.url(forResource: "video0.mp4", withExtension: nil, subdirectory: "Mat")
-            track.mediaClipTimeRange = CMTimeRange(start: 15.0, duration: track.timeRange.duration.seconds)
+//            track.mediaClipTimeRange = CMTimeRange(start: 15.0, duration: track.timeRange.duration.seconds)
             track.lutImageURL = Bundle.main.url(forResource: "lut_filter_27", withExtension: "jpg", subdirectory: "Mat")
+            trackBundle.videoTracks.append(track)
+        }
+        
+        do {
+//            let trajectory = VCMovementTrajectory()
+//            trajectory.movementRatio = 0.1
+            let track = VCVideoTrackDescription()
+//            track.canvasStyle = .image(Bundle.main.url(forResource: "test1.jpg", withExtension: nil, subdirectory: "Mat")!)
+//            track.trajectory = trajectory
+            track.id = "videoTrack1"
+            let source = CMTimeRange(start: 5.0, end: 100)
+            let target = CMTimeRange(start: 6, end: 10.0)
+            track.timeMapping = CMTimeMapping(source: source, target: target)
+
+            track.isFit = true
+            track.mediaURL = Bundle.main.url(forResource: "video0.mp4", withExtension: nil, subdirectory: "Mat")
+//            track.mediaClipTimeRange = CMTimeRange(start: 15.0, duration: track.timeRange.duration.seconds)
+//            track.lutImageURL = Bundle.main.url(forResource: "lut_filter_27", withExtension: "jpg", subdirectory: "Mat")
             trackBundle.videoTracks.append(track)
         }
         
@@ -132,10 +154,11 @@ class ViewController: UIViewController {
         do {
             let track = VCAudioTrackDescription()
             track.id = "audioTrack"
-            track.timeRange = CMTimeRange(start: 0.0, duration: 10)
+            let timeRange = CMTimeRange(start: 0.0, duration: 6)
+            track.timeMapping = CMTimeMapping(source: timeRange, target: timeRange)
             track.mediaURL = Bundle.main.url(forResource: "02.Ellis - Clear My Head (Radio Edit) [NCS]", withExtension: "mp3", subdirectory: "Mat")
             
-            track.mediaClipTimeRange = CMTimeRange(start: 0.0, duration: 3 * 60 + 37)
+//            track.mediaClipTimeRange = CMTimeRange(start: 0.0, duration: 3 * 60 + 37)
             if #available(iOS 11.0, *) {
 //                track.audioEffectProvider = VCGhostAudioEffectProvider()
             }
@@ -185,6 +208,7 @@ class ViewController: UIViewController {
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            return
             do {
                 self.player.removePlayingTimeObserver()
                 self.requestCallbackHandler.stopRenderFlag = true
@@ -473,7 +497,7 @@ class ViewController: UIViewController {
                 PHPhotoLibrary.shared().performChanges {
                     PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
                 } completionHandler: { _, _ in
-                    
+                    LLog("finish ")
                 }
             } else if let error = error {
                 LLog(error)

@@ -7,7 +7,7 @@
 
 import AVFoundation
 
-public struct VCRequestItem {
+public class VCRequestItem {
     var sourceFrameDic: [String : CIImage] = [:]
     
     var instruction: VCVideoInstruction = .init()

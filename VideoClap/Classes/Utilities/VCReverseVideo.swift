@@ -140,7 +140,8 @@ public class VCReverseVideo: NSObject {
         
         let videoTrackDes = VCVideoTrackDescription()
         videoTrackDes.id = "reverse"
-        videoTrackDes.timeRange = CMTimeRange(start: .zero, duration: asset.duration)
+        let timeRange = CMTimeRange(start: .zero, duration: asset.duration)
+        videoTrackDes.timeMapping = CMTimeMapping(source: timeRange, target: timeRange)
         
         videoClap.videoDescription.trackBundle.videoTracks.append(videoTrackDes)
         

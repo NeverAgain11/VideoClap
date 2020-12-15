@@ -143,6 +143,10 @@ open class VCPreviewRequestCallbackHandler: VCRequestCallbackHandler {
             DispatchQueue.main.async {
                 self.renderView.layer.contents = cgImage
             }
+        } else {
+            DispatchQueue.main.async {
+                self.renderView.layer.contents = nil
+            }
         }
         
         if let laminationImage = laminationImage {

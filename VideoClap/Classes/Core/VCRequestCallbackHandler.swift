@@ -46,23 +46,9 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     
     public func contextChanged() {
         let trackBundle = videoDescription.trackBundle
-        imageTrackEnumor = trackBundle.imageTracks.reduce([:]) { (result, imageTrack) -> [String : VCImageTrackDescription] in
-            var mutable = result
-            mutable[imageTrack.id] = imageTrack
-            return mutable
-        }
-        
-        videoTrackEnumor = trackBundle.videoTracks.reduce([:]) { (result, imageTrack) -> [String : VCVideoTrackDescription] in
-            var mutable = result
-            mutable[imageTrack.id] = imageTrack
-            return mutable
-        }
-        
-        audioTrackEnumor = trackBundle.audioTracks.reduce([:]) { (result, imageTrack) -> [String : VCAudioTrackDescription] in
-            var mutable = result
-            mutable[imageTrack.id] = imageTrack
-            return mutable
-        }
+        imageTrackEnumor = trackBundle.imageTracks.dic()
+        videoTrackEnumor = trackBundle.videoTracks.dic()
+        audioTrackEnumor = trackBundle.audioTracks.dic()
     }
     
     internal func preprocess(image: CIImage, trackID: String) {

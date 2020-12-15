@@ -7,10 +7,36 @@
 
 import AVFoundation
 
-public protocol VCTrackDescriptionProtocol: NSCopying, NSMutableCopying {
+public protocol Identifiable {
     
     var id: String { get set }
     
+}
+
+public protocol VCTrackDescriptionProtocol: NSCopying, NSMutableCopying, Identifiable {
+    
     var timeRange: CMTimeRange { get set }
+    
+}
+
+public protocol VCScaleTrackDescriptionProtocol: VCTrackDescriptionProtocol {
+    
+    var sourceTimeRange: CMTimeRange { get set }
+    
+    var timeMapping: CMTimeMapping { get set }
+    
+}
+
+extension VCScaleTrackDescriptionProtocol {
+    
+    public var timeMapping: CMTimeMapping {
+        get {
+            return CMTimeMapping(source: sourceTimeRange, target: timeRange)
+        }
+        set {
+            sourceTimeRange = newValue.source
+            timeRange = newValue.target
+        }
+    }
     
 }
