@@ -21,7 +21,7 @@ internal class VCVideoInstruction: NSObject, AVVideoCompositionInstructionProtoc
     
     var passthroughTrackID: CMPersistentTrackID = kCMPersistentTrackID_Invalid
     
-    var videoProcessProtocol: VCVideoProcessProtocol?
+    weak var videoProcessProtocol: VCVideoProcessProtocol?
     
     var trackBundle: VCTrackBundle = VCTrackBundle()
     
