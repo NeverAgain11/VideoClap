@@ -97,6 +97,7 @@ internal class VCVideoCompositor: NSObject {
         let newPlayerItem = AVPlayerItem(asset: composition)
         newPlayerItem.audioMix = audioMix
         newPlayerItem.videoComposition = videoComposition
+        newPlayerItem.audioTimePitchAlgorithm = .spectral
         return newPlayerItem
     }
     
