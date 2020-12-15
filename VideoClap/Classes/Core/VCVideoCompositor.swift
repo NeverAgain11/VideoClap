@@ -169,7 +169,8 @@ internal class VCVideoCompositor: NSObject {
                     if let bestVideoTrack = asset.tracks(withMediaType: mediaType).first, let assetDuration = bestVideoTrack.asset?.duration {
                         
                         if let compositionTrack = composition.track(withTrackID: persistentTrackID) {
-                            let existTimeRanges = compositionTrack.segments.filter({ $0.isEmpty == false }).map({ $0.timeMapping.target })
+//                            let existTimeRanges = compositionTrack.segments.filter({ $0.isEmpty == false }).map({ $0.timeMapping.target })
+                            let existTimeRanges = compositionTrack.segments.filter({ $0.isEmpty == false }).map({ $0.timeMapping.source })
                             if self.canInsertTimeRange(mediaTrack.timeRange, atExistingTimeRanges: existTimeRanges) {
                                 
                             } else {
@@ -187,8 +188,8 @@ internal class VCVideoCompositor: NSObject {
                                 mediaTrack.timeMapping.source = CMTimeRange(start: fixStart, end: fixEnd)
                                 
                                 try compositionTrack.insertTimeRange(mediaTrack.timeMapping.source, of: bestVideoTrack, at: mediaTrack.timeMapping.target.start)
-                                compositionTrack.scaleTimeRange(mediaTrack.timeMapping.source, toDuration: mediaTrack.timeMapping.target.duration)
-                                
+                                let scaledTimeRange: CMTimeRange = CMTimeRange(start: mediaTrack.timeMapping.target.start, duration: mediaTrack.timeMapping.source.duration)
+                                compositionTrack.scaleTimeRange(scaledTimeRange, toDuration: mediaTrack.timeMapping.target.duration)
                                 mediaTrack.persistentTrackID = persistentTrackID
                                 mediaTrack.compositionTrack = compositionTrack
                                 if var trackInfos = existTrackInfoDic[persistentTrackID] {
@@ -408,9 +409,9 @@ internal class VCVideoCompositor: NSObject {
 //            print(instruction.requiredSourceTrackIDsDic.map({ ($0.key, $0.value.id) }))
 //
 //            print("transitions info: ", instruction.transitions.map({ ($0.transition.fromId, $0.transition.toId) }))
-//            
+//
 //            print("trajectories info: ", instruction.trajectories, instruction.trajectories.map({ ($0.timeRange, $0.id) }))
-//            
+//
 //            print("---------------- **** --------------------\n")
 //        }
         

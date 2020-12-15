@@ -154,15 +154,16 @@ class ViewController: UIViewController {
         do {
             let track = VCAudioTrackDescription()
             track.id = "audioTrack"
-            let timeRange = CMTimeRange(start: 0.0, duration: 6)
-            track.timeMapping = CMTimeMapping(source: timeRange, target: timeRange)
+            let source = CMTimeRange(start: 5.0, duration: 40)
+            let target = CMTimeRange(start: 0, end: 10.0)
+            track.timeMapping = CMTimeMapping(source: source, target: target)
             track.mediaURL = Bundle.main.url(forResource: "02.Ellis - Clear My Head (Radio Edit) [NCS]", withExtension: "mp3", subdirectory: "Mat")
             
 //            track.mediaClipTimeRange = CMTimeRange(start: 0.0, duration: 3 * 60 + 37)
             if #available(iOS 11.0, *) {
 //                track.audioEffectProvider = VCGhostAudioEffectProvider()
             }
-            let desc = VCAudioVolumeRampDescription(startVolume: 0.7,
+            let desc = VCAudioVolumeRampDescription(startVolume: 0.0,
                                                     endVolume: 1.0,
                                                     timeRange: CMTimeRange(start: 0.0, duration: 10.0))
             track.audioVolumeRampDescriptions = [desc]

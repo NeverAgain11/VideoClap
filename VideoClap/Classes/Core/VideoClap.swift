@@ -115,7 +115,7 @@ open class VideoClap: NSObject {
             session.outputFileType = .mov
 //            session.shouldOptimizeForNetworkUse = false
             session.videoComposition = playerItem.videoComposition
-            session.timeRange = CMTimeRange(start: 7, end: 10)
+//            session.timeRange = CMTimeRange(start: 7, end: 10)
 //            session.timeRange = CMTimeRange(start: CMTime.zero, duration: playerItem.duration)
             
             let den: Int64 = 100
