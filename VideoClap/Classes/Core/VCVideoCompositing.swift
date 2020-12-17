@@ -52,17 +52,17 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
             videoCompositionRequest.finish(with: VCVideoCompositingError.internalError)
             return
         }
-        var item = VCRequestItem()
-        item.instruction = instruction
-        
-        for (persistentTrackID, videoTrackDescription) in instruction.requiredSourceTrackIDsDic {
-            if let sourceFrame = videoCompositionRequest.sourceFrame(byTrackID: persistentTrackID) {
-                let sourceImage = CIImage(cvPixelBuffer: sourceFrame)
-                item.sourceFrameDic[videoTrackDescription.id] = sourceImage
-            }
-        }
         
         if let videoProcessProtocol = instruction.videoProcessProtocol {
+            let item = VCRequestItem()
+            item.instruction = instruction
+            
+            for (persistentTrackID, videoTrackDescription) in instruction.requiredSourceTrackIDsDic {
+                if let sourceFrame = videoCompositionRequest.sourceFrame(byTrackID: persistentTrackID) {
+                    let sourceImage = CIImage(cvPixelBuffer: sourceFrame)
+                    item.sourceFrameDic[videoTrackDescription.id] = sourceImage
+                }
+            }
             videoProcessProtocol.handle(item: item,
                                         compositionTime: videoCompositionRequest.compositionTime,
                                         blackImage: blackImage) { (optionalImage: CIImage?) in
