@@ -12,16 +12,17 @@ import Lottie
 import SwiftyTimer
 
 internal let log: SwiftyBeaver.Type = {
-    #if DEBUG
+//    #if DEBUG
     let console = ConsoleDestination()
-    console.asynchronously = false
+    console.asynchronously = true
     console.format = "$C$L$c $n[$l] > $F: \(Thread.current) $T\n$M"
     SwiftyBeaver.addDestination(console)
-    #endif
+//    #endif
     return SwiftyBeaver.self
 }()
 
 public typealias ProgressHandler = (_ progress: Progress) -> Void
+public typealias CancelClosure = () -> Void
 
 public enum VideoClapError: Error {
     case exportCancel
@@ -50,6 +51,18 @@ open class VideoClap: NSObject {
     public override init() {
         super.init()
         NotificationCenter.default.addObserver(self, selector: #selector(receiveMemoryWarning(_:)), name: UIApplication.didReceiveMemoryWarningNotification, object: UIApplication.shared)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(mediaServicesWereResetNotification(_:)), name: AVAudioSession.mediaServicesWereResetNotification, object: nil)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(mediaServicesWereLostNotification(_:)), name: AVAudioSession.mediaServicesWereLostNotification, object: nil)
+    }
+    
+    @objc private func mediaServicesWereResetNotification(_ sender: Notification) {
+        log.warning(sender)
+    }
+    
+    @objc func mediaServicesWereLostNotification(_ sender: Notification) {
+        log.warning(sender)
     }
     
     @objc private func receiveMemoryWarning(_ sender: Notification) {
@@ -74,83 +87,104 @@ open class VideoClap: NSObject {
         return playerItem
     }
     
-    public func exportToVideo(fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) {
+    @discardableResult
+    public func export(fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.audioProcessing, options: [.mixWithOthers])
+            try audioSession.setActive(true)
+        } catch let error {
+            log.error(error)
+        }
+        
         let playerItem = playerItemForPlay()
-        let presetName = AVAssetExportPresetHighestQuality
-        AVAssetExportSession.determineCompatibility(ofExportPreset: presetName, with: playerItem.asset, outputFileType: .mov) { (canExport) in
-            guard canExport, let session = AVAssetExportSession(asset: playerItem.asset, presetName: presetName) else {
-                completionHandler(nil, VideoClapError.exportFailed)
-                return
+        if playerItem.asset.tracks(withMediaType: .audio).isEmpty && playerItem.asset.tracks(withMediaType: .video).isEmpty {
+            completionHandler(nil, VideoClapError.exportFailed)
+            return nil
+        }
+        
+        guard let session = AVAssetExportSession(asset: playerItem.asset, presetName: AVAssetExportPresetHighestQuality) else {
+            completionHandler(nil, VideoClapError.exportFailed)
+            return nil
+        }
+        let folder = VideoClap.ExportFolder
+        
+        if FileManager.default.fileExists(atPath: folder.path) == false {
+            do {
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: nil)
+            } catch let error {
+                completionHandler(nil, error)
+                return nil
             }
-            let folder = VideoClap.ExportFolder
-            
-            if FileManager.default.fileExists(atPath: folder.path) == false {
-                do {
-                    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: nil)
-                } catch let error {
-                    completionHandler(nil, error)
-                    return
-                }
+        }
+        
+        let exportVideoURL: URL
+        let fileNameExt: String = "mov"
+        if var fileName = fileName {
+            if fileName.pathExtension != fileNameExt {
+                fileName = fileName.deletingPathExtension().appendingPathExtension(fileNameExt) ?? fileName
             }
-            
-            let exportVideoURL: URL
-            
-            if let fileName = fileName {
-                exportVideoURL = folder.appendingPathComponent(fileName)
-            } else {
-                let fileName = UUID().uuidString + ".mov"
-                exportVideoURL = folder.appendingPathComponent(fileName)
+            exportVideoURL = folder.appendingPathComponent(fileName)
+        } else {
+            let fileName = UUID().uuidString.appendingPathExtension(fileNameExt) ?? UUID().uuidString
+            exportVideoURL = folder.appendingPathComponent(fileName)
+        }
+        if FileManager.default.fileExists(atPath: exportVideoURL.path) {
+            do {
+                try FileManager.default.removeItem(at: exportVideoURL)
+            } catch let error {
+                completionHandler(nil, error)
+                return nil
             }
-            if FileManager.default.fileExists(atPath: exportVideoURL.path) {
-                do {
-                    try FileManager.default.removeItem(at: exportVideoURL)
-                } catch let error {
-                    completionHandler(nil, error)
-                    return
-                }
-            }
-            
-            session.outputURL = exportVideoURL
-            session.audioMix = playerItem.audioMix
-            session.outputFileType = .mov
-//            session.shouldOptimizeForNetworkUse = false
-            session.videoComposition = playerItem.videoComposition
-//            session.timeRange = CMTimeRange(start: 7, end: 10)
-//            session.timeRange = CMTimeRange(start: CMTime.zero, duration: playerItem.duration)
-            
-            let den: Int64 = 100
-            let progress = Progress(totalUnitCount: den)
-            
-            session.exportAsynchronously {
-                DispatchQueue.main.async {
-                    if progress.isCancelled {
-                        completionHandler(nil, VideoClapError.exportCancel)
-                    } else {
-                        if session.status == .completed {
-                            completionHandler(exportVideoURL, nil)
-                        } else {
-                            completionHandler(nil, session.error)
-                        }
-                        progress.cancel()
-                    }
-                }
-            }
-            
-            let timer = Timer.every(0.1) { (timer: Timer) in
+        }
+        
+        session.outputURL = exportVideoURL
+        session.audioMix = playerItem.audioMix
+        session.outputFileType = .mov
+        session.shouldOptimizeForNetworkUse = true
+        session.videoComposition = playerItem.videoComposition
+        session.directoryForTemporaryFiles = VideoClap.ExportFolder
+        session.canPerformMultiplePassesOverSourceMediaData = false
+        session.audioTimePitchAlgorithm = playerItem.audioTimePitchAlgorithm
+        
+        let den: Int64 = 100
+        let progress = Progress(totalUnitCount: den)
+        
+        session.exportAsynchronously {
+            DispatchQueue.main.async {
                 if progress.isCancelled {
-                    timer.invalidate()
-                    session.cancelExport()
+                    completionHandler(nil, VideoClapError.exportCancel)
                 } else {
-                    progress.completedUnitCount = Int64(min(1.0, session.progress) * Float(den))
-                    progressHandler(progress)
+                    if session.status == .completed {
+                        completionHandler(exportVideoURL, nil)
+                    } else {
+                        completionHandler(nil, session.error)
+                    }
+                    progress.cancel()
                 }
             }
-            if Thread.current.isMainThread {
-                
+        }
+        
+        let timer = Timer.every(0.1) { (timer: Timer) in
+            if progress.isCancelled {
+                timer.invalidate()
+                session.cancelExport()
             } else {
-                timer.start(modes: .default)
-                RunLoop.current.run()
+                progress.completedUnitCount = Int64(min(1.0, session.progress) * Float(den))
+                progressHandler(progress)
             }
+        }
+        if Thread.current.isMainThread {
+            
+        } else {
+            timer.start(modes: .default)
+            RunLoop.current.run()
+        }
+
+        return {
+            progress.cancel()
+            timer.invalidate()
+            session.cancelExport()
         }
     }
     
@@ -167,8 +201,6 @@ open class VideoClap: NSObject {
     
     public func estimateVideoDuration() -> CMTime {
         return playerItemForPlay().asset.duration
-//        let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler)
-//        return videoCompositor.estimateVideoDuration()
     }
     
     public static func cleanExportFolder() {

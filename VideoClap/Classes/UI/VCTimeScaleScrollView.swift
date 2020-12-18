@@ -8,27 +8,19 @@
 import AVFoundation
 import UIKit
 
-public class VCTimeScaleScrollView: UIScrollView {
+public protocol PinchGRHandler: NSObject {
+    func handle(state: UIGestureRecognizer.State, scale: CGFloat)
+}
+
+public class VCTimeScaleScrollView: UIScrollView, PinchGRHandler {
     
     public let timeBase: CMTimeScale = 600
-    
-    let viewLayout: UICollectionViewFlowLayout = {
-        let layout = UICollectionViewFlowLayout()
-        layout.minimumLineSpacing = 0
-        layout.minimumInteritemSpacing = 0
-        layout.scrollDirection = .horizontal
-        return layout
-    }()
-    
-    internal lazy var pinchGR: UIPinchGestureRecognizer = {
-        let pinchGR = UIPinchGestureRecognizer(target: self, action: #selector(pinchGRHandler(_:)))
-        return pinchGR
-    }()
     
     internal lazy var storeScales: [CGFloat] = []
     
     internal var cellWidth: CGFloat = 0.0
     
+    /// 指示一个cell占用多少 time value
     internal var baseValue: CMTimeValue = 40
     
     internal var datasourceCount = 0
@@ -49,8 +41,6 @@ public class VCTimeScaleScrollView: UIScrollView {
     
     public internal(set) lazy var duration: CMTime = CMTime(value: 0, timescale: timeBase)
     
-    internal var isPinching: Bool = false
-    
     internal lazy var formatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .none
@@ -70,6 +60,8 @@ public class VCTimeScaleScrollView: UIScrollView {
     
     var reloadDataLimit = 0
     
+    var didScrollCallback: ((_ scrollView: UIScrollView, CGFloat) -> Void)?
+    
     public convenience init() {
         self.init(frame: .zero)
     }
@@ -87,84 +79,80 @@ public class VCTimeScaleScrollView: UIScrollView {
         isDirectionalLockEnabled = true
         showsHorizontalScrollIndicator = false
         delegate = self
-        addGestureRecognizer(pinchGR)
     }
     
     internal func makeDataSource() {
-        let widthPerTimeValue: CGFloat
-        
+        var widthPerBaseValue: CGFloat
+        let cellWidthRange: ClosedRange<CGFloat> = 80...120
         switch scale {
         case range0:
             baseValue = 6000
-            widthPerTimeValue = scale.map(from: range0, to: 1...2)
+            widthPerBaseValue = scale.map(from: range0, to: cellWidthRange)
             
         case range1:
             baseValue = 3000
-            widthPerTimeValue = scale.map(from: range1, to: 1...2)
+            widthPerBaseValue = scale.map(from: range1, to: cellWidthRange)
             
         case range2:
             baseValue = 2400
-            widthPerTimeValue = scale.map(from: range2, to: 1...2)
+            widthPerBaseValue = scale.map(from: range2, to: cellWidthRange)
             
         case range3:
             baseValue = 1200
-            widthPerTimeValue = scale.map(from: range3, to: 1...2)
+            widthPerBaseValue = scale.map(from: range3, to: cellWidthRange)
             
         case range4:
             baseValue = 600
-            widthPerTimeValue = scale.map(from: range4, to: 1...2)
+            widthPerBaseValue = scale.map(from: range4, to: cellWidthRange)
             
         case range5:
             baseValue = 300
-            widthPerTimeValue = scale.map(from: range5, to: 1...2)
+            widthPerBaseValue = scale.map(from: range5, to: cellWidthRange)
 
         case range6:
             baseValue = 100
-            widthPerTimeValue = scale.map(from: range6, to: 1...2)
+            widthPerBaseValue = scale.map(from: range6, to: cellWidthRange)
             
         case range7:
             baseValue = 60
-            widthPerTimeValue = scale.map(from: range7, to: 1...2)
+            widthPerBaseValue = scale.map(from: range7, to: cellWidthRange)
             
         case range8:
             baseValue = 40
-            widthPerTimeValue = scale.map(from: range8, to: 1...2)
+            widthPerBaseValue = scale.map(from: range8, to: cellWidthRange)
             
         default:
             baseValue = 40
-            widthPerTimeValue = scale.map(from: range8, to: 1...2)
+            widthPerBaseValue = scale.map(from: range8, to: cellWidthRange)
         }
         
-        cellWidth = CGFloat(baseValue) * widthPerTimeValue
-        
-        cellWidth = cellWidth.map(from: CGFloat(baseValue)...CGFloat(baseValue * 2), to: 80...120)
+        cellWidth = widthPerBaseValue
         
         datasourceCount = Int(duration.value / baseValue)
     }
     
-    @objc internal func pinchGRHandler(_ sender: UIPinchGestureRecognizer) {
+    public func handle(state: UIGestureRecognizer.State, scale: CGFloat) {
         let limit = 2
-        switch sender.state {
+        switch state {
         case .began:
-            isPinching = true
             storeScales.removeAll()
+            self.delegate = nil
             
         case .changed:
 //            storeScales.append(2.0 - sender.scale)
-            storeScales.append(sender.scale)
+            storeScales.append(scale)
             NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(delayChange), object: nil)
             if storeScales.count % limit == 0 {
                 delayChange()
             } else {
                 perform(#selector(delayChange), with: nil, afterDelay: 0.03)
             }
-            sender.scale = 1.0
             
         case .ended:
             if storeScales.count % limit != 0 {
                 delayChange()
             }
-            isPinching = false
+            self.delegate = self
             
         default:
             break
@@ -201,14 +189,11 @@ public class VCTimeScaleScrollView: UIScrollView {
         var currentIndex = Int(contentOffset.x / cellWidth)
         currentIndex = min(max(0, currentIndex), datasourceCount)
         
-        let upper = max(0, currentIndex - 5)
+        let maxLow = ceil((frame.size.width + cellWidth * 2) / cellWidth)
+        let upper = max(0, currentIndex - Int(maxLow) / 2)
         var low = 0
         
-        if upper == 0 {
-            low = min(datasourceCount, currentIndex + 17)
-        } else {
-            low = min(datasourceCount, currentIndex + 12)
-        }
+        low = min(datasourceCount, currentIndex + Int(maxLow))
         
         for item in upper..<low {
             let x: CGFloat = CGFloat(item) * cellWidth
@@ -280,10 +265,12 @@ public class VCTimeScaleScrollView: UIScrollView {
 extension VCTimeScaleScrollView: UIScrollViewDelegate {
     
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        if scrollView.contentSize.width.isZero || isPinching {
+        if scrollView.contentSize.width.isZero {
             return
         }
+        
         let percentage = (scrollView.contentOffset.x + self.contentInset.left) / (scrollView.contentSize.width)
+        didScrollCallback?(scrollView, percentage)
         currentTime = CMTime(seconds: Double(percentage) * duration.seconds, preferredTimescale: timeBase)
         currentTime = min(max(.zero, currentTime), duration)
         reloadDataLimit += 1

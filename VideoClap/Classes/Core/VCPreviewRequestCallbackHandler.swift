@@ -49,6 +49,20 @@ open class VCPreviewRequestCallbackHandler: VCRequestCallbackHandler {
 
     public var stopRenderFlag: Bool = false
     
+    public func rebuildPlayer(item: AVPlayerItem) {
+        let newItem = item
+        player = SSPlayer(playerItem: newItem)
+        placeLayer.player = player
+    }
+    
+    public func removePlayerItem() {
+        player.currentItem?.cancelPendingSeeks()
+        player.cancelPendingPrerolls()
+        player.replaceCurrentItem(with: nil)
+        player = SSPlayer()
+        placeLayer.player = player
+    }
+    
     public override func contextChanged() {
         super.contextChanged()
         _ = placeLayer

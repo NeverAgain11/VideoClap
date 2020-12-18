@@ -18,6 +18,11 @@ class TestTimeScaleView: UIViewController {
         return view
     }()
     
+    internal lazy var pinchGR: UIPinchGestureRecognizer = {
+        let pinchGR = UIPinchGestureRecognizer(target: self, action: #selector(pinchGRHandler(_:)))
+        return pinchGR
+    }()
+    
     lazy var vView: UIView = {
         let view = UIView()
         view.backgroundColor = .black
@@ -31,16 +36,16 @@ class TestTimeScaleView: UIViewController {
         view.setNeedsLayout()
         view.layoutIfNeeded()
         timeScaleView.setScale(59.9)
-        
         timeScaleView.setTime(currentTime: .zero, duration: CMTime(seconds: 1000000000000, preferredTimescale: 600))
+        view.addGestureRecognizer(pinchGR)
+    }
+    
+    @objc internal func pinchGRHandler(_ sender: UIPinchGestureRecognizer) {
+        timeScaleView.handle(state: sender.state, scale: sender.scale)
         
-        var start: CMTime = .zero
-        
-//        Timer.scheduledTimer(withTimeInterval: CMTime(seconds: 1/24, preferredTimescale: 600).seconds, repeats: true) { (timer) in
-//            start = CMTimeAdd(start, CMTime(seconds: 1/24, preferredTimescale: 600))
-//            self.timeScaleView.setTime(currentTime: start)
-//        }
-        
+        if sender.state == .changed {
+            sender.scale = 1.0
+        }
     }
     
 }

@@ -46,6 +46,8 @@ class ViewController: UIViewController {
         return queue
     }()
     
+    var exportVideoClap = VideoClap()
+    
     lazy var slider: UISlider = {
         let slider = UISlider()
         slider.minimumValue = 0
@@ -352,7 +354,7 @@ class ViewController: UIViewController {
     }
     
     func export(fileName: String?, completion: @escaping () -> Void) {
-        videoClap.exportToVideo(fileName: fileName) { (progress) in
+        videoClap.export(fileName: fileName) { (progress) in
             print(progress.fractionCompleted, fileName)
         } completionHandler: { (url, error) in
             if let error = error {
@@ -482,18 +484,26 @@ class ViewController: UIViewController {
             }
         }
     }
-
+    
     @objc func exportButtonDidTap(_ sender: UIBarButtonItem) {
-        player.pause()
+        self.requestCallbackHandler.removePlayerItem()
         playButton.isSelected = false
-        let videoClap = VideoClap()
+        let videoClap = exportVideoClap
         videoClap.videoDescription = self.videoDescription.mutableCopy() as! VCVideoDescription
         let scale = CGFloat(videoClap.videoDescription.renderScale)
         videoClap.videoDescription.renderSize = videoClap.videoDescription.renderSize.applying(.init(scaleX: scale, y: scale))
         videoClap.videoDescription.renderScale = 1.0
-        videoClap.exportToVideo { (progress) in
+        videoClap.export { (progress) in
             LLog(progress.fractionCompleted)
-        } completionHandler: { (url, error) in
+        } completionHandler: { [weak self] (url, error) in
+            guard let self = self else { return }
+            let newItem = videoClap.playerItemForPlay()
+            newItem.seek(to: self.requestCallbackHandler.compositionTime, toleranceBefore: .zero, toleranceAfter: .zero) { (_) in
+                self.requestCallbackHandler.rebuildPlayer(item: newItem)
+                self.player.observePlayingTime { (time: CMTime) in
+                    self.timer()
+                }
+            }
             if let url = url {
                 PHPhotoLibrary.shared().performChanges {
                     PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)

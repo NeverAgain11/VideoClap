@@ -145,7 +145,7 @@ public class VCReverseVideo: NSObject {
         
         videoClap.videoDescription.trackBundle.videoTracks.append(videoTrackDes)
         
-        videoClap.exportToVideo { (progress: Progress) in
+        videoClap.export { (progress: Progress) in
             progressCallback(progress)
         } completionHandler: { (url: URL?, error: Error?) in
             customRequestCallbackHandler.samples.removeAll()
