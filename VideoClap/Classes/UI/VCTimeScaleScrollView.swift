@@ -8,10 +8,6 @@
 import AVFoundation
 import UIKit
 
-public protocol PinchGRHandler: NSObject {
-    func handle(state: UIGestureRecognizer.State, scale: CGFloat)
-}
-
 public class VCTimeScaleScrollView: UIScrollView, PinchGRHandler {
     
     public let timeBase: CMTimeScale = 600
@@ -185,7 +181,6 @@ public class VCTimeScaleScrollView: UIScrollView, PinchGRHandler {
     }
     
     func reloadData() {
-        subviews.forEach({ $0.removeFromSuperview() })
         var currentIndex = Int(contentOffset.x / cellWidth)
         currentIndex = min(max(0, currentIndex), datasourceCount)
         
@@ -195,35 +190,51 @@ public class VCTimeScaleScrollView: UIScrollView, PinchGRHandler {
         
         low = min(datasourceCount, currentIndex + Int(maxLow))
         
+        let exCellFrames: [CGRect] = cells.map({ $0.frame })
+        
         for item in upper..<low {
             let x: CGFloat = CGFloat(item) * cellWidth
             let cellFrame = CGRect(x: x, y: 0, width: cellWidth, height: bounds.height)
-
-            let time = CMTime(value: baseValue * Int64(item), timescale: timeBase)
             
-            let label = UILabel(frame: cellFrame)
-            label.text = "・"
-            label.textColor = UIColor.lightText
-            label.textAlignment = .center
-            addSubview(label)
-            
-            let keyTimeLabel = UILabel()
-            keyTimeLabel.textColor = UIColor.lightText
-            keyTimeLabel.textAlignment = .center
-            keyTimeLabel.backgroundColor = self.backgroundColor
-            addSubview(keyTimeLabel)
-            
-            if time.value % 600 == 0 {
-                keyTimeLabel.text = format(time: time)
+            if exCellFrames.contains(cellFrame) {
+                
             } else {
-                let seconds = time.value / 600
-                let remaind = time.value - seconds * 600
-                keyTimeLabel.text = "\(remaind / 20)f"
+                let newCell = cellForItemAt(index: item)
+                newCell.frame = cellFrame
+                cells.append(newCell)
+                addSubview(newCell)
             }
-            
-            keyTimeLabel.sizeToFit()
-            keyTimeLabel.center = CGPoint(x: cellFrame.origin.x, y: bounds.midY)
         }
+        
+        let left: CGFloat = CGFloat(upper) * cellWidth
+        let right: CGFloat = CGFloat(low) * cellWidth
+        
+        let visibleRect: CGRect = CGRect(x: left, y: 0, width: right - left, height: self.bounds.height)
+        
+        for cell in cells {
+            if cell.frame.intersects(visibleRect) {
+                
+            } else {
+                cell.removeFromSuperview()
+            }
+        }
+        
+        cells = cells.filter({ $0.superview != nil })
+    }
+    
+    private func cellForItemAt(index: Int) -> VCTimeScaleCell {
+        let cell = VCTimeScaleCell()
+        let time = CMTime(value: baseValue * Int64(index), timescale: timeBase)
+        
+        if time.value % 600 == 0 {
+            cell.keyTimeLabel.text = format(time: time)
+        } else {
+            let seconds = time.value / 600
+            let remaind = time.value - seconds * 600
+            cell.keyTimeLabel.text = "\(remaind / 20)f"
+        }
+ 
+        return cell
     }
     
     public func setTime(currentTime: CMTime, duration: CMTime) {

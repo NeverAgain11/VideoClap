@@ -21,7 +21,6 @@ class VCImageCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        imageView.backgroundColor = contentView.backgroundColor
         contentView.addSubview(imageView)
         imageView.snp.makeConstraints { (make) in
             make.edges.equalToSuperview()

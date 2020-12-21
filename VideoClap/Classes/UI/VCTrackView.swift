@@ -10,12 +10,6 @@ import SnapKit
 import AVFoundation
 import SDWebImage
 
-internal let thumbnailCache: SDImageCache = {
-    let cache = SDImageCache()
-    cache.config.maxMemoryCost = UInt(Float(ProcessInfo().physicalMemory) * 0.1)
-    return cache
-}()
-
 public class VCVideoTrackView: UICollectionView {
     
     internal let flowLayout: UICollectionViewFlowLayout = {
@@ -38,7 +32,7 @@ public class VCVideoTrackView: UICollectionView {
     
     internal var datasourceCount: Int = 0
     
-    internal var imageGenerator: AVAssetImageGenerator?
+    internal var imageGenerator: VCAssetImageGenerator?
     
     internal var lastCellSize: CGSize = .zero
     
@@ -78,18 +72,18 @@ public class VCVideoTrackView: UICollectionView {
         super.reloadData()
     }
     
-    func assetImageGenerator() -> AVAssetImageGenerator? {
+    func assetImageGenerator() -> VCAssetImageGenerator? {
+        imageGenerator?.cancelAllCGImageGeneration()
+        imageGenerator = nil
         guard let videoTrack = self.videoTrack else { return nil }
         guard let url = videoTrack.mediaURL else { return nil }
-        let asset = AVAsset(url: url)
+        let asset = AVURLAsset(url: url)
         if asset.tracks(withMediaType: .video).isEmpty || asset.isPlayable == false {
             return nil
         }
-        let generator = AVAssetImageGenerator(asset: asset)
-        generator.appliesPreferredTrackTransform = true
-        generator.requestedTimeToleranceAfter = .zero
-        generator.requestedTimeToleranceBefore = .zero
-        generator.maximumSize = cellSize.applying(.init(scaleX: UIScreen.main.scale, y: UIScreen.main.scale))
+        let generator = VCAssetImageGenerator(asset: asset)
+        let scale: CGFloat = UIScreen.main.scale
+        generator.maximumSize = cellSize.applying(.init(scaleX: scale, y: scale))
         return generator
     }
     
@@ -103,26 +97,21 @@ extension VCVideoTrackView: UICollectionViewDataSource, UICollectionViewDelegate
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "VCImageCell", for: indexPath) as! VCImageCell
+        cell.backgroundColor = collectionView.backgroundColor
+        cell.contentView.backgroundColor = collectionView.backgroundColor
+        cell.imageView.backgroundColor = collectionView.backgroundColor
         guard let videoTrack = self.videoTrack else { return cell }
-        let timeValue: CMTimeValue = CMTimeValue(CGFloat(indexPath.item) * cellSize.width / widthPerTimeValue)
+        let timeValue: CMTimeValue = CMTimeValue(CGFloat(indexPath.item) * cellSize.width / widthPerTimeValue) + videoTrack.timeRange.start.value
         let time: CMTime = CMTime(value: timeValue, timescale: VCTimeControl.timeBase)
-        let key = videoTrack.id + "\(timeValue)"
-        cell.id = key
-        if let cacheImage = thumbnailCache.imageFromMemoryCache(forKey: key) {
-            cell.imageView.image = cacheImage
-        } else {
-            imageGenerator?.generateCGImagesAsynchronously(forTimes: [time] as [NSValue], completionHandler: { (time, image, _, result, error) in
-                if let cgImage = image {
-                    let uiImage: UIImage = UIImage(cgImage: cgImage)
-                    thumbnailCache.storeImage(toMemory: uiImage, forKey: key)
-                    DispatchQueue.main.async {
-                        if cell.id == key {
-                            cell.imageView.image = UIImage(cgImage: cgImage)
-                        }
-                    }
+        cell.id = "\(timeValue)"
+        imageGenerator?.generateCGImageAsynchronously(forTime: time, completionHandler: { (requestedTime, image, actualTime, result, closestMatch, error) in
+            DispatchQueue.main.async {
+                if let cgImage = image, cell.id == "\(timeValue)" {
+                    let uiImage = UIImage(cgImage: cgImage)
+                    cell.imageView.image = uiImage
                 }
-            })
-        }
+            }
+        })
         return cell
     }
     

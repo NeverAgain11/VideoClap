@@ -26,7 +26,7 @@ class TestTrackView: UIViewController, UIScrollViewDelegate {
     
     lazy var track: VCVideoTrackDescription = {
         let track = VCVideoTrackDescription()
-        let source = CMTimeRange(start: 0, end: 5.1)
+        let source = CMTimeRange(start: 0, end: 5)
         let target = source
         track.timeMapping = CMTimeMapping(source: source, target: target)
         track.mediaURL = Bundle.main.url(forResource: "video0.mp4", withExtension: nil, subdirectory: "Mat")
@@ -63,6 +63,9 @@ class TestTrackView: UIViewController, UIScrollViewDelegate {
         videoTrackView.frame = CGRect(x: 0, y: 0, width: totalWidth, height: height)
         scrollView.contentSize.width = videoTrackView.frame.width
         scrollView.contentSize.height = height
+        scrollView.contentInset.left = view.frame.width / 2
+        scrollView.contentInset.right = scrollView.contentInset.left
+        scrollView.contentOffset.x = -scrollView.contentInset.left
     }
     
     @objc internal func pinchGRHandler(_ sender: UIPinchGestureRecognizer) {
@@ -74,7 +77,7 @@ class TestTrackView: UIViewController, UIScrollViewDelegate {
     }
     
     public func handle(state: UIGestureRecognizer.State, scale: CGFloat) {
-        let limit = 10
+        let limit = 2
         switch state {
         case .began:
             storeScales.removeAll()
@@ -112,6 +115,9 @@ class TestTrackView: UIViewController, UIScrollViewDelegate {
             return result * scale
         }
         storeScales.removeAll()
+        if (timeControl.isReachMax && storeScale >= 1.0) || (timeControl.isReachMin && storeScale <= 1.0) {
+            return
+        }
         timeControl.setScale(timeControl.scale * storeScale)
         videoTrackView.widthPerTimeValue = timeControl.widthPerTimeVale
         let totalWidth: CGFloat = CGFloat(track.timeMapping.target.duration.value) * videoTrackView.widthPerTimeValue

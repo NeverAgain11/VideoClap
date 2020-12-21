@@ -30,14 +30,24 @@ public class VCTimeControl: NSObject {
     
     public internal(set) lazy var duration: CMTime = CMTime(value: 0, timescale: VCTimeControl.timeBase)
     
-    internal let cellWidthRange: ClosedRange<CGFloat> = 80...120
+    let maxScale: CGFloat = 600
+    
+    let minScale: CGFloat = 1
     
     public internal(set) var widthPerBaseValue: CGFloat = 0
     
     public internal(set) var widthPerTimeVale: CGFloat = 0
     
+    public var isReachMax: Bool {
+        return scale == maxScale
+    }
+    
+    public var isReachMin: Bool {
+        return scale == minScale
+    }
+    
     public func setScale(_ v: CGFloat) {
-        scale = min(600, max(1 , v))
+        scale = min(maxScale, max(minScale, v))
         update()
     }
     
@@ -69,45 +79,36 @@ public class VCTimeControl: NSObject {
         switch scale {
         case range0:
             baseValue = 6000
-            widthPerBaseValue = scale.map(from: range0, to: cellWidthRange)
             
         case range1:
             baseValue = 3000
-            widthPerBaseValue = scale.map(from: range1, to: cellWidthRange)
             
         case range2:
             baseValue = 2400
-            widthPerBaseValue = scale.map(from: range2, to: cellWidthRange)
             
         case range3:
             baseValue = 1200
-            widthPerBaseValue = scale.map(from: range3, to: cellWidthRange)
             
         case range4:
             baseValue = 600
-            widthPerBaseValue = scale.map(from: range4, to: cellWidthRange)
             
         case range5:
             baseValue = 300
-            widthPerBaseValue = scale.map(from: range5, to: cellWidthRange)
 
         case range6:
             baseValue = 100
-            widthPerBaseValue = scale.map(from: range6, to: cellWidthRange)
             
         case range7:
             baseValue = 60
-            widthPerBaseValue = scale.map(from: range7, to: cellWidthRange)
             
         case range8:
             baseValue = 40
-            widthPerBaseValue = scale.map(from: range8, to: cellWidthRange)
             
         default:
             baseValue = 40
-            widthPerBaseValue = scale.map(from: range8, to: cellWidthRange)
         }
-        widthPerTimeVale = widthPerBaseValue / CGFloat(baseValue)
+        widthPerTimeVale = scale / 300
+        widthPerBaseValue = widthPerTimeVale * CGFloat(baseValue)
     }
     
 }
