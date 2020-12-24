@@ -31,7 +31,6 @@ open class VCMegapolis2DPatternTransitionFilter: CIFilter {
         vec4 color0 = sample(inputImage, uv);
         vec4 color1 = sample(inputTargetImage, uv);
         
-        vec2 uv = U.xy / iResolution.xy;
         
         vec2 R  = iResolution.xy;
         float p = 6./R.y;
