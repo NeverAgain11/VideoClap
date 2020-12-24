@@ -183,7 +183,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             for transition in instruction.transitions {
                 if transition.transition.fromId == videoTrack.id {
                     if let time = transition.fromTrackClipTimeRange?.end {
-                        if let frame = trackFrame(trackID: transition.transition.fromId, at: time) {
+                        if let frame = trackFrame(trackID: transition.transition.fromId, at: time, maximumSize: nil) {
                             preprocess(image: frame, trackID: transition.transition.fromId)
                         }
                     }
@@ -191,7 +191,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                 
                 if transition.transition.toId == videoTrack.id {
                     if let time = transition.toTrackClipTimeRange?.start {
-                        if let frame = trackFrame(trackID: transition.transition.toId, at: time) {
+                        if let frame = trackFrame(trackID: transition.transition.toId, at: time, maximumSize: nil) {
                             preprocess(image: frame, trackID: transition.transition.toId)
                         }
                     }
@@ -573,7 +573,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
 
 public extension VCRequestCallbackHandler {
     
-    public func trackImage(trackID: String, size: CGSize) -> CIImage? {
+    public func trackImage(trackID: String, size: CGSize?) -> CIImage? {
         locker.object(forKey: #function).lock()
         defer {
             locker.object(forKey: #function).unlock()
@@ -586,7 +586,7 @@ public extension VCRequestCallbackHandler {
         return nil
     }
     
-    public func trackFrame(trackID: String, at time: CMTime = .zero) -> CIImage? {
+    public func trackFrame(trackID: String, at time: CMTime = .zero, maximumSize: CGSize?) -> CIImage? {
         locker.object(forKey: #function).lock()
         defer {
             locker.object(forKey: #function).unlock()
@@ -603,6 +603,9 @@ public extension VCRequestCallbackHandler {
                 generator.appliesPreferredTrackTransform = true
                 generator.requestedTimeToleranceAfter = .zero
                 generator.requestedTimeToleranceBefore = .zero
+                if let maximumSize = maximumSize {
+                    generator.maximumSize = maximumSize
+                }
                 do {
                     let cgimage = try generator.copyCGImage(at: time, actualTime: nil)
                     let ciimage = CIImage(cgImage: cgimage)
