@@ -10,53 +10,21 @@ import UIKit
 
 public class VCTimeScaleScrollView: UIScrollView, PinchGRHandler {
     
-    public let timeBase: CMTimeScale = 600
+    public lazy var timeControl: VCTimeControl = {
+        let timeControl: VCTimeControl = .init()
+        return timeControl
+    }()
     
     internal lazy var storeScales: [CGFloat] = []
     
-    internal var cellWidth: CGFloat = 0.0
-    
-    /// 指示一个cell占用多少 time value
-    internal var baseValue: CMTimeValue = 40
-    
-    internal var datasourceCount = 0
-    
-    let range0: Range<CGFloat> = 1..<10
-    let range1: Range<CGFloat> = 10..<20
-    let range2: Range<CGFloat> = 20..<24
-    let range3: Range<CGFloat> = 24..<30
-    let range4: Range<CGFloat> = 30..<60
-    let range5: Range<CGFloat> = 60..<120
-    let range6: Range<CGFloat> = 120..<200
-    let range7: Range<CGFloat> = 200..<300
-    let range8: ClosedRange<CGFloat> = 300...600
-    
-    public internal(set) lazy var currentTime: CMTime = CMTime(value: 0, timescale: timeBase)
-    
-    public internal(set) lazy var scale: CGFloat = 1
-    
-    public internal(set) lazy var duration: CMTime = CMTime(value: 0, timescale: timeBase)
-    
-    internal lazy var formatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .none
-        formatter.minimumIntegerDigits = 2
-        return formatter
-    }()
-    
-    lazy var cells: [VCTimeScaleCell] = {
-        let cells: [VCTimeScaleCell] = []
-        return cells
-    }()
-    
-    lazy var contentView: UIView = {
-        let mView = UIView()
+    internal lazy var contentView: VCTimeScaleView = {
+        let mView = VCTimeScaleView(frame: .zero, timeControl: timeControl)
         return mView
     }()
     
-    var reloadDataLimit = 0
+    private var reloadDataLimit = 0
     
-    var didScrollCallback: ((_ scrollView: UIScrollView, CGFloat) -> Void)?
+    public var didScrollCallback: ((CMTime) -> Void)?
     
     public convenience init() {
         self.init(frame: .zero)
@@ -71,60 +39,17 @@ public class VCTimeScaleScrollView: UIScrollView, PinchGRHandler {
         fatalError("init(coder:) has not been implemented")
     }
     
-    internal func commitInit() {
+    private func commitInit() {
         isDirectionalLockEnabled = true
         showsHorizontalScrollIndicator = false
         delegate = self
-    }
-    
-    internal func makeDataSource() {
-        var widthPerBaseValue: CGFloat
-        let cellWidthRange: ClosedRange<CGFloat> = 80...120
-        switch scale {
-        case range0:
-            baseValue = 6000
-            widthPerBaseValue = scale.map(from: range0, to: cellWidthRange)
-            
-        case range1:
-            baseValue = 3000
-            widthPerBaseValue = scale.map(from: range1, to: cellWidthRange)
-            
-        case range2:
-            baseValue = 2400
-            widthPerBaseValue = scale.map(from: range2, to: cellWidthRange)
-            
-        case range3:
-            baseValue = 1200
-            widthPerBaseValue = scale.map(from: range3, to: cellWidthRange)
-            
-        case range4:
-            baseValue = 600
-            widthPerBaseValue = scale.map(from: range4, to: cellWidthRange)
-            
-        case range5:
-            baseValue = 300
-            widthPerBaseValue = scale.map(from: range5, to: cellWidthRange)
-
-        case range6:
-            baseValue = 100
-            widthPerBaseValue = scale.map(from: range6, to: cellWidthRange)
-            
-        case range7:
-            baseValue = 60
-            widthPerBaseValue = scale.map(from: range7, to: cellWidthRange)
-            
-        case range8:
-            baseValue = 40
-            widthPerBaseValue = scale.map(from: range8, to: cellWidthRange)
-            
-        default:
-            baseValue = 40
-            widthPerBaseValue = scale.map(from: range8, to: cellWidthRange)
+        
+        addSubview(contentView)
+        
+        contentView.snp.makeConstraints { (make) in
+            make.height.equalToSuperview()
+            make.centerY.equalToSuperview()
         }
-        
-        cellWidth = widthPerBaseValue
-        
-        datasourceCount = Int(duration.value / baseValue)
     }
     
     public func handle(state: UIGestureRecognizer.State, scale: CGFloat) {
@@ -155,120 +80,79 @@ public class VCTimeScaleScrollView: UIScrollView, PinchGRHandler {
         }
     }
     
-    @objc internal func delayChange() {
+    @objc private func delayChange() {
         let storeScale = storeScales.reduce(1.0) { (result, scale) in
             return result * scale
         }
         storeScales.removeAll()
-        setScale(scale * storeScale)
+        setScale(timeControl.scale * storeScale)
+    }
+    
+    private func validate() -> Bool {
+        if timeControl.duration.seconds.isZero {
+            return false
+        }
+        return true
     }
     
     public func setScale(_ v: CGFloat) {
-        scale = min(600, max(1 , v))
-        makeDataSource()
-        if datasourceCount == 0 {
+        timeControl.setScale(v)
+        
+        guard validate() else {
             return
         }
-        contentInset.left = bounds.width / 2.0
-        contentInset.right = contentInset.left
-        let contentWidth: CGFloat = cellWidth * CGFloat(datasourceCount)
-        contentSize.width = contentWidth
-        let percentage = currentTime.seconds / duration.seconds
+        
+        let datasourceCount = Int(timeControl.duration.value / timeControl.intervalTime.value)
+        let cellWidth = timeControl.widthPerTimeVale * CGFloat(timeControl.intervalTime.value)
+        let totalWidth = cellWidth * CGFloat(datasourceCount)
+        let percentage = timeControl.currentTime.seconds / timeControl.duration.seconds
+        let offsetX = CGFloat(percentage) * (totalWidth) - contentInset.left
+        contentView.datasourceCount = datasourceCount
+        contentView.cellWidth = cellWidth
+        
+        reloadData(targetX: offsetX)
+        
+        fixPosition()
+    }
+    
+    private func fixPosition() {
+        let percentage = timeControl.currentTime.seconds / timeControl.duration.seconds
         let offsetX = CGFloat(percentage) * (contentSize.width) - contentInset.left
-        setContentOffset(CGPoint(x: offsetX, y: 0), animated: false)
-        
-        reloadData()
+        contentOffset.x = offsetX
     }
     
-    func reloadData() {
-        var currentIndex = Int(contentOffset.x / cellWidth)
-        currentIndex = min(max(0, currentIndex), datasourceCount)
-        
-        let maxLow = ceil((frame.size.width + cellWidth * 2) / cellWidth)
-        let upper = max(0, currentIndex - Int(maxLow) / 2)
-        var low = 0
-        
-        low = min(datasourceCount, currentIndex + Int(maxLow))
-        
-        let exCellFrames: [CGRect] = cells.map({ $0.frame })
-        
-        for item in upper..<low {
-            let x: CGFloat = CGFloat(item) * cellWidth
-            let cellFrame = CGRect(x: x, y: 0, width: cellWidth, height: bounds.height)
-            
-            if exCellFrames.contains(cellFrame) {
-                
-            } else {
-                let newCell = cellForItemAt(index: item)
-                newCell.frame = cellFrame
-                cells.append(newCell)
-                addSubview(newCell)
-            }
-        }
-        
-        let left: CGFloat = CGFloat(upper) * cellWidth
-        let right: CGFloat = CGFloat(low) * cellWidth
-        
-        let visibleRect: CGRect = CGRect(x: left, y: 0, width: right - left, height: self.bounds.height)
-        
-        for cell in cells {
-            if cell.frame.intersects(visibleRect) {
-                
-            } else {
-                cell.removeFromSuperview()
-            }
-        }
-        
-        cells = cells.filter({ $0.superview != nil })
+    public func reloadData() {
+        reloadData(targetX: contentOffset.x)
     }
     
-    private func cellForItemAt(index: Int) -> VCTimeScaleCell {
-        let cell = VCTimeScaleCell()
-        let time = CMTime(value: baseValue * Int64(index), timescale: timeBase)
-        
-        if time.value % 600 == 0 {
-            cell.keyTimeLabel.text = format(time: time)
-        } else {
-            let seconds = time.value / 600
-            let remaind = time.value - seconds * 600
-            cell.keyTimeLabel.text = "\(remaind / 20)f"
-        }
- 
-        return cell
+    private func reloadData(targetX: CGFloat) {
+        let rect = CGRect(x: max(0, targetX), y: 0, width: self.bounds.width, height: self.bounds.height)
+        contentView.reloadData(in: rect)
+        contentSize.width = contentView.frame.size.width
     }
     
     public func setTime(currentTime: CMTime, duration: CMTime) {
-        if currentTime.isValid == false || duration.isValid == false {
-            return
-        }
-        self.duration = max(duration, .zero)
-        self.currentTime = min(max(.zero, currentTime), self.duration)
-        setScale(scale)
+        timeControl.setTime(currentTime: currentTime, duration: duration)
+        reloadData()
     }
     
     public func setTime(currentTime: CMTime) {
+        timeControl.setTime(currentTime: currentTime)
+        
         if currentTime.isValid == false {
             return
         }
-        self.currentTime = min(max(.zero, currentTime), self.duration)
-        let percentage = self.currentTime.seconds / duration.seconds
+        timeControl.currentTime = min(max(.zero, currentTime), timeControl.duration)
+        let percentage = timeControl.currentTime.seconds / timeControl.duration.seconds
         let offsetX = CGFloat(percentage) * (contentSize.width) - contentInset.left
-        setContentOffset(CGPoint(x: offsetX, y: 0), animated: false)
+        if offsetX.isNaN == false {
+            contentOffset.x = offsetX
+        }
     }
     
     public func setTime(duration: CMTime) {
-        if duration.isValid == false {
-            return
-        }
-        self.duration = max(duration, .zero)
-        setScale(scale)
-    }
-    
-    internal func format(time: CMTime) -> String {
-        let minute = formatter.string(from: NSNumber(value: Int(time.seconds) / 60)) ?? "00"
-        let second = formatter.string(from: NSNumber(value: Int(time.seconds) % 60)) ?? "00"
-        let timeStr = "\(minute):\(second)"
-        return timeStr
+        timeControl.setTime(duration: duration)
+        reloadData()
     }
     
 }
@@ -281,9 +165,9 @@ extension VCTimeScaleScrollView: UIScrollViewDelegate {
         }
         
         let percentage = (scrollView.contentOffset.x + self.contentInset.left) / (scrollView.contentSize.width)
-        didScrollCallback?(scrollView, percentage)
-        currentTime = CMTime(seconds: Double(percentage) * duration.seconds, preferredTimescale: timeBase)
-        currentTime = min(max(.zero, currentTime), duration)
+        timeControl.currentTime = CMTime(seconds: Double(percentage) * timeControl.duration.seconds, preferredTimescale: VCTimeControl.timeBase)
+        timeControl.currentTime = min(max(.zero, timeControl.currentTime), timeControl.duration)
+        didScrollCallback?(timeControl.currentTime)
         reloadDataLimit += 1
         if reloadDataLimit % 2 == 0 {
             reloadData()

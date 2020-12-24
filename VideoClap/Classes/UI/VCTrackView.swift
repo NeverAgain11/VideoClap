@@ -10,13 +10,63 @@ import SnapKit
 import AVFoundation
 import SDWebImage
 
+public class VCVideoTrackViewLayout: UICollectionViewLayout {
+    
+    public var displayRect: CGRect?
+    
+    public override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+        guard let collectionView = self.collectionView as? VCVideoTrackView else { return nil }
+        guard let displayRect = displayRect else { return nil }
+        var attrs: [UICollectionViewLayoutAttributes] = []
+        
+        let cellSize: CGSize = collectionView.cellSize
+        let cellWidth: CGFloat = cellSize.width
+        let datasourceCount: Int = collectionView.datasourceCount
+        
+        let upper = max(0, Int(floor(displayRect.minX / cellWidth)) )
+        let low = min(datasourceCount, Int(ceil(displayRect.maxX / cellWidth)) )
+        
+        if low <= upper {
+            return nil
+        }
+        
+        let y: CGFloat = 0
+        for index in upper..<low {
+            let x: CGFloat = CGFloat(index) * cellWidth
+            let attr = UICollectionViewLayoutAttributes(forCellWith: IndexPath(item: index, section: 0))
+            attr.frame = CGRect(origin: CGPoint(x: x, y: y), size: cellSize)
+            attrs.append(attr)
+        }
+        
+        return attrs
+    }
+    
+    public override var collectionViewContentSize: CGSize {
+        guard let collectionView = self.collectionView as? VCVideoTrackView else { return .zero }
+        return collectionView.bounds.size
+    }
+    
+}
+
+public class VCVideoTrackViewFlowLayout: UICollectionViewFlowLayout {
+    
+    public override init() {
+        super.init()
+        minimumLineSpacing = 0
+        minimumInteritemSpacing = 0
+        scrollDirection = .horizontal
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+}
+
 public class VCVideoTrackView: UICollectionView {
     
-    internal let flowLayout: UICollectionViewFlowLayout = {
-        let layout = UICollectionViewFlowLayout()
-        layout.minimumLineSpacing = 0
-        layout.minimumInteritemSpacing = 0
-        layout.scrollDirection = .horizontal
+    internal let layout: VCVideoTrackViewLayout = {
+        let layout = VCVideoTrackViewLayout()
         return layout
     }()
     
@@ -26,7 +76,7 @@ public class VCVideoTrackView: UICollectionView {
         }
     }
     
-    public var widthPerTimeValue: CGFloat = 0
+    public var timeControl: VCTimeControl?
     
     public var cellSize: CGSize = .zero
     
@@ -41,12 +91,12 @@ public class VCVideoTrackView: UICollectionView {
     }
     
     public init(frame: CGRect) {
-        super.init(frame: frame, collectionViewLayout: flowLayout)
+        super.init(frame: frame, collectionViewLayout: layout)
         commitInit()
     }
     
     public override init(frame: CGRect, collectionViewLayout layout: UICollectionViewLayout) {
-        super.init(frame: frame, collectionViewLayout: flowLayout)
+        super.init(frame: frame, collectionViewLayout: layout)
         commitInit()
     }
     
@@ -64,12 +114,20 @@ public class VCVideoTrackView: UICollectionView {
     
     public override func reloadData() {
         guard let videoTrack = self.videoTrack else { return }
-        let totalWidth: CGFloat = CGFloat(videoTrack.timeMapping.target.duration.value) * widthPerTimeValue
+        guard cellSize.width.isZero == false else { return }
+        guard let timeControl = timeControl else { return }
+        let totalWidth: CGFloat = CGFloat(videoTrack.timeMapping.target.duration.value) * timeControl.widthPerTimeVale
         datasourceCount = Int(ceil(totalWidth / cellSize.width))
         let fraction = (totalWidth / cellSize.width).truncatingRemainder(dividingBy: 1)
         lastCellSize = cellSize
         lastCellSize.width = cellSize.width * fraction
         super.reloadData()
+    }
+    
+    public func reloadData(displayRect: CGRect) {
+        layout.displayRect = displayRect
+        layout.invalidateLayout()
+        reloadData()
     }
     
     func assetImageGenerator() -> VCAssetImageGenerator? {
@@ -87,6 +145,10 @@ public class VCVideoTrackView: UICollectionView {
         return generator
     }
     
+    public func cancelAllCGImageGeneration() {
+        imageGenerator?.cancelAllCGImageGeneration()
+    }
+    
 }
 
 extension VCVideoTrackView: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
@@ -101,8 +163,12 @@ extension VCVideoTrackView: UICollectionViewDataSource, UICollectionViewDelegate
         cell.contentView.backgroundColor = collectionView.backgroundColor
         cell.imageView.backgroundColor = collectionView.backgroundColor
         guard let videoTrack = self.videoTrack else { return cell }
-        let timeValue: CMTimeValue = CMTimeValue(CGFloat(indexPath.item) * cellSize.width / widthPerTimeValue) + videoTrack.timeRange.start.value
+        guard let timeControl = timeControl else { return cell }
+        guard timeControl.widthPerTimeVale.isZero == false else { return cell }
+        let timeValue: CMTimeValue = CMTimeValue(CGFloat(indexPath.item) * cellSize.width / timeControl.widthPerTimeVale) + videoTrack.timeRange.start.value
         let time: CMTime = CMTime(value: timeValue, timescale: VCTimeControl.timeBase)
+//        let timeValue: CMTimeValue = CMTimeValue(indexPath.item) * timeControl.intervalTime.value + videoTrack.timeRange.start.value
+//        let time: CMTime = CMTime(value: timeValue, timescale: VCTimeControl.timeBase)
         cell.id = "\(timeValue)"
         imageGenerator?.generateCGImageAsynchronously(forTime: time, completionHandler: { (requestedTime, image, actualTime, result, closestMatch, error) in
             DispatchQueue.main.async {

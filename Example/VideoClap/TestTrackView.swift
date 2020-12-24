@@ -10,7 +10,7 @@ import UIKit
 import VideoClap
 import AVFoundation
 
-class TestTrackView: UIViewController, UIScrollViewDelegate {
+class TestTrackView: UIViewController {
     
     lazy var scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -26,7 +26,7 @@ class TestTrackView: UIViewController, UIScrollViewDelegate {
     
     lazy var track: VCVideoTrackDescription = {
         let track = VCVideoTrackDescription()
-        let source = CMTimeRange(start: 0, end: 5)
+        let source = CMTimeRange(start: 0, end: 50)
         let target = source
         track.timeMapping = CMTimeMapping(source: source, target: target)
         track.mediaURL = Bundle.main.url(forResource: "video0.mp4", withExtension: nil, subdirectory: "Mat")
@@ -44,21 +44,24 @@ class TestTrackView: UIViewController, UIScrollViewDelegate {
     
     let height: CGFloat = 50
     
+    var reloadDataLimit = 0
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         timeControl.setTime(currentTime: .zero, duration: CMTime(value: track.timeMapping.target.duration.value, timescale: VCTimeControl.timeBase))
-        timeControl.setScale(59.9)
+        timeControl.setScale(timeControl.maxScale)
+        
         setupUI()
         view.addGestureRecognizer(pinchGR)
         view.setNeedsLayout()
         view.layoutIfNeeded()
         
+        videoTrackView.timeControl = timeControl
         videoTrackView.cellSize = CGSize(width: height, height: height)
-        videoTrackView.widthPerTimeValue = timeControl.widthPerTimeVale
         videoTrackView.videoTrack = track
-        videoTrackView.reloadData()
+        videoTrackView.reloadData(displayRect: CGRect(x: 0, y: 0, width: view.bounds.width, height: height))
         
-        let totalWidth: CGFloat = CGFloat(track.timeMapping.target.duration.value) * videoTrackView.widthPerTimeValue
+        let totalWidth: CGFloat = CGFloat(track.timeMapping.target.duration.value) * timeControl.widthPerTimeVale
         
         videoTrackView.frame = CGRect(x: 0, y: 0, width: totalWidth, height: height)
         scrollView.contentSize.width = videoTrackView.frame.width
@@ -77,7 +80,7 @@ class TestTrackView: UIViewController, UIScrollViewDelegate {
     }
     
     public func handle(state: UIGestureRecognizer.State, scale: CGFloat) {
-        let limit = 2
+        let limit = 1
         switch state {
         case .began:
             storeScales.removeAll()
@@ -90,7 +93,7 @@ class TestTrackView: UIViewController, UIScrollViewDelegate {
             if storeScales.count % limit == 0 {
                 delayChange()
             } else {
-                perform(#selector(delayChange), with: nil, afterDelay: 0.1)
+                perform(#selector(delayChange), with: nil, afterDelay: 0.03)
             }
             
         case .ended:
@@ -119,13 +122,23 @@ class TestTrackView: UIViewController, UIScrollViewDelegate {
             return
         }
         timeControl.setScale(timeControl.scale * storeScale)
-        videoTrackView.widthPerTimeValue = timeControl.widthPerTimeVale
-        let totalWidth: CGFloat = CGFloat(track.timeMapping.target.duration.value) * videoTrackView.widthPerTimeValue
+        let totalWidth: CGFloat = CGFloat(track.timeMapping.target.duration.value) * timeControl.widthPerTimeVale
         videoTrackView.frame = CGRect(x: 0, y: 0, width: totalWidth, height: height)
         scrollView.contentSize.width = videoTrackView.frame.width
         scrollView.contentSize.height = height
         fixPosition()
-        videoTrackView.reloadData()
+        
+        let targetX = scrollView.contentOffset.x
+        let rect = CGRect(x: max(0, targetX), y: 0, width: scrollView.bounds.width, height: videoTrackView.bounds.height)
+        videoTrackView.reloadData(displayRect: rect)
+    }
+    
+}
+
+extension TestTrackView: UIScrollViewDelegate {
+    
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+
     }
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -136,6 +149,13 @@ class TestTrackView: UIViewController, UIScrollViewDelegate {
         var currentTime = CMTime(seconds: Double(percentage) * timeControl.duration.seconds, preferredTimescale: VCTimeControl.timeBase)
         currentTime = min(max(.zero, currentTime), timeControl.duration)
         timeControl.setTime(currentTime: currentTime)
+        
+        reloadDataLimit += 1
+        if reloadDataLimit % 1 == 0 {
+            let targetX = scrollView.contentOffset.x
+            let rect = CGRect(x: max(0, targetX), y: 0, width: scrollView.bounds.width, height: videoTrackView.bounds.height)
+            videoTrackView.reloadData(displayRect: rect)
+        }
     }
     
 }

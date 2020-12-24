@@ -12,27 +12,17 @@ public class VCTimeControl: NSObject {
     
     public static let timeBase: CMTimeScale = 600
     
-    let range0: Range<CGFloat> = 1..<10
-    let range1: Range<CGFloat> = 10..<20
-    let range2: Range<CGFloat> = 20..<24
-    let range3: Range<CGFloat> = 24..<30
-    let range4: Range<CGFloat> = 30..<60
-    let range5: Range<CGFloat> = 60..<120
-    let range6: Range<CGFloat> = 120..<200
-    let range7: Range<CGFloat> = 200..<300
-    let range8: ClosedRange<CGFloat> = 300...600
-    
-    internal var baseValue: CMTimeValue = 40
+    public internal(set) var intervalTime: CMTime = CMTime(seconds: 20.0, preferredTimescale: VCTimeControl.timeBase)
     
     public internal(set) lazy var currentTime: CMTime = CMTime(value: 0, timescale: VCTimeControl.timeBase)
     
-    public internal(set) lazy var scale: CGFloat = 1
+    public internal(set) lazy var scale: CGFloat = (maxScale + minScale) / 2.0
     
     public internal(set) lazy var duration: CMTime = CMTime(value: 0, timescale: VCTimeControl.timeBase)
     
-    let maxScale: CGFloat = 600
+    public private(set) lazy var maxScale: CGFloat = 12000
     
-    let minScale: CGFloat = 1
+    public let minScale: CGFloat = 30
     
     public internal(set) var widthPerBaseValue: CGFloat = 0
     
@@ -44,6 +34,10 @@ public class VCTimeControl: NSObject {
     
     public var isReachMin: Bool {
         return scale == minScale
+    }
+    
+    public var maxLength: CGFloat {
+        return widthPerTimeVale * CGFloat(duration.value)
     }
     
     public func setScale(_ v: CGFloat) {
@@ -75,40 +69,46 @@ public class VCTimeControl: NSObject {
         setScale(scale)
     }
     
-    internal func update() {
+    private func update() {
         switch scale {
-        case range0:
-            baseValue = 6000
+        case 30..<60:
+            intervalTime = CMTime(seconds: 20.0, preferredTimescale: VCTimeControl.timeBase)
+        
+        case 60..<120:
+            intervalTime = CMTime(seconds: 10.0, preferredTimescale: VCTimeControl.timeBase)
             
-        case range1:
-            baseValue = 3000
+        case 120..<200:
+            intervalTime = CMTime(seconds: 5.0, preferredTimescale: VCTimeControl.timeBase)
             
-        case range2:
-            baseValue = 2400
+        case 200..<300:
+            intervalTime = CMTime(seconds: 3.0, preferredTimescale: VCTimeControl.timeBase)
             
-        case range3:
-            baseValue = 1200
+        case 300..<600:
+            intervalTime = CMTime(seconds: 2.0, preferredTimescale: VCTimeControl.timeBase)
             
-        case range4:
-            baseValue = 600
+        case 600..<1200:
+            intervalTime = CMTime(seconds: 1.0, preferredTimescale: VCTimeControl.timeBase)
             
-        case range5:
-            baseValue = 300
+        case 1200..<1800:
+            intervalTime = CMTime(seconds: 1.0 / 2.0, preferredTimescale: VCTimeControl.timeBase)
 
-        case range6:
-            baseValue = 100
+        case 1800..<3600:
+            intervalTime = CMTime(seconds: 1.0 / 3.0, preferredTimescale: VCTimeControl.timeBase)
             
-        case range7:
-            baseValue = 60
+        case 3600..<6000:
+            intervalTime = CMTime(seconds: 1.0 / 6.0, preferredTimescale: VCTimeControl.timeBase)
             
-        case range8:
-            baseValue = 40
+        case 6000..<9000:
+            intervalTime = CMTime(seconds: 1.0 / 10.0, preferredTimescale: VCTimeControl.timeBase)
+            
+        case 9000..<12000:
+            intervalTime = CMTime(seconds: 1.0 / 15.0, preferredTimescale: VCTimeControl.timeBase)
             
         default:
-            baseValue = 40
+            break
         }
-        widthPerTimeVale = scale / 300
-        widthPerBaseValue = widthPerTimeVale * CGFloat(baseValue)
+        widthPerTimeVale = scale * 1 / 6 / 600
+        widthPerBaseValue = widthPerTimeVale * CGFloat(intervalTime.value)
     }
     
 }
