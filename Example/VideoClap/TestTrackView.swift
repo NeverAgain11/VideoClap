@@ -24,12 +24,25 @@ class TestTrackView: UIViewController {
         return view
     }()
     
-    lazy var track: VCVideoTrackDescription = {
+    lazy var imageTrackView: VCImageTrackView = {
+        let view = VCImageTrackView()
+        view.backgroundColor = UIColor.lightGray
+        return view
+    }()
+    
+    lazy var videoTrack: VCVideoTrackDescription = {
         let track = VCVideoTrackDescription()
-        let source = CMTimeRange(start: 0, end: 50)
+        let source = CMTimeRange(start: 0, end: 5)
         let target = source
         track.timeMapping = CMTimeMapping(source: source, target: target)
         track.mediaURL = Bundle.main.url(forResource: "video0.mp4", withExtension: nil, subdirectory: "Mat")
+        return track
+    }()
+    
+    lazy var imageTrack: VCImageTrackDescription = {
+        let track = VCImageTrackDescription()
+        track.timeRange = CMTimeRange(start: 5, end: 10)
+        track.mediaURL = Bundle.main.url(forResource: "watch-dogs-2-12000x8000-season-pass-hd-4k-8k-3105.JPG", withExtension: nil, subdirectory: "Mat")
         return track
     }()
     
@@ -40,31 +53,36 @@ class TestTrackView: UIViewController {
     
     var timeControl = VCTimeControl()
     
-    internal lazy var storeScales: [CGFloat] = []
-    
     let height: CGFloat = 50
     
-    var reloadDataLimit = 0
+    init() {
+        super.init(nibName: nil, bundle: nil)
+        timeControl.setTime(currentTime: .zero, duration: CMTime(value: videoTrack.timeMapping.target.duration.value, timescale: VCTimeControl.timeBase))
+        timeControl.setScale(timeControl.minScale)
+        view.addGestureRecognizer(pinchGR)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        timeControl.setTime(currentTime: .zero, duration: CMTime(value: track.timeMapping.target.duration.value, timescale: VCTimeControl.timeBase))
-        timeControl.setScale(timeControl.maxScale)
-        
         setupUI()
-        view.addGestureRecognizer(pinchGR)
-        view.setNeedsLayout()
-        view.layoutIfNeeded()
         
         videoTrackView.timeControl = timeControl
         videoTrackView.cellSize = CGSize(width: height, height: height)
-        videoTrackView.videoTrack = track
+        videoTrackView.videoTrack = videoTrack
         videoTrackView.reloadData(displayRect: CGRect(x: 0, y: 0, width: view.bounds.width, height: height))
+        videoTrackView.frame = CGRect(x: 0, y: 0, width: CGFloat(videoTrack.timeMapping.target.duration.value) * timeControl.widthPerTimeVale, height: height)
         
-        let totalWidth: CGFloat = CGFloat(track.timeMapping.target.duration.value) * timeControl.widthPerTimeVale
+        imageTrackView.timeControl = timeControl
+        imageTrackView.cellSize = CGSize(width: height, height: height)
+        imageTrackView.imageTrack = imageTrack
+        imageTrackView.reloadData(displayRect: CGRect(x: 0, y: 0, width: view.bounds.width, height: height))
+        imageTrackView.frame = CGRect(x: videoTrackView.frame.maxX, y: 0, width: CGFloat(imageTrack.timeRange.duration.value) * timeControl.widthPerTimeVale, height: height)
         
-        videoTrackView.frame = CGRect(x: 0, y: 0, width: totalWidth, height: height)
-        scrollView.contentSize.width = videoTrackView.frame.width
+        scrollView.contentSize.width = videoTrackView.frame.width + imageTrackView.frame.width
         scrollView.contentSize.height = height
         scrollView.contentInset.left = view.frame.width / 2
         scrollView.contentInset.right = scrollView.contentInset.left
@@ -80,26 +98,18 @@ class TestTrackView: UIViewController {
     }
     
     public func handle(state: UIGestureRecognizer.State, scale: CGFloat) {
-        let limit = 1
         switch state {
         case .began:
-            storeScales.removeAll()
+            videoTrackView.isStopLoadThumbnail = true
             scrollView.delegate = nil
             
         case .changed:
 //            storeScales.append(2.0 - sender.scale)
-            storeScales.append(scale)
-            NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(delayChange), object: nil)
-            if storeScales.count % limit == 0 {
-                delayChange()
-            } else {
-                perform(#selector(delayChange), with: nil, afterDelay: 0.03)
-            }
+            update(scale: scale)
             
         case .ended:
-            if storeScales.count % limit != 0 {
-                delayChange()
-            }
+            videoTrackView.isStopLoadThumbnail = false
+            update(scale: 1.0)
             scrollView.delegate = self
             
         default:
@@ -113,33 +123,28 @@ class TestTrackView: UIViewController {
         scrollView.setContentOffset(CGPoint(x: offsetX, y: 0), animated: false)
     }
     
-    @objc func delayChange() {
-        let storeScale = storeScales.reduce(1.0) { (result, scale) in
-            return result * scale
-        }
-        storeScales.removeAll()
-        if (timeControl.isReachMax && storeScale >= 1.0) || (timeControl.isReachMin && storeScale <= 1.0) {
+    func update(scale: CGFloat) {
+        if (timeControl.isReachMax && scale >= 1.0) || (timeControl.isReachMin && scale <= 1.0) {
             return
         }
-        timeControl.setScale(timeControl.scale * storeScale)
-        let totalWidth: CGFloat = CGFloat(track.timeMapping.target.duration.value) * timeControl.widthPerTimeVale
-        videoTrackView.frame = CGRect(x: 0, y: 0, width: totalWidth, height: height)
-        scrollView.contentSize.width = videoTrackView.frame.width
-        scrollView.contentSize.height = height
+        timeControl.setScale(timeControl.scale * scale)
+        
+        videoTrackView.frame = CGRect(x: 0, y: 0, width: CGFloat(videoTrack.timeMapping.target.duration.value) * timeControl.widthPerTimeVale, height: height)
+        imageTrackView.frame = CGRect(x: videoTrackView.frame.maxX, y: 0, width: CGFloat(imageTrack.timeRange.duration.value) * timeControl.widthPerTimeVale, height: height)
+        
+        scrollView.contentSize.width = videoTrackView.frame.width + imageTrackView.frame.width
+        
         fixPosition()
         
         let targetX = scrollView.contentOffset.x
-        let rect = CGRect(x: max(0, targetX), y: 0, width: scrollView.bounds.width, height: videoTrackView.bounds.height)
+        let rect = CGRect(x: max(0, targetX), y: 0, width: scrollView.bounds.width, height: scrollView.bounds.height)
         videoTrackView.reloadData(displayRect: rect)
+        imageTrackView.reloadData(displayRect: rect)
     }
     
 }
 
 extension TestTrackView: UIScrollViewDelegate {
-    
-    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-
-    }
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         if scrollView.contentSize.width.isZero {
@@ -149,13 +154,10 @@ extension TestTrackView: UIScrollViewDelegate {
         var currentTime = CMTime(seconds: Double(percentage) * timeControl.duration.seconds, preferredTimescale: VCTimeControl.timeBase)
         currentTime = min(max(.zero, currentTime), timeControl.duration)
         timeControl.setTime(currentTime: currentTime)
-        
-        reloadDataLimit += 1
-        if reloadDataLimit % 1 == 0 {
-            let targetX = scrollView.contentOffset.x
-            let rect = CGRect(x: max(0, targetX), y: 0, width: scrollView.bounds.width, height: videoTrackView.bounds.height)
-            videoTrackView.reloadData(displayRect: rect)
-        }
+        let targetX = scrollView.contentOffset.x
+        let rect = CGRect(x: max(0, targetX), y: 0, width: scrollView.bounds.width, height: videoTrackView.bounds.height)
+        videoTrackView.reloadData(displayRect: rect)
+        imageTrackView.reloadData(displayRect: rect)
     }
     
 }
@@ -164,8 +166,12 @@ extension TestTrackView {
     
     func setupUI() {
         scrollView.addSubview(videoTrackView)
+        scrollView.addSubview(imageTrackView)
         view.addSubview(scrollView)
         setupConstraints()
+        
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
     }
     
     func setupConstraints() {
