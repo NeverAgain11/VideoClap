@@ -14,7 +14,6 @@ public class VCLaminationTrackDescription: VCImageTrackDescription {
         copyObj.mediaURL         = mediaURL
         copyObj.id               = id
         copyObj.timeRange        = timeRange
-        copyObj.isFit            = isFit
         copyObj.isFlipHorizontal = isFlipHorizontal
         copyObj.filterIntensity  = filterIntensity
         copyObj.lutImageURL      = lutImageURL

@@ -135,30 +135,35 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         return nil
     }
     
-    public func smoothReplaceCurrentItem(with item: AVPlayerItem?) {
+    public func smoothReplaceCurrentItem(with item: AVPlayerItem?, time: CMTime? = nil) -> CMTime {
         guard let newPlayerItem = item else {
             super.replaceCurrentItem(with: item)
-            return
+            return .zero
         }
-        
         stopRenderFlag = true
         super.pause()
         self.removePlayingTimeObserver()
-        
-        let seekTime = videoClap.requestCallbackHandler.compositionTime
-        newPlayerItem.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] (_) in
-            guard let self = self else { return }
-            self.replaceCurrentItem(with: newPlayerItem)
-            self.stopRenderFlag = false
-            if let block = self.playingBlock {
-                self.observePlayingTime(forInterval: self.interval, queue: self.observeQueue, block: block)
-            }
+        var seekTime = time ?? videoClap.requestCallbackHandler.compositionTime
+        seekTime = CMTimeClampToRange(seekTime, range: CMTimeRange(start: .zero, duration: newPlayerItem.duration))
+        newPlayerItem.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero)
+        self.replaceCurrentItem(with: newPlayerItem)
+        self.stopRenderFlag = false
+        if let block = self.playingBlock {
+            self.observePlayingTime(forInterval: self.interval, queue: self.observeQueue, block: block)
         }
+        return seekTime
     }
     
-    public func reload() {
-        let newPlayerItem = self.videoClap.playerItemForPlay()
-        self.smoothReplaceCurrentItem(with: newPlayerItem)
+    @discardableResult
+    public func reload() -> CMTime? {
+        do {
+            let newPlayerItem = try self.videoClap.playerItemForPlay()
+            contextChanged()
+            return self.smoothReplaceCurrentItem(with: newPlayerItem)
+        } catch let error {
+            log.error(error)
+        }
+        return nil
     }
     
     public override func observePlayingTime(forInterval interval: CMTime = CMTime(value: 30, timescale: 600), queue: DispatchQueue = .main, block: @escaping (CMTime) -> Void) {

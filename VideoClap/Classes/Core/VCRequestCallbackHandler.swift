@@ -11,8 +11,6 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     
     public var videoDescription: VCVideoDescription = VCVideoDescription()
     
-    internal var audioTrackEnumor: [String : VCAudioTrackDescription] = [:]
-    
     public internal(set) var compositionTime: CMTime = .zero
     
     internal var blackImage: CIImage {
@@ -20,12 +18,6 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     }
     
     public var renderTarget: VCRenderTarget = VCOfflineRenderTarget()
-    
-    public func contextChanged() {
-        let trackBundle = videoDescription.trackBundle
-        audioTrackEnumor = trackBundle.audioTracks.dic()
-        renderTarget.contextChanged()
-    }
     
     public func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
         self.compositionTime = compositionTime
@@ -108,7 +100,8 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         finish(finalFrame)
     }
     
-    public func handle(trackID: String,
+    public func handle(audios: [String : VCAudioTrackDescription],
+                       trackID: String,
                        timeRange: CMTimeRange,
                        inCount: CMItemCount,
                        inFlag: MTAudioProcessingTapFlags,
@@ -120,7 +113,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             return
         }
         
-        guard let audioTrack = audioTrackEnumor[trackID], let url = audioTrack.mediaURL else { return }
+        guard let audioTrack = audios[trackID], let url = audioTrack.mediaURL else { return }
 
         if #available(iOS 11.0, *), let audioEffectProvider = audioTrack.audioEffectProvider {
             do {

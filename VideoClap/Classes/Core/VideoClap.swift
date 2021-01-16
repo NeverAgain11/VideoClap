@@ -33,6 +33,11 @@ open class VideoClap: NSObject {
         }
     }
     
+    private lazy var videoCompositor: VCVideoCompositor = {
+        let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler)
+        return videoCompositor
+    }()
+    
     deinit {
         NotificationCenter.default.removeObserver(self, name: UIApplication.didReceiveMemoryWarningNotification, object: UIApplication.shared)
     }
@@ -62,23 +67,20 @@ open class VideoClap: NSObject {
         VCImageCache.share.clearMemory()
     }
     
-    public func playerItemForPlay() -> AVPlayerItem {
-        let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler)
-        requestCallbackHandler.contextChanged()
-        videoCompositor.setRequestCallbackHandler(requestCallbackHandler)
-        let playerItem: AVPlayerItem
-        do {
-             playerItem = try videoCompositor.playerItemForPlay()
-        } catch let error {
-            log.error(error)
-            playerItem = AVPlayerItem(asset: AVAsset())
-        }
+    public func playerItemForPlay() throws -> AVPlayerItem {
+        let playerItem = try videoCompositor.playerItemForPlay()
         return playerItem
     }
     
     @discardableResult
     public func export(fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
-        return export(playerItem: playerItemForPlay(), fileName: fileName, progressHandler: progressHandler, completionHandler: completionHandler)
+        do {
+            let item = try playerItemForPlay()
+            return export(playerItem: item, fileName: fileName, progressHandler: progressHandler, completionHandler: completionHandler)
+        } catch let error {
+            completionHandler(nil, error)
+            return nil 
+        }
     }
     
     @discardableResult
@@ -182,18 +184,22 @@ open class VideoClap: NSObject {
     }
     
     func imageGenerator() -> AVAssetImageGenerator {
-        let playerItem = playerItemForPlay()
-        let generator = AVAssetImageGenerator(asset: playerItem.asset)
-        generator.appliesPreferredTrackTransform = true
-        generator.requestedTimeToleranceAfter = .zero
-        generator.requestedTimeToleranceBefore = .zero
-        generator.maximumSize = requestCallbackHandler.videoDescription.renderSize
-        generator.videoComposition = playerItem.videoComposition
-        return generator
+        do {
+            let playerItem = try playerItemForPlay()
+            let generator = AVAssetImageGenerator(asset: playerItem.asset)
+            generator.appliesPreferredTrackTransform = true
+            generator.requestedTimeToleranceAfter = .zero
+            generator.requestedTimeToleranceBefore = .zero
+            generator.maximumSize = requestCallbackHandler.videoDescription.renderSize
+            generator.videoComposition = playerItem.videoComposition
+            return generator
+        } catch let error {
+            return AVAssetImageGenerator(asset: AVAsset())
+        }
     }
     
     public func estimateVideoDuration() -> CMTime {
-        return playerItemForPlay().asset.duration
+        return (try? playerItemForPlay().asset.duration) ?? .zero
     }
     
     public static func cleanExportFolder() {

@@ -63,13 +63,14 @@ internal class VCVideoCompositor: NSObject {
         try addEmptyTrack(timeRange: CMTimeRange(start: .zero, duration: max(composition.duration, videoDuration)), onCompositionTrack: compositionTrack)
         
         var audioMixInputParametersGroup: [AVMutableAudioMixInputParameters] = []
-        
+        let audios = trackBundle.audioTracks.dic()
         for (_, trackInfos) in existAudioTrackDic {
             for audioTrack in trackInfos {
                 if let compositionTrack = audioTrack.compositionTrack,
                     let inputParameters = addAudioMix(audioTrack: compositionTrack,
                                                      audioTrackID: audioTrack.persistentTrackID,
-                                                     track: audioTrack) {
+                                                     track: audioTrack,
+                                                     audios: audios) {
                     audioMixInputParametersGroup.append(inputParameters)
                 }
             }
@@ -161,11 +162,11 @@ internal class VCVideoCompositor: NSObject {
         for mediaTrack in mediaTracks {
             if let mediaURL = mediaTrack.mediaURL {
                 let asset = AVURLAsset(url: mediaURL, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
-                let group = DispatchGroup()
+//                let group = DispatchGroup()
                 
-                group.enter()
+//                group.enter()
                 
-                asset.loadValuesAsynchronously(forKeys: ["duration", "playable", "preferredRate", "preferredVolume", "hasProtectedContent", "providesPreciseDurationAndTiming", "metadata"]) {
+//                asset.loadValuesAsynchronously(forKeys: ["duration", "playable", "preferredRate", "preferredVolume", "hasProtectedContent", "providesPreciseDurationAndTiming", "metadata"]) {
                     if let bestVideoTrack = asset.tracks(withMediaType: mediaType).first, let assetDuration = bestVideoTrack.asset?.duration {
                         
                         if let compositionTrack = composition.track(withTrackID: persistentTrackID) {
@@ -203,12 +204,12 @@ internal class VCVideoCompositor: NSObject {
                             }
                         }
                         
-                    }
+//                    }
                     
-                    group.leave()
+//                    group.leave()
                 }
                 
-                group.wait()
+//                group.wait()
                 
             }
         }
@@ -405,7 +406,7 @@ internal class VCVideoCompositor: NSObject {
         return videoComposition
     }
     
-    private func addAudioMix(audioTrack: AVMutableCompositionTrack, audioTrackID: CMPersistentTrackID, track: VCAudioTrackDescription) -> AVMutableAudioMixInputParameters? {
+    private func addAudioMix(audioTrack: AVMutableCompositionTrack, audioTrackID: CMPersistentTrackID, track: VCAudioTrackDescription, audios: [String : VCAudioTrackDescription]) -> AVMutableAudioMixInputParameters? {
         if track.audioVolumeRampDescriptions.isEmpty {
             return nil
         }
@@ -431,7 +432,7 @@ internal class VCVideoCompositor: NSObject {
         }
         
         do {
-            let cookie = VCTapToken(trackID: track.id, processCallback: requestCallbackHandler)
+            let cookie = VCTapToken(trackID: track.id, audios: audios, processCallback: requestCallbackHandler)
             try inputParams.setAudioProcessingTap(cookie: cookie)
         } catch let error {
             log.error(error)

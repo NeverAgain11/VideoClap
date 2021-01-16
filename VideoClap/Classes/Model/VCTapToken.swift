@@ -12,9 +12,11 @@ import AVFoundation
 public class VCTapToken: NSObject {
     var processCallback: VCAudioProcessingTapProcessProtocol
     var trackID: String
+    var audios: [String : VCAudioTrackDescription]
     
-    init(trackID: String, processCallback: VCAudioProcessingTapProcessProtocol) {
+    init(trackID: String, audios: [String : VCAudioTrackDescription], processCallback: VCAudioProcessingTapProcessProtocol) {
         self.trackID = trackID
         self.processCallback = processCallback
+        self.audios = audios
     }
 }

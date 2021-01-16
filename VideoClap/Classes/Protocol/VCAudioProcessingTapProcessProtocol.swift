@@ -9,7 +9,8 @@ import AVFoundation
 
 public protocol VCAudioProcessingTapProcessProtocol: NSObject {
     
-    func handle(trackID: String,
+    func handle(audios: [String : VCAudioTrackDescription],
+                trackID: String,
                 timeRange: CMTimeRange,
                 inCount: CMItemCount,
                 inFlag: MTAudioProcessingTapFlags,

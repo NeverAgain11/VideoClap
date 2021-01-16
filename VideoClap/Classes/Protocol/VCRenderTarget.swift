@@ -8,6 +8,5 @@
 import Foundation
 
 public protocol VCRenderTarget: NSObject {
-    func contextChanged()
     func draw(images: [String:CIImage], blackImage: CIImage) -> CIImage?
 }

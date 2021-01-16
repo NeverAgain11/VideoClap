@@ -196,4 +196,11 @@ extension VCHelper {
         return overlayFilter.outputImage
     }
     
+    static func blurCompositing(value: CGFloat = 10.0, inputImage: CIImage) -> CIImage? {
+        guard let filter: CIFilter = CIFilter(name: "CIBoxBlur") else { return nil }
+        filter.setValue(inputImage, forKey: kCIInputImageKey)
+        filter.setValue(NSNumber(value: Float(value)), forKey: kCIInputRadiusKey)
+        return filter.outputImage
+    }
+    
 }

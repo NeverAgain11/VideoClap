@@ -75,7 +75,8 @@ private func tapProcess(tap: MTAudioProcessingTap,
     let trackID = tapToken.trackID
     let processCallback = tapToken.processCallback
     if status == noErr && timeRange.isValid {
-        processCallback.handle(trackID: trackID,
+        processCallback.handle(audios: tapToken.audios,
+                               trackID: trackID,
                                timeRange: timeRange,
                                inCount: numberFrames,
                                inFlag: flags,
@@ -84,7 +85,8 @@ private func tapProcess(tap: MTAudioProcessingTap,
                                outFlag: flagsOut,
                                error: nil)
     } else {
-        processCallback.handle(trackID: trackID,
+        processCallback.handle(audios: tapToken.audios,
+                               trackID: trackID,
                                timeRange: timeRange,
                                inCount: numberFrames,
                                inFlag: flags,

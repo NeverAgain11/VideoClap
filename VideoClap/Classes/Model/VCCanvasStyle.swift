@@ -10,5 +10,5 @@ import AVFoundation
 public enum VCCanvasStyle {
     case pureColor(UIColor)
     case image(URL)
-    case trackImage(String)
+    case blur
 }

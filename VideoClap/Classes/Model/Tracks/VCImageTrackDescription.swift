@@ -24,8 +24,6 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
     
     public var timeRange: CMTimeRange = .zero
     
-    public var isFit: Bool = true
-    
     public var isFlipHorizontal: Bool = false
     
     public var filterIntensity: NSNumber = 1.0
@@ -61,7 +59,6 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         copyObj.mediaURL         = mediaURL
         copyObj.id               = id
         copyObj.timeRange        = timeRange
-        copyObj.isFit            = isFit
         copyObj.isFlipHorizontal = isFlipHorizontal
         copyObj.filterIntensity  = filterIntensity
         copyObj.lutImageURL      = lutImageURL
@@ -206,7 +203,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         }
         
         if let canvasStyle = self.canvasStyle,
-           let canvasImage = canvasImage(canvasStyle: canvasStyle, renderSize: renderSize, renderScale: renderScale)
+           let canvasImage = canvasImage(canvasStyle: canvasStyle, originImage: image, renderSize: renderSize, renderScale: renderScale)
         {
             frame = frame.composited(over: canvasImage)
         }
@@ -214,7 +211,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         return frame
     }
     
-    func canvasImage(canvasStyle: VCCanvasStyle, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
+    func canvasImage(canvasStyle: VCCanvasStyle, originImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
         let renderer = VCGraphicsRenderer()
         
         var canvasImage: CIImage?
@@ -231,8 +228,8 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         case .image(let url):
             canvasImage = downsampleImage(url: url, renderSize: renderSize, renderScale: renderScale)
             
-        default:
-            return nil
+        case .blur:
+            canvasImage = VCHelper.blurCompositing(inputImage: originImage)
         }
         
         if let canvasImage = canvasImage {
