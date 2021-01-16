@@ -11,13 +11,9 @@ open class VCVideoDescription: NSObject, NSCopying, NSMutableCopying {
     
     public var renderSize: CGSize = .zero
     
-    public var renderScale: Float = 1.0
+    public var renderScale: CGFloat = 1.0
     
     public var fps: Double = 24.0
-    
-    public var waterMarkRect: VCRect?
-    
-    public var waterMarkImageURL: URL?
     
     public var trackBundle: VCTrackBundle = .init()
     

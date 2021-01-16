@@ -7,19 +7,8 @@
 
 import Foundation
 import AVFoundation
-import SwiftyBeaver
 import Lottie
 import SwiftyTimer
-
-internal let log: SwiftyBeaver.Type = {
-//    #if DEBUG
-    let console = ConsoleDestination()
-    console.asynchronously = true
-    console.format = "$C$L$c $n[$l] > $F: \(Thread.current) $T\n$M"
-    SwiftyBeaver.addDestination(console)
-//    #endif
-    return SwiftyBeaver.self
-}()
 
 public typealias ProgressHandler = (_ progress: Progress) -> Void
 public typealias CancelClosure = () -> Void
@@ -89,6 +78,11 @@ open class VideoClap: NSObject {
     
     @discardableResult
     public func export(fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
+        return export(playerItem: playerItemForPlay(), fileName: fileName, progressHandler: progressHandler, completionHandler: completionHandler)
+    }
+    
+    @discardableResult
+    public func export(playerItem: AVPlayerItem, fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
         do {
             let audioSession = AVAudioSession.sharedInstance()
             try audioSession.setCategory(.audioProcessing, options: [.mixWithOthers])
@@ -97,7 +91,6 @@ open class VideoClap: NSObject {
             log.error(error)
         }
         
-        let playerItem = playerItemForPlay()
         if playerItem.asset.tracks(withMediaType: .audio).isEmpty && playerItem.asset.tracks(withMediaType: .video).isEmpty {
             completionHandler(nil, VideoClapError.exportFailed)
             return nil
@@ -145,7 +138,7 @@ open class VideoClap: NSObject {
         session.videoComposition = playerItem.videoComposition
         session.directoryForTemporaryFiles = VideoClap.ExportFolder
         session.canPerformMultiplePassesOverSourceMediaData = false
-        session.audioTimePitchAlgorithm = playerItem.audioTimePitchAlgorithm
+        session.audioTimePitchAlgorithm = .spectral
         
         let den: Int64 = 100
         let progress = Progress(totalUnitCount: den)

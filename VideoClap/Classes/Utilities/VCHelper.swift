@@ -98,6 +98,22 @@ public class VCHelper: NSObject {
         }
     }
     
+    static func image(color: UIColor, size: CGSize) -> CIImage {
+        let key = "__custom_color_image" + size.debugDescription + color.debugDescription
+        if let cacheImage = VCImageCache.share.image(forKey: key) {
+            return cacheImage
+        } else {
+            let renderer = VCGraphicsRenderer()
+            renderer.rendererRect.size = size
+            let image = renderer.ciImage { (context) in
+                UIColor.black.setFill()
+                UIRectFill(renderer.rendererRect)
+            }
+            VCImageCache.share.storeImage(toMemory: image, forKey: key)
+            return image ?? CIImage()
+        }
+    }
+    
 }
 
 extension VCHelper {

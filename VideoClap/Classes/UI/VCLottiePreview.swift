@@ -117,7 +117,7 @@ public class VCLottiePreview: UIView {
             break
             
         case .changed:
-            lottieTrack.rotateRadian += Float(sender.rotation)
+            lottieTrack.rotateRadian += sender.rotation
             imageView.transform = CGAffineTransform.identity.rotated(by: CGFloat(lottieTrack.rotateRadian))
             sender.rotation = 0.0
             

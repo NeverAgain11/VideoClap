@@ -10,8 +10,6 @@ import AVFoundation
 
 public protocol VCTrajectoryProtocol: NSObject {
     
-    var timeRange: CMTimeRange { get set }
-    
     var range: VCRange { get set }
     
     func transition(renderSize: CGSize, progress: CGFloat, image: CIImage) -> CIImage?

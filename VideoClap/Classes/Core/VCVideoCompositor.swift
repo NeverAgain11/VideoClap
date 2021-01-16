@@ -228,22 +228,13 @@ internal class VCVideoCompositor: NSObject {
         let locker = VCLocker()
         let trackBundle = videoDescription.trackBundle
         let imageTracks = trackBundle.imageTracks
-        let lottieTracks = trackBundle.lottieTracks
-        let laminationTracks = trackBundle.laminationTracks
-        let textTracks = trackBundle.textTracks
         
         let trackDescriptions: [VCImageTrackDescription] = imageTracks + videoTracks
         let enumor = trackDescriptions.dic()
         
         var transitions: [VCTransition] = []
         
-        for track in trackDescriptions {
-            if let trajectory = track.trajectory {
-                let start =  track.timeRange.start.seconds + TimeInterval(trajectory.range.left) * track.timeRange.duration.seconds
-                let end =  track.timeRange.start.seconds + TimeInterval(trajectory.range.right) * track.timeRange.duration.seconds
-                trajectory.timeRange = CMTimeRange(start: start, end: end)
-            }
-        }
+        var trackCompensateTimeRange: [String:CMTimeRange] = [:]
         
         (videoDescription.transitions as NSArray).enumerateObjects(options: .concurrent) { (obj, index, outStop) in
             guard let transition = obj as? VCTransitionProtocol else { return }
@@ -257,23 +248,8 @@ internal class VCVideoCompositor: NSObject {
                 
                 let t: VCTransition = VCTransition(timeRange: CMTimeRange(start: start, end: end), transition: transition)
                 
-                t.fromTrackClipTimeRange = (fromTrack as? VCVideoTrackDescription)?.sourceTimeRange
-                t.toTrackClipTimeRange = (toTrack as? VCVideoTrackDescription)?.sourceTimeRange
-                
-                if let trajectory = fromTrack.trajectory {
-                    let duration = (end - fromTrack.timeRange.start).seconds
-                    let start =  fromTrack.timeRange.start.seconds + TimeInterval(trajectory.range.left) * duration
-                    let end =  fromTrack.timeRange.start.seconds + TimeInterval(trajectory.range.right) * duration
-                    trajectory.timeRange = CMTimeRange(start: start, end: end)
-                }
-                
-                if let trajectory = toTrack.trajectory {
-                    let duration = (toTrack.timeRange.end - start).seconds
-                    let trajectoryStart = start.seconds + TimeInterval(trajectory.range.left) * duration
-                    let trajectoryEnd = start.seconds + TimeInterval(trajectory.range.right) * duration
-                    trajectory.timeRange = CMTimeRange(start: trajectoryStart,
-                                                       end: trajectoryEnd)
-                }
+                trackCompensateTimeRange[transition.fromId] = CMTimeRange(start: fromTrack.timeRange.start, end: t.timeRange.end)
+                trackCompensateTimeRange[transition.toId] = CMTimeRange(start: t.timeRange.start, end: toTrack.timeRange.end)
                 
                 locker.object(forKey: "transitions").lock()
                 transitions.append(t)
@@ -295,11 +271,8 @@ internal class VCVideoCompositor: NSObject {
         
         keyTimes.append(contentsOf: imageTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
         keyTimes.append(contentsOf: videoTracks.flatMap({ [$0.timeMapping.target.start, $0.timeMapping.target.end] }))
-        keyTimes.append(contentsOf: lottieTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
-        keyTimes.append(contentsOf: laminationTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
         keyTimes.append(contentsOf: audioTracks.flatMap({ [$0.timeMapping.target.start, $0.timeMapping.target.end] }))
         keyTimes.append(contentsOf: transitions.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
-        keyTimes.append(contentsOf: textTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
         
         func removeDuplicates(times: [CMTime]) -> [CMTime] {
             var fastEnum: [String:CMTime] = [:]
@@ -329,10 +302,7 @@ internal class VCVideoCompositor: NSObject {
             
             trackBundle.imageTracks = imageTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
             trackBundle.videoTracks = videoTracks.filter({ $0.timeMapping.target.intersection(timeRange).isEmpty == false })
-            trackBundle.lottieTracks = lottieTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
-            trackBundle.laminationTracks = laminationTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
             trackBundle.audioTracks = audioTracks.filter({ $0.timeMapping.target.intersection(timeRange).isEmpty == false })
-            trackBundle.textTracks = textTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
             
             if trackBundle.videoTracks.isEmpty {
                 instruction.requiredSourceTrackIDs = [VCVideoCompositor.EmptyVideoTrackID as NSValue]
@@ -346,6 +316,7 @@ internal class VCVideoCompositor: NSObject {
             }
 
             instruction.transitions = transitions.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
+            instruction.trackCompensateTimeRange = trackCompensateTimeRange
             
             for transition in instruction.transitions {
                 
@@ -430,7 +401,7 @@ internal class VCVideoCompositor: NSObject {
         videoComposition.instructions = instructions
         videoComposition.customVideoCompositorClass = VCVideoCompositing.self
         videoComposition.renderSize = videoDescription.renderSize
-        videoComposition.renderScale = videoDescription.renderScale
+        videoComposition.renderScale = Float(videoDescription.renderScale)
         return videoComposition
     }
     

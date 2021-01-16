@@ -10,8 +10,6 @@ import AVFoundation
 internal class VCTransition: NSObject {
     let transition: VCTransitionProtocol
     let timeRange: CMTimeRange
-    var fromTrackClipTimeRange: CMTimeRange?
-    var toTrackClipTimeRange: CMTimeRange?
     
     init(timeRange: CMTimeRange, transition: VCTransitionProtocol) {
         self.timeRange  = timeRange

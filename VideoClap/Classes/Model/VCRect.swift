@@ -12,6 +12,10 @@ public struct VCRect {
     public var normalizeWidth: CGFloat
     public var normalizeHeight: CGFloat
     
+    public static var zero: VCRect {
+        return VCRect(normalizeCenter: .zero, normalizeSize: .zero)
+    }
+    
     public init(normalizeCenter: CGPoint, normalizeSize: CGSize) {
         self.normalizeCenter = normalizeCenter
         self.normalizeWidth = normalizeSize.width

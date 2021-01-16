@@ -39,7 +39,7 @@ class TestTimeScaleView: UIViewController {
         timeScaleView.contentInset.left = timeScaleView.bounds.width / 2.0
         timeScaleView.contentInset.right = timeScaleView.contentInset.left
         
-        timeScaleView.setTime(currentTime: .zero, duration: CMTime(seconds: 100, preferredTimescale: 600))
+        timeScaleView.setTime(currentTime: .zero, duration: CMTime(seconds: 100000000000000, preferredTimescale: 600))
         timeScaleView.setScale(60)
         
         view.addGestureRecognizer(pinchGR)

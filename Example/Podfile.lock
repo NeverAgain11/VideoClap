@@ -1,11 +1,11 @@
 PODS:
   - lottie-ios (3.1.9)
-  - SDWebImage (5.9.4):
-    - SDWebImage/Core (= 5.9.4)
-  - SDWebImage/Core (5.9.4)
+  - SDWebImage (5.10.0):
+    - SDWebImage/Core (= 5.10.0)
+  - SDWebImage/Core (5.10.0)
   - SnapKit (4.2.0)
   - SSPlayer (0.1.0)
-  - SwiftyBeaver (1.9.2)
+  - SwiftyBeaver (1.9.3)
   - SwiftyTimer (2.1.0)
   - VideoClap (0.1.0):
     - lottie-ios
@@ -133,15 +133,15 @@ EXTERNAL SOURCES:
 
 CHECKOUT OPTIONS:
   SSPlayer:
-    :commit: a4e509618b83a56cd42467e634c557ade3e363d1
+    :commit: b58d8e65cb5eb4d50cfa24d7a874e8f758bebd38
     :git: https://github.com/lai001/SSPlayer.git
 
 SPEC CHECKSUMS:
   lottie-ios: 3a3758ef5a008e762faec9c9d50a39842f26d124
-  SDWebImage: b69257f4ab14e9b6a2ef53e910fdf914d8f757c1
+  SDWebImage: 9169792e9eec3e45bba2a0c02f74bf8bd922d1ee
   SnapKit: fe8a619752f3f27075cc9a90244d75c6c3f27e2a
   SSPlayer: 6299c67bde2d7a5f64292dccac0e6ddd45bfdd91
-  SwiftyBeaver: b8239f6bfe9e1ea3303e6139abc8c24228081d84
+  SwiftyBeaver: 2e8acd6fc90c6d0a27055867a290794926d57c02
   SwiftyTimer: 02dd6cf10cbc71cbf67cec494f6e5eb782102543
   VideoClap: c864d5d51af10e4c2b393385b8b923fb2ec76b10
 

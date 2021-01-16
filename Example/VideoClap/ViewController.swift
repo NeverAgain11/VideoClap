@@ -19,31 +19,29 @@ class NavigationController: UINavigationController {
 
 class ViewController: UIViewController {
 
-    lazy var requestCallbackHandler: VCPreviewRequestCallbackHandler = {
-        return VCPreviewRequestCallbackHandler()
-    }()
-    
-    var videoDescription: VCVideoDescription {
-        return requestCallbackHandler.videoDescription
+    var requestCallbackHandler: VCRequestCallbackHandler {
+        return videoClap.requestCallbackHandler
     }
     
-    lazy var videoClap: VideoClap = {
-        let videoClap = VideoClap()
-        videoClap.requestCallbackHandler = requestCallbackHandler
-        return videoClap
-    }()
+    var videoDescription: VCVideoDescription {
+        return videoClap.videoDescription
+    }
     
-    var player: SSPlayer {
-        return requestCallbackHandler.player
+    var videoClap: VideoClap {
+        return vcplayer.videoClap
+    }
+    
+    var player: VCPlayer {
+        return vcplayer
     }
     
     var containerView: UIView {
-        return requestCallbackHandler.containerView
+        return vcplayer.containerView
     }
     
-    lazy var queue: DispatchQueue = {
-        let queue: DispatchQueue = DispatchQueue(label: "play", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
-        return queue
+    lazy var vcplayer: VCPlayer = {
+        let player = VCPlayer()
+        return player
     }()
     
     var exportVideoClap = VideoClap()
@@ -95,21 +93,32 @@ class ViewController: UIViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(transitionChange), name: TransitionNotification, object: nil)
         setupUI()
         videoDescription.fps = 24.0
-        videoDescription.renderScale = Float(UIScreen.main.scale)
+        videoDescription.renderScale = UIScreen.main.scale
         videoDescription.renderSize = CGSize(width: view.bounds.width * ratio, height: view.bounds.width)
-        videoDescription.waterMarkRect = .init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1)
-        videoDescription.waterMarkImageURL = Bundle.main.url(forResource: "test3.jpg", withExtension: nil, subdirectory: "Mat")
+        videoDescription.renderSize = CGSize(width: 480, height: 640)
         let trackBundle = videoDescription.trackBundle
+        
+        do {
+            let track = VCImageTrackDescription()
+            track.id = "waterMarkTrack"
+            track.indexPath = IndexPath(item: 0, section: 1000)
+            track.timeRange = CMTimeRange(start: 0.0, duration: 5.0)
+            track.mediaURL = Bundle.main.url(forResource: "test3.jpg", withExtension: nil, subdirectory: "Mat")
+            track.imageLayout = .rect(.init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1))
+//            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
+            trackBundle.imageTracks.append(track)
+        }
         
         do {
             let trajectory = VCMovementTrajectory()
             trajectory.movementRatio = 0.1
             let track = VCVideoTrackDescription()
+            track.indexPath = IndexPath(item: 0, section: 900)
             track.canvasStyle = .image(Bundle.main.url(forResource: "test1.jpg", withExtension: nil, subdirectory: "Mat")!)
             track.trajectory = trajectory
             track.id = "videoTrack"
 //            track.speed = 5.0
-            let source = CMTimeRange(start: 5.0, end: 100)
+            let source = CMTimeRange(start: 5.0, duration: 100.0)
             let target = CMTimeRange(start: 5.0, end: 6.0)
             track.timeMapping = CMTimeMapping(source: source, target: target)
 
@@ -124,10 +133,11 @@ class ViewController: UIViewController {
 //            let trajectory = VCMovementTrajectory()
 //            trajectory.movementRatio = 0.1
             let track = VCVideoTrackDescription()
+            track.indexPath = IndexPath(item: 0, section: 900)
 //            track.canvasStyle = .image(Bundle.main.url(forResource: "test1.jpg", withExtension: nil, subdirectory: "Mat")!)
 //            track.trajectory = trajectory
             track.id = "videoTrack1"
-            let source = CMTimeRange(start: 5.0, end: 100)
+            let source = CMTimeRange(start: 5.0, duration: 100.0)
             let target = CMTimeRange(start: 6, end: 10.0)
             track.timeMapping = CMTimeMapping(source: source, target: target)
 
@@ -142,6 +152,7 @@ class ViewController: UIViewController {
             let trajectory = VCMovementTrajectory()
             trajectory.movementRatio = 0.1
             let track = VCImageTrackDescription()
+            track.indexPath = IndexPath(item: 1, section: 900)
             track.canvasStyle = .image(Bundle.main.url(forResource: "test4.jpg", withExtension: nil, subdirectory: "Mat")!)
             track.trajectory = trajectory
             track.id = "imageTrack"
@@ -179,61 +190,51 @@ class ViewController: UIViewController {
         
         do {
             let lamination = VCLaminationTrackDescription()
+            lamination.indexPath = IndexPath(item: 1, section: 999)
             lamination.id = "laminationTrack"
             lamination.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10))
             lamination.mediaURL = Bundle.main.url(forResource: "Anniversary1", withExtension: "png", subdirectory: "Mat")
-            trackBundle.laminationTracks.append(lamination)
+            trackBundle.imageTracks.append(lamination)
         }
         
         do {
             for index in 0..<2 {
                 let animationSticker = VCLottieTrackDescription()
+                animationSticker.indexPath = IndexPath(item: index, section: 901)
                 animationSticker.id = "animationSticker\(index)"
                 let size: CGSize = CGSize(width: 0.35 / ratio, height: 0.35)
                 animationSticker.rect = VCRect(normalizeCenter: CGPoint(x: CGFloat.random(in: 0.0...1.0), y: CGFloat.random(in: 0.0...1.0)),
                                                normalizeSize: size)
                 animationSticker.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10))
-                animationSticker.setAnimationView("Watermelon", subdirectory: "Mat/LottieAnimations")
-                trackBundle.lottieTracks.append(animationSticker)
+                animationSticker.mediaURL = Bundle.main.url(forResource: "Watermelon.json", withExtension: nil, subdirectory: "Mat/LottieAnimations")
+                trackBundle.imageTracks.append(animationSticker)
             }
         }
         
         do {
             let textTrack = VCTextTrackDescription()
+            textTrack.indexPath = IndexPath(item: 0, section: 902)
             textTrack.id = "textTrack"
-            textTrack.center = CGPoint(x: 0.5, y: 0.5)
+            textTrack.imageLayout = .center(CGPoint(x: 0.5, y: 0.5))
+//            textTrack.center = CGPoint(x: 0.5, y: 0.5)
             textTrack.timeRange = CMTimeRange(start: 0.0, end: 10.0)
             textTrack.isTypewriter = true
             textTrack.rotateRadian = .pi * 0.15
             textTrack.text = NSAttributedString(string: "按键或把手把字和符号打印在纸上的机械，有手打和电打两种。\n在大多数办公室，电脑已经取代了打字机。\n她拿起一张纸，把它哗哗啦啦地塞到打字机中。",
                                                 attributes: [.foregroundColor : UIColor.red, .font : UIFont.systemFont(ofSize: 30, weight: .bold)])
-            trackBundle.textTracks.append(textTrack)
+            trackBundle.imageTracks.append(textTrack)
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             return
             do {
-                self.player.removePlayingTimeObserver()
-                self.requestCallbackHandler.stopRenderFlag = true
-                self.player.currentItem?.cancelPendingSeeks()
-                self.player.cancelPendingPrerolls()
-                self.player.pause()
                 let track = VCImageTrackDescription()
                 track.id = "imageTrack1"
                 track.timeRange = CMTimeRange(start: 10.0, duration: 5.0)
                 track.mediaURL = Bundle.main.url(forResource: "test4", withExtension: "jpg", subdirectory: "Mat")
                 track.isFit = true
                 trackBundle.imageTracks.append(track)
-                let newPlayerItem = self.videoClap.playerItemForPlay()
-                let seekTime = self.requestCallbackHandler.compositionTime
-                newPlayerItem.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] (_) in
-                    guard let self = self else { return }
-                    self.player.replaceCurrentItem(with: newPlayerItem)
-                    self.requestCallbackHandler.stopRenderFlag = false
-                    self.player.observePlayingTime(queue: self.queue) { (_) in
-                        self.timer()
-                    }
-                }
+                self.vcplayer.reload()
             }
         }
         
@@ -340,10 +341,7 @@ class ViewController: UIViewController {
     }
     
     func initPlay() {
-        player.currentItem?.cancelPendingSeeks()
-        player.pause()
-        let item = videoClap.playerItemForPlay()
-        player.replaceCurrentItem(with: item)
+        vcplayer.reload()
         playButton.isSelected = true
         
         player.observePlayingTime { (time: CMTime) in
@@ -354,8 +352,12 @@ class ViewController: UIViewController {
     }
     
     func export(fileName: String?, completion: @escaping () -> Void) {
-        videoClap.export(fileName: fileName) { (progress) in
-            print(progress.fractionCompleted, fileName)
+        exportVideoClap.videoDescription = self.videoDescription.mutableCopy() as! VCVideoDescription
+        exportVideoClap.videoDescription.renderSize = KResolution1920x1080
+        exportVideoClap.videoDescription.renderScale = 1.0
+        
+        exportVideoClap.export { (progress) in
+            print(progress.fractionCompleted, fileName ?? "")
         } completionHandler: { (url, error) in
             if let error = error {
                 LLog(error)
@@ -391,6 +393,7 @@ class ViewController: UIViewController {
             }
             
             #endif
+            
         }
     }
     
@@ -410,7 +413,7 @@ class ViewController: UIViewController {
             
         case .ended:
             if Scope.cacheIsPlaying {
-                player.observePlayingTime(queue: queue) { (time: CMTime) in
+                player.observePlayingTime { (time: CMTime) in
                     self.timer()
                 }
                 player.play()
@@ -419,7 +422,7 @@ class ViewController: UIViewController {
         case .moved:
             let duration = player.currentItem?.asset.duration ?? CMTime(seconds: 1.0)
             let time = CMTime(seconds: duration.seconds * Double(slider.value))
-            player.seekSmoothly(to: time) {
+            player.seekSmoothly(to: time) { _ in
                 self.timer()
             }
             
@@ -437,7 +440,7 @@ class ViewController: UIViewController {
         let duration = player.currentItem?.duration.seconds ?? 1
         let time = CMTime(seconds: Double(newValue) * duration)
         
-        player.seekSmoothly(to: time) { [unowned self] in
+        player.seekSmoothly(to: time) { [unowned self] _ in
             self.timer()
             if cacheIsPlaying {
                 self.player.play()
@@ -479,40 +482,33 @@ class ViewController: UIViewController {
         } else {
             player.play()
             playButton.isSelected = true
-            player.observePlayingTime(queue: queue) { (time: CMTime) in
+            player.observePlayingTime { (time: CMTime) in
                 self.timer()
             }
         }
     }
     
     @objc func exportButtonDidTap(_ sender: UIBarButtonItem) {
-        self.requestCallbackHandler.removePlayerItem()
-        playButton.isSelected = false
-        let videoClap = exportVideoClap
-        videoClap.videoDescription = self.videoDescription.mutableCopy() as! VCVideoDescription
-        let scale = CGFloat(videoClap.videoDescription.renderScale)
-        videoClap.videoDescription.renderSize = videoClap.videoDescription.renderSize.applying(.init(scaleX: scale, y: scale))
-        videoClap.videoDescription.renderScale = 1.0
-        videoClap.export { (progress) in
-            LLog(progress.fractionCompleted)
-        } completionHandler: { [weak self] (url, error) in
-            guard let self = self else { return }
-            let newItem = videoClap.playerItemForPlay()
-            newItem.seek(to: self.requestCallbackHandler.compositionTime, toleranceBefore: .zero, toleranceAfter: .zero) { (_) in
-                self.requestCallbackHandler.rebuildPlayer(item: newItem)
-                self.player.observePlayingTime { (time: CMTime) in
-                    self.timer()
+        do {
+            try self.vcplayer.enableManualRenderingMode()
+            _ = self.vcplayer.export { (progress) in
+                LLog(progress.fractionCompleted)
+            } completionHandler: { [weak self] (url, error) in
+                guard let self = self else { return }
+                self.vcplayer.disableManualRenderingMode()
+                if let url = url {
+                    PHPhotoLibrary.shared().performChanges {
+                        PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+                    } completionHandler: { _, _ in
+                        LLog("finish ")
+                    }
+                } else if let error = error {
+                    LLog(error)
                 }
             }
-            if let url = url {
-                PHPhotoLibrary.shared().performChanges {
-                    PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
-                } completionHandler: { _, _ in
-                    LLog("finish ")
-                }
-            } else if let error = error {
-                LLog(error)
-            }
+            playButton.isSelected = false
+        } catch let error {
+            LLog(error)
         }
     }
     

@@ -27,4 +27,5 @@ internal class VCVideoInstruction: NSObject, AVVideoCompositionInstructionProtoc
     
     var transitions: [VCTransition] = []
     
+    var trackCompensateTimeRange: [String:CMTimeRange] = [:]
 }

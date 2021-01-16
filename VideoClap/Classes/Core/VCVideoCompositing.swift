@@ -40,11 +40,12 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
         return CIContext()
     }()
     
-    private var blackImage: CIImage = CIImage()
+    private var blackImage: CIImage {
+        VCHelper.image(color: .black, size: renderContext.size.scaling(renderContext.renderScale))
+    }
     
     internal func renderContextChanged(_ newRenderContext: AVVideoCompositionRenderContext) {
         self.renderContext = newRenderContext
-        setBlackImage()
     }
     
     internal func startRequest(_ videoCompositionRequest: AVAsynchronousVideoCompositionRequest) {
@@ -91,15 +92,6 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
                          bounds: CGRect(origin: .zero, size: renderContext.size),
                          colorSpace: colorSpace)
         return finalBuffer
-    }
-    
-    private func setBlackImage() {
-        let renderer = VCGraphicsRenderer()
-        renderer.rendererRect.size = renderContext.size
-        self.blackImage = renderer.ciImage { (context) in
-            UIColor.black.setFill()
-            UIRectFill(renderer.rendererRect)
-        } ?? self.blackImage
     }
     
 }

@@ -23,8 +23,6 @@ open class VCMovementTrajectory: NSObject, VCTrajectoryProtocol {
     
     public var range: VCRange = .init(left: 0.0, right: 1.0)
     
-    public var timeRange: CMTimeRange = .zero
-    
     public var movementType: MovementType = .bottomRight
     
     public var movementRatio: CGFloat = 1.0
