@@ -135,6 +135,11 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         return nil
     }
     
+    /// 替换掉当前的item
+    /// - Parameters:
+    ///   - item: 新的player item，替换掉当前的item
+    ///   - time: 要索引的时间，如果该参数nil，则会自动将新的player item索引到原来player item的时间，如果不为nil，新的player item会索引到该时间（范围在0到player item的时长）
+    /// - Returns: 最终的索引的时间
     public func smoothReplaceCurrentItem(with item: AVPlayerItem?, time: CMTime? = nil) -> CMTime {
         guard let newPlayerItem = item else {
             super.replaceCurrentItem(with: item)
@@ -154,8 +159,9 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         return seekTime
     }
     
-    @discardableResult
-    public func reload() -> CMTime? {
+    /// 重新构建一个新的player item并替换掉当前的item
+    /// - Returns: 构建失败或者替换掉当前的item失败，返回nil，否则返回player item的索引时间
+    @discardableResult public func reload() -> CMTime? {
         do {
             let newPlayerItem = try self.videoClap.playerItemForPlay()
             contextChanged()
@@ -166,13 +172,25 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         return nil
     }
     
+    /// 刷新当前帧，调用此方法会暂停视频的播放
+    /// - Returns: 当暂停播放失败或者currentItem为nil的时候返回false，刷新当前帧失败
+    @discardableResult public func reloadFrame() -> Bool {
+        super.pause()
+        if isPlaying {
+            return false
+        }
+        guard let item = currentItem else { return false }
+        contextChanged()
+        let videoComposition = item.videoComposition?.mutableCopy() as? AVVideoComposition
+        item.videoComposition = videoComposition
+        return true
+    }
+    
     public override func observePlayingTime(forInterval interval: CMTime = CMTime(value: 30, timescale: 600), queue: DispatchQueue = .main, block: @escaping (CMTime) -> Void) {
         self.playingBlock = block
         self.observeQueue = queue
         self.interval = interval
-        super.observePlayingTime(forInterval: interval, queue: queue) { (time) in
-            self.playingBlock?(time)
-        }
+        super.observePlayingTime(forInterval: interval, queue: queue, block: block)
     }
     
     public func enableManualRenderingMode() throws {
@@ -187,21 +205,24 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
     }
     
     public func disableManualRenderingMode() {
+        guard manualRenderingMode == .offline else {
+            return
+        }
         videoClap.requestCallbackHandler.renderTarget = self
         manualRenderingMode = .realtime
-        self.observePlayingTime(forInterval: self.interval, queue: self.observeQueue) { (time) in
-            self.playingBlock?(time)
+        if let block = self.playingBlock {
+            self.observePlayingTime(forInterval: self.interval, queue: self.observeQueue, block: block)
         }
     }
     
-    public func export(fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
+    public func export(size: CGSize? = nil, fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
         guard manualRenderingMode == .offline else {
-            completionHandler(nil, NSError(domain: "", code: 1, userInfo: [NSLocalizedFailureReasonErrorKey:""]))
+            completionHandler(nil, NSError(domain: "", code: 2, userInfo: [NSLocalizedFailureReasonErrorKey:""]))
             return nil
         }
         let renderSize = self.videoClap.videoDescription.renderSize
         let renderScale = self.videoClap.videoDescription.renderScale
-        let exportRenderSize = renderSize.scaling(renderScale)
+        let exportRenderSize = size ?? renderSize.scaling(renderScale)
         let time = self.videoClap.requestCallbackHandler.compositionTime
         
         let playItem = self.currentItem.unsafelyUnwrapped

@@ -15,9 +15,9 @@ open class VCVideoDescription: NSObject, NSCopying, NSMutableCopying {
     
     public var fps: Double = 24.0
     
-    public var trackBundle: VCTrackBundle = .init()
+    public var trackBundle: VCTrackBundle = VCTrackBundle()
     
-    public var transitions: [VCTransitionProtocol] = []
+    public var transitions: [VCTransition] = []
     
     public func copy(with zone: NSZone? = nil) -> Any {
         return self

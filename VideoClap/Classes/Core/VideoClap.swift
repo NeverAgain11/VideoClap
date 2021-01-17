@@ -18,7 +18,7 @@ public enum VideoClapError: Error {
     case exportFailed
 }
 
-open class VideoClap: NSObject {
+open class VideoClap: NSObject, VCMediaServicesObserver {
     
     static let ExportFolder = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("VideoClapExportVideos")
     
@@ -51,12 +51,12 @@ open class VideoClap: NSObject {
         NotificationCenter.default.addObserver(self, selector: #selector(mediaServicesWereLostNotification(_:)), name: AVAudioSession.mediaServicesWereLostNotification, object: nil)
     }
     
-    @objc private func mediaServicesWereResetNotification(_ sender: Notification) {
-        log.warning(sender)
+    @objc public func mediaServicesWereResetNotification(_ sender: Notification) {
+        videoCompositor.mediaServicesWereResetNotification(sender)
     }
     
-    @objc func mediaServicesWereLostNotification(_ sender: Notification) {
-        log.warning(sender)
+    @objc public func mediaServicesWereLostNotification(_ sender: Notification) {
+        videoCompositor.mediaServicesWereLostNotification(sender)
     }
     
     @objc private func receiveMemoryWarning(_ sender: Notification) {

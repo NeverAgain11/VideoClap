@@ -80,19 +80,19 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
                 continue
             }
             
-            guard let fromImage = preprocessFinishedImages[transition.transition.fromId] else { continue }
-            guard let toImage = preprocessFinishedImages[transition.transition.toId] else { continue }
+            guard let fromImage = preprocessFinishedImages[transition.fromId] else { continue }
+            guard let toImage = preprocessFinishedImages[transition.toId] else { continue }
             guard let image = transition.transition.transition(renderSize: self.videoDescription.renderSize.scaling(self.videoDescription.renderScale),
                                                                progress: Float(progress),
                                                                fromImage: fromImage,
                                                                toImage: toImage) else {
                 continue
             }
-            let key = transition.transition.fromId + "🔗" + transition.transition.toId
+            let key = transition.fromId + "🔗" + transition.toId
             image.indexPath = min(fromImage.indexPath, toImage.indexPath)
             preprocessFinishedImages[key] = image
-            preprocessFinishedImages.removeValue(forKey: transition.transition.fromId)
-            preprocessFinishedImages.removeValue(forKey: transition.transition.toId)
+            preprocessFinishedImages.removeValue(forKey: transition.fromId)
+            preprocessFinishedImages.removeValue(forKey: transition.toId)
         }
         
         let finalFrame: CIImage? = renderTarget.draw(images: preprocessFinishedImages, blackImage: self.blackImage)

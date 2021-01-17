@@ -238,7 +238,7 @@ internal class VCVideoCompositor: NSObject {
         var trackCompensateTimeRange: [String:CMTimeRange] = [:]
         
         (videoDescription.transitions as NSArray).enumerateObjects(options: .concurrent) { (obj, index, outStop) in
-            guard let transition = obj as? VCTransitionProtocol else { return }
+            guard let transition = obj as? VCTransition else { return }
             guard enumor[transition.fromId] != nil || enumor[transition.toId] != nil else { return }
             guard let fromTrack = enumor[transition.fromId], let toTrack = enumor[transition.toId], fromTrack.timeRange.end >= toTrack.timeRange.start else { return }
 
@@ -247,22 +247,21 @@ internal class VCVideoCompositor: NSObject {
                 let start: CMTime = CMTime(seconds: fromTrack.timeRange.end.seconds - fromTrack.timeRange.duration.seconds * Double(transition.range.left))
                 let end: CMTime = CMTime(seconds: toTrack.timeRange.start.seconds + toTrack.timeRange.duration.seconds * Double(transition.range.right))
                 
-                let t: VCTransition = VCTransition(timeRange: CMTimeRange(start: start, end: end), transition: transition)
+                transition.timeRange = CMTimeRange(start: start, end: end)
                 
-                trackCompensateTimeRange[transition.fromId] = CMTimeRange(start: fromTrack.timeRange.start, end: t.timeRange.end)
-                trackCompensateTimeRange[transition.toId] = CMTimeRange(start: t.timeRange.start, end: toTrack.timeRange.end)
+                trackCompensateTimeRange[transition.fromId] = CMTimeRange(start: fromTrack.timeRange.start, end: transition.timeRange.end)
+                trackCompensateTimeRange[transition.toId] = CMTimeRange(start: transition.timeRange.start, end: toTrack.timeRange.end)
                 
                 locker.object(forKey: "transitions").lock()
-                transitions.append(t)
+                transitions.append(transition)
                 locker.object(forKey: "transitions").unlock()
             } else if fromTrack.timeRange.end > toTrack.timeRange.start {
                 // 两个轨道有重叠
-                let t: VCTransition = VCTransition(timeRange: CMTimeRange(start: toTrack.timeRange.start, end: fromTrack.timeRange.end), transition: transition)
+                transition.timeRange = CMTimeRange(start: toTrack.timeRange.start, end: fromTrack.timeRange.end)
                 locker.object(forKey: "transitions").lock()
-                transitions.append(t)
+                transitions.append(transition)
                 locker.object(forKey: "transitions").unlock()
             }
-            
         }
         
         var instructions: [VCVideoInstruction] = []
@@ -321,8 +320,8 @@ internal class VCVideoCompositor: NSObject {
             
             for transition in instruction.transitions {
                 
-                let fromTrack = enumor[transition.transition.fromId]
-                let toTrack = enumor[transition.transition.toId]
+                let fromTrack = enumor[transition.fromId]
+                let toTrack = enumor[transition.toId]
                 
                 switch fromTrack {
                 case let track as VCVideoTrackDescription:
@@ -379,10 +378,8 @@ internal class VCVideoCompositor: NSObject {
 //            print("requiredSourceTrackIDs: ", instruction.requiredSourceTrackIDs)
 //
 //            print(instruction.requiredSourceTrackIDsDic.map({ ($0.key, $0.value.id) }))
-//
-//            print("transitions info: ", instruction.transitions.map({ ($0.transition.fromId, $0.transition.toId) }))
-//
-//            print("trajectories info: ", instruction.trajectories, instruction.trajectories.map({ ($0.timeRange, $0.id) }))
+//            
+//            print("transitions info: ", instruction.transitions.map({ ($0.fromId, $0.toId) }))
 //
 //            print("---------------- **** --------------------\n")
 //        }
@@ -453,7 +450,9 @@ internal class VCVideoCompositor: NSObject {
         
         var timeRangeDurationValue = CMTime(seconds: timeRange.duration.seconds).value
         let blackVideoDurationValue = CMTime(seconds: blackVideoAsset.duration.seconds).value
-        
+        if blackVideoDurationValue <= .zero {
+            throw VCVideoCompositorError.internalError
+        }
         var append: Bool = false
         while timeRangeDurationValue - blackVideoDurationValue > 0 {
             let duraionValue: CMTimeValue = blackVideoDurationValue
@@ -485,6 +484,19 @@ internal class VCVideoCompositor: NSObject {
             let time = CMTime(value: insertDescription.insertTimeValue, timescale: 600)
             try compositionTrack.insertTimeRange(range, of: blackVideoTrack, at: time)
         }
+    }
+    
+}
+
+extension VCVideoCompositor: VCMediaServicesObserver {
+    
+    func mediaServicesWereResetNotification(_ sender: Notification) {
+        let url = VCHelper.bundle().url(forResource: "black30s.mov", withExtension: nil) ?? URL(fileURLWithPath: "")
+        blackVideoAsset = AVURLAsset(url: url)
+    }
+    
+    func mediaServicesWereLostNotification(_ sender: Notification) {
+        
     }
     
 }

@@ -116,7 +116,7 @@ class ViewController: UIViewController {
             track.canvasStyle = .image(Bundle.main.url(forResource: "test1.jpg", withExtension: nil, subdirectory: "Mat") ?? URL(fileURLWithPath: ""))
             track.trajectory = trajectory
             track.id = "videoTrack"
-            let source = CMTimeRange(start: 5.0, duration: 100.0)
+            let source = CMTimeRange(start: 5.0, duration: 1)
             let target = CMTimeRange(start: 5.0, end: 6.0)
             track.timeMapping = CMTimeMapping(source: source, target: target)
             track.mediaURL = Bundle.main.url(forResource: "video0.mp4", withExtension: nil, subdirectory: "Mat")
@@ -132,7 +132,7 @@ class ViewController: UIViewController {
             track.canvasStyle = .blur
 //            track.trajectory = trajectory
             track.id = "videoTrack1"
-            let source = CMTimeRange(start: 5.0, duration: 100.0)
+            let source = CMTimeRange(start: 5.0, duration: 4)
             let target = CMTimeRange(start: 6, end: 10.0)
             track.timeMapping = CMTimeMapping(source: source, target: target)
             track.mediaURL = Bundle.main.url(forResource: "video0.mp4", withExtension: nil, subdirectory: "Mat")
@@ -173,7 +173,9 @@ class ViewController: UIViewController {
         
         do {
             let trasition = VCCubeTransition()
-            addTransition(trasition)
+            let t = VCTransition()
+            t.transition = trasition
+            addTransition(t)
         }
         
         do {
@@ -301,7 +303,8 @@ class ViewController: UIViewController {
             let group = DispatchGroup()
             for type in TransitionType.allCases {
                 group.enter()
-                let transition: VCTransitionProtocol = self.getTransition(type: type)
+                let transition = VCTransition()
+                transition.transition = self.getTransition(type: type)
                 self.addTransition(transition)
                 self.export(fileName: type.rawValue + ".mov") {
                     group.leave()
@@ -313,22 +316,11 @@ class ViewController: UIViewController {
     
     @objc func transitionChange(_ sender: Notification) {
         let type = sender.userInfo?["transitionType"] as! TransitionType
-        let trasition: VCTransitionProtocol = getTransition(type: type)
-        addTransition(trasition)
-        
-        if vcplayer.isPlaying {
-            initPlay()
-        } else {
-            vcplayer.reload()
-            playButton.isSelected = false
-            
-            player.observePlayingTime { (time: CMTime) in
-                self.timer()
-            }
-        }
+        videoDescription.transitions.first.unsafelyUnwrapped.transition = getTransition(type: type)
+        vcplayer.reloadFrame()
     }
     
-    func addTransition(_ trasition: VCTransitionProtocol) {
+    func addTransition(_ trasition: VCTransition) {
         trasition.fromId = "imageTrack"
         trasition.toId = "videoTrack"
         trasition.range = VCRange(left: 0.5, right: 0.5)
@@ -486,7 +478,7 @@ class ViewController: UIViewController {
     @objc func exportButtonDidTap(_ sender: UIBarButtonItem) {
         do {
             try self.vcplayer.enableManualRenderingMode()
-            _ = self.vcplayer.export { (progress) in
+            _ = self.vcplayer.export(size: KResolution720x1280) { (progress) in
                 LLog(progress.fractionCompleted)
             } completionHandler: { [weak self] (url, error) in
                 guard let self = self else { return }
