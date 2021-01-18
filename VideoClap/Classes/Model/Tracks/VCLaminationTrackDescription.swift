@@ -27,9 +27,10 @@ public class VCLaminationTrackDescription: VCImageTrackDescription {
     }
     
     public override func compositionImage(sourceFrame: CIImage, compositionTime: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage? {
+        let actualRenderSize = renderSize.scaling(renderScale)
         var laminationImage: CIImage = sourceFrame
-        let scaleX = renderSize.width / laminationImage.extent.width
-        let scaleY = renderSize.height / laminationImage.extent.height
+        let scaleX = actualRenderSize.width / laminationImage.extent.width
+        let scaleY = actualRenderSize.height / laminationImage.extent.height
         laminationImage = laminationImage.transformed(by: .init(scaleX: scaleX, y: scaleY))
         return laminationImage
     }

@@ -106,7 +106,7 @@ public class VCHelper: NSObject {
             let renderer = VCGraphicsRenderer()
             renderer.rendererRect.size = size
             let image = renderer.ciImage { (context) in
-                UIColor.black.setFill()
+                color.setFill()
                 UIRectFill(renderer.rendererRect)
             }
             VCImageCache.share.storeImage(toMemory: image, forKey: key)

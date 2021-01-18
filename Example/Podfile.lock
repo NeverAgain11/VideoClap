@@ -113,7 +113,7 @@ PODS:
 
 DEPENDENCIES:
   - SnapKit (= 4.2.0)
-  - SSPlayer (from `https://github.com/lai001/SSPlayer.git`)
+  - SSPlayer (from `https://github.com/lai001/SSPlayer.git`, commit `faf4f9c4696a3ee46a2e4860913f530a58630410`)
   - SwiftyBeaver
   - VideoClap (from `../`)
 
@@ -127,13 +127,14 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   SSPlayer:
+    :commit: faf4f9c4696a3ee46a2e4860913f530a58630410
     :git: https://github.com/lai001/SSPlayer.git
   VideoClap:
     :path: "../"
 
 CHECKOUT OPTIONS:
   SSPlayer:
-    :commit: b58d8e65cb5eb4d50cfa24d7a874e8f758bebd38
+    :commit: faf4f9c4696a3ee46a2e4860913f530a58630410
     :git: https://github.com/lai001/SSPlayer.git
 
 SPEC CHECKSUMS:
@@ -145,6 +146,6 @@ SPEC CHECKSUMS:
   SwiftyTimer: 02dd6cf10cbc71cbf67cec494f6e5eb782102543
   VideoClap: c864d5d51af10e4c2b393385b8b923fb2ec76b10
 
-PODFILE CHECKSUM: c6034d572cd8bb4839743dd25b88c712eac5d9d3
+PODFILE CHECKSUM: 7f6c42c67f7a585e078701f53d384fb087f4de83
 
-COCOAPODS: 1.9.1
+COCOAPODS: 1.10.0

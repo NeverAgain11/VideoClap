@@ -48,15 +48,11 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             if image == nil, let compensateTimeRange = compensateTimeRange {
                 if compensateTimeRange.end > imageTrack.timeRange.end {
                     image = imageTrack.originImage(time: imageTrack.sourceTimeRange.end,
-                                                         renderSize: self.videoDescription.renderSize,
-                                                         renderScale: self.videoDescription.renderScale,
                                                          compensateTimeRange: compensateTimeRange)
                     
 
                 } else if compensateTimeRange.start < imageTrack.timeRange.start {
                     image = imageTrack.originImage(time: imageTrack.sourceTimeRange.start,
-                                                         renderSize: self.videoDescription.renderSize,
-                                                         renderScale: self.videoDescription.renderScale,
                                                          compensateTimeRange: compensateTimeRange)
                 }
             }

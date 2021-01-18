@@ -85,6 +85,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
     }
     
     func process(image: CIImage, compositionTime: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage {
+        let actualRenderSize = renderSize.scaling(renderScale)
         var transform = CGAffineTransform.identity
         var frame = image
         do {
@@ -114,15 +115,15 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
             defer {
                 switch imageLayout {
                 case .fit, .fill:
-                    let moveFrameCenterToRenderRectCenter = CGAffineTransform(translationX: renderSize.width / 2.0, y: renderSize.height / 2.0)
+                    let moveFrameCenterToRenderRectCenter = CGAffineTransform(translationX: actualRenderSize.width / 2.0, y: actualRenderSize.height / 2.0)
                     transform = transform.concatenating(moveFrameCenterToRenderRectCenter)
                 case .center(let point):
-                    let center = CGPoint(x: point.x * renderSize.width, y: point.y * renderSize.height)
+                    let center = CGPoint(x: point.x * actualRenderSize.width, y: point.y * actualRenderSize.height)
                     let translation = CGAffineTransform(translationX: center.x, y: center.y)
                     transform = transform.concatenating(translation)
                 case .rect(let rect):
                     let point = rect.normalizeCenter
-                    let center = CGPoint(x: point.x * renderSize.width, y: point.y * renderSize.height)
+                    let center = CGPoint(x: point.x * actualRenderSize.width, y: point.y * actualRenderSize.height)
                     let translation = CGAffineTransform(translationX: center.x, y: center.y)
                     transform = transform.concatenating(translation)
                 }
@@ -131,16 +132,16 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
             switch imageLayout {
             case .fit:
                 let extent = frame.extent
-                let widthRatio = renderSize.width /  extent.width
-                let heightRatio = renderSize.height / extent.height
+                let widthRatio = actualRenderSize.width /  extent.width
+                let heightRatio = actualRenderSize.height / extent.height
                 let ratio: CGFloat = min(widthRatio, heightRatio)
                 let scaleTransform = CGAffineTransform(scaleX: ratio, y: ratio)
                 transform = transform.concatenating(scaleTransform)
                 
             case .fill:
                 let extent = frame.extent
-                let widthRatio = renderSize.width /  extent.width
-                let heightRatio = renderSize.height / extent.height
+                let widthRatio = actualRenderSize.width /  extent.width
+                let heightRatio = actualRenderSize.height / extent.height
                 let ratio: CGFloat = max(widthRatio, heightRatio)
                 let scaleTransform = CGAffineTransform(scaleX: ratio, y: ratio)
                 transform = transform.concatenating(scaleTransform)
@@ -150,8 +151,8 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
                 
             case .rect(let rect):
                 let extent = frame.extent
-                let width = renderSize.width * rect.normalizeWidth // 宽度，基于像素
-                let height = renderSize.height * rect.normalizeHeight // 高度，基于像素
+                let width = actualRenderSize.width * rect.normalizeWidth // 宽度，基于像素
+                let height = actualRenderSize.height * rect.normalizeHeight // 高度，基于像素
                 let scaleX = width / extent.size.width
                 let scaleY = height / extent.size.height
                 let scale = CGAffineTransform(scaleX: scaleX, y: scaleY)
@@ -196,7 +197,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
             timeRange = CMTimeRange(start: start, end: end)
             let progress = (compositionTime.seconds - timeRange.start.seconds) / timeRange.duration.seconds
             if progress.isInfinite == false, progress.isNaN == false {
-                if let image = trajectory.transition(renderSize: renderSize, progress: CGFloat(progress), image: frame) {
+                if let image = trajectory.transition(renderSize: actualRenderSize, progress: CGFloat(progress), image: frame) {
                     frame = image
                 }
             }
@@ -212,18 +213,11 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
     }
     
     func canvasImage(canvasStyle: VCCanvasStyle, originImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
-        let renderer = VCGraphicsRenderer()
-        
         var canvasImage: CIImage?
         
         switch canvasStyle {
         case .pureColor(let color):
-            renderer.rendererRect.size = renderSize
-            renderer.scale = renderScale
-            return renderer.ciImage { (context) in
-                color.setFill()
-                UIRectFill(renderer.rendererRect)
-            }
+            return VCHelper.image(color: color, size: renderSize.scaling(renderScale))
             
         case .image(let url):
             canvasImage = downsampleImage(url: url, renderSize: renderSize, renderScale: renderScale)
@@ -237,15 +231,15 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
             let moveFrameCenterToRenderRectOrigin = CGAffineTransform(translationX: -canvasImage.extent.midX, y: -canvasImage.extent.midY)
             transform = transform.concatenating(moveFrameCenterToRenderRectOrigin)
             
-
+            let actualRenderSize = renderSize.scaling(renderScale)
             let extent = canvasImage.extent
-            let widthRatio = renderSize.width /  extent.width
-            let heightRatio = renderSize.height / extent.height
+            let widthRatio = actualRenderSize.width /  extent.width
+            let heightRatio = actualRenderSize.height / extent.height
             let ratio: CGFloat = max(widthRatio, heightRatio)
             let scaleTransform = CGAffineTransform(scaleX: ratio, y: ratio)
             transform = transform.concatenating(scaleTransform)
             
-            let moveFrameCenterToRenderRectCenter = CGAffineTransform(translationX: renderSize.width / 2.0, y: renderSize.height / 2.0)
+            let moveFrameCenterToRenderRectCenter = CGAffineTransform(translationX: actualRenderSize.width / 2.0, y: actualRenderSize.height / 2.0)
             transform = transform.concatenating(moveFrameCenterToRenderRectCenter)
             
             return canvasImage.transformed(by: transform)
@@ -304,8 +298,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
     
     func downsampleSize(url: URL, renderSize: CGSize, renderScale: CGFloat) -> CGSize? {
         guard let imageSize = UIImage(contentsOfFile: url.path)?.size else { return nil }
-        let scale: CGFloat = renderScale
-        let scaleSize = renderSize.applying(.init(scaleX: scale, y: scale))
+        let scaleSize = renderSize.scaling(renderScale)
         if max(scaleSize.width, scaleSize.height) > max(imageSize.width, imageSize.height) {
             return imageSize
         } else {

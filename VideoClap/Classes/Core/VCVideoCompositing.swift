@@ -89,7 +89,7 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
         guard let finalBuffer: CVPixelBuffer = renderContext.newPixelBuffer() else { return nil }
         
         ciContext.render(ciImage, to: finalBuffer,
-                         bounds: CGRect(origin: .zero, size: renderContext.size),
+                         bounds: CGRect(origin: .zero, size: renderContext.size.scaling(renderContext.renderScale)),
                          colorSpace: colorSpace)
         return finalBuffer
     }

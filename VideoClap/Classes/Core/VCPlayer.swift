@@ -25,15 +25,14 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
     
     internal var lottieTrackEnumor: [String : VCLottieTrackDescription] = [:]
     
-    private lazy var placeLayer: AVPlayerLayer = {
-        let placeLayer = AVPlayerLayer(player: self)
-        return placeLayer
+    lazy var playerView: SSPlayerView = {
+        let playerView = SSPlayerView(player: self)
+        playerView.isHidden = true
+        return playerView
     }()
     
     lazy var renderView: UIView = {
         let view = UIView()
-        view.clipsToBounds = true
-        view.backgroundColor = .black
         return view
     }()
     
@@ -65,47 +64,63 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
     
     public override init() {
         super.init()
-        _ = placeLayer
     }
     
     public func contextChanged() {
-        let trackBundle = videoClap.videoDescription.trackBundle
-        
-        lottieTrackEnumor = trackBundle.lottieTracks.reduce([:]) { (result, track) in
-            var mutable = result
-            if let animationView = track.animationView {
-                let scle = CGFloat(videoClap.videoDescription.renderScale)
-                animationView.frame.size = CGSize(width: 100, height: 100).applying(.init(scaleX: scle, y: scle))
-            }
-            mutable[track.id] = track
-            return mutable
+        guard containerView.superview != nil else {
+            return
         }
-        
+
+        containerView.addSubview(playerView)
         containerView.addSubview(renderView)
+        
+        playerView.snp.remakeConstraints { (make) in
+            make.center.equalToSuperview()
+            make.size.equalTo(videoClap.videoDescription.renderSize)
+        }
         
         renderView.snp.remakeConstraints { (make) in
             make.center.equalToSuperview()
             make.size.equalTo(videoClap.videoDescription.renderSize)
         }
         
-        do {
-            for lottieTrack in trackBundle.lottieTracks {
-                if let _ = lottiePreviewDic[lottieTrack.id] {
-                    
-                } else {
-                    let preview = VCLottiePreview()
-                    renderView.addSubview(preview)
-                    preview.setup(lottieTrack: lottieTrack, renderSize: videoClap.videoDescription.renderSize)
-                    lottiePreviewDic[lottieTrack.id] = preview
-                }
-            }
-        }
-        
-        renderView.addSubview(laminationImageView)
-        
-        laminationImageView.snp.remakeConstraints { (make) in
-            make.edges.equalToSuperview()
-        }
+//        let trackBundle = videoClap.videoDescription.trackBundle
+//
+//        lottieTrackEnumor = trackBundle.lottieTracks.reduce([:]) { (result, track) in
+//            var mutable = result
+//            if let animationView = track.animationView {
+//                let scle = CGFloat(videoClap.videoDescription.renderScale)
+//                animationView.frame.size = CGSize(width: 100, height: 100).applying(.init(scaleX: scle, y: scle))
+//            }
+//            mutable[track.id] = track
+//            return mutable
+//        }
+//
+//        containerView.addSubview(renderView)
+//
+//        renderView.snp.remakeConstraints { (make) in
+//            make.center.equalToSuperview()
+//            make.size.equalTo(videoClap.videoDescription.renderSize)
+//        }
+//
+//        do {
+//            for lottieTrack in trackBundle.lottieTracks {
+//                if let _ = lottiePreviewDic[lottieTrack.id] {
+//
+//                } else {
+//                    let preview = VCLottiePreview()
+//                    renderView.addSubview(preview)
+//                    preview.setup(lottieTrack: lottieTrack, renderSize: videoClap.videoDescription.renderSize)
+//                    lottiePreviewDic[lottieTrack.id] = preview
+//                }
+//            }
+//        }
+//
+//        renderView.addSubview(laminationImageView)
+//
+//        laminationImageView.snp.remakeConstraints { (make) in
+//            make.edges.equalToSuperview()
+//        }
     }
     
     public func draw(images: [String : CIImage], blackImage: CIImage) -> CIImage? {
@@ -123,7 +138,7 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         finalFrame = finalFrame?.composited(over: blackImage) ?? blackImage // 让背景变为黑色，防止出现图像重叠
 
         if let ciImage = finalFrame {
-            let cgImage = CIContext.share.createCGImage(ciImage, from: CGRect(origin: .zero, size: videoClap.videoDescription.renderSize))
+            let cgImage = CIContext.share.createCGImage(ciImage, from: CGRect(origin: .zero, size: videoClap.videoDescription.renderSize.scaling(videoClap.videoDescription.renderScale)))
             DispatchQueue.main.async {
                 self.renderView.layer.contents = cgImage
             }

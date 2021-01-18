@@ -80,18 +80,16 @@ public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescr
         let actualRenderSize = renderSize.scaling(renderScale)
         var frame: CIImage = sourceFrame
         // 对视频帧降采样
-        if let naturalSize = self.naturalSize {
-            if max(actualRenderSize.width, actualRenderSize.height) > max(naturalSize.width, naturalSize.height) {
-                
-            } else {
-                let widthRatio: CGFloat = actualRenderSize.width / frame.extent.width
-                let heightRatio: CGFloat = actualRenderSize.height / frame.extent.height
-                let scale = widthRatio < 1.0 ? widthRatio : heightRatio
-                frame = frame.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
-                
-                if let cgImage = CIContext.share.createCGImage(frame, from: CGRect(origin: .zero, size: frame.extent.size)) {
-                    frame = CIImage(cgImage: cgImage)
-                }
+        if max(actualRenderSize.width, actualRenderSize.height) > max(sourceFrame.extent.width, sourceFrame.extent.height) {
+            
+        } else {
+            let widthRatio: CGFloat = actualRenderSize.width / frame.extent.width
+            let heightRatio: CGFloat = actualRenderSize.height / frame.extent.height
+            let scale = widthRatio < 1.0 ? widthRatio : heightRatio
+            frame = frame.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+            
+            if let cgImage = CIContext.share.createCGImage(frame, from: CGRect(origin: .zero, size: frame.extent.size)) {
+                frame = CIImage(cgImage: cgImage)
             }
         }
         return process(image: frame, compositionTime: compositionTime, renderSize: renderSize, renderScale: renderScale, compensateTimeRange: compensateTimeRange)
