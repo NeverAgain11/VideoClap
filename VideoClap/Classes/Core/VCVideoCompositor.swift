@@ -404,7 +404,7 @@ internal class VCVideoCompositor: NSObject {
     }
     
     private func addAudioMix(audioTrack: AVMutableCompositionTrack, audioTrackID: CMPersistentTrackID, track: VCAudioTrackDescription, audios: [String : VCAudioTrackDescription]) -> AVMutableAudioMixInputParameters? {
-        if track.audioVolumeRampDescriptions.isEmpty {
+        if track.audioVolumeRampDescriptions.isEmpty && track.audioEffectProvider == nil {
             return nil
         }
         
