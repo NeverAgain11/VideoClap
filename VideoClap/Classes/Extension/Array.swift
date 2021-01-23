@@ -30,3 +30,15 @@ extension Array where Element: VCScaleTrackDescriptionProtocol {
     }
     
 }
+
+extension Array {
+    
+    func object(at index: Int) -> Element? {
+        if (0..<self.count).contains(index) {
+            return self[index]
+        } else {
+            return nil
+        }
+    }
+    
+}

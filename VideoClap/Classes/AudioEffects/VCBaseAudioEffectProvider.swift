@@ -18,6 +18,13 @@ open class VCBaseAudioEffectProvider: NSObject, VCAudioEffectProviderProtocol {
     }
     
     public func handle(timeRange: CMTimeRange, inCount: CMItemCount, inFlag: MTAudioProcessingTapFlags, outBuffer: UnsafeMutablePointer<AudioBufferList>, outCount: UnsafeMutablePointer<CMItemCount>, outFlag: UnsafeMutablePointer<MTAudioProcessingTapFlags>, pcmFormat: AVAudioFormat) {
+        
+//        let bufferList = UnsafeMutableAudioBufferListPointer(outBuffer)
+//        for bufferIndex in 0..<bufferList.count {
+//            let audioBuffer = bufferList[bufferIndex]
+//            let channelData = UnsafeMutableBufferPointer<Float>(audioBuffer).map({ $0 })
+//        }
+        
         let audioUnits = supplyAudioUnits()
         guard audioUnits.isEmpty == false else {
             return

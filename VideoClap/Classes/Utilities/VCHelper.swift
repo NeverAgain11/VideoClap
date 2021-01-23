@@ -7,6 +7,7 @@
 
 import Foundation
 import Metal
+import AVFoundation
 
 public class VCHelper: NSObject {
     
@@ -111,6 +112,117 @@ public class VCHelper: NSObject {
             }
             VCImageCache.share.storeImage(toMemory: image, forKey: key)
             return image ?? CIImage()
+        }
+    }
+    
+    public static func listPropertiesNames(type: AnyClass) -> [String] {
+        var propertyNames: [String] = []
+        var count = UInt32()
+        let classToInspect: AnyClass = type
+        let properties: UnsafeMutablePointer<objc_property_t>? = class_copyPropertyList(classToInspect, &count)
+        
+        let intCount = Int(count)
+        for i in 0..<intCount {
+            guard let property = properties?[i] else {
+                return []
+            }
+            guard let propertyName = NSString(utf8String: property_getName(property)) as String? else {
+                return []
+            }
+
+            propertyNames.append(propertyName)
+        }
+
+        free(properties)
+        return propertyNames
+    }
+    
+    public static func audioError(_ error: OSStatus) -> NSError? {
+        switch error {
+        case kAudioUnitErr_InvalidProperty:
+            return NSError(domain: "", code: Int(kAudioUnitErr_InvalidProperty), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_InvalidProperty"])
+        case kAudioUnitErr_InvalidParameter:
+            return NSError(domain: "", code: Int(kAudioUnitErr_InvalidParameter), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_InvalidParameter"])
+        case kAudioUnitErr_InvalidElement:
+            return NSError(domain: "", code: Int(kAudioUnitErr_InvalidElement), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_InvalidElement"])
+        case kAudioUnitErr_NoConnection:
+            return NSError(domain: "", code: Int(kAudioUnitErr_NoConnection), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_NoConnection"])
+        case kAudioUnitErr_FailedInitialization:
+            return NSError(domain: "", code: Int(kAudioUnitErr_FailedInitialization), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_FailedInitialization"])
+        case kAudioUnitErr_TooManyFramesToProcess:
+            return NSError(domain: "", code: Int(kAudioUnitErr_TooManyFramesToProcess), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_TooManyFramesToProcess"])
+        case kAudioUnitErr_InvalidFile:
+            return NSError(domain: "", code: Int(kAudioUnitErr_InvalidFile), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_InvalidFile"])
+        case kAudioUnitErr_UnknownFileType:
+            return NSError(domain: "", code: Int(kAudioUnitErr_UnknownFileType), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_UnknownFileType"])
+        case kAudioUnitErr_FileNotSpecified:
+            return NSError(domain: "", code: Int(kAudioUnitErr_FileNotSpecified), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_FileNotSpecified"])
+        case kAudioUnitErr_FormatNotSupported:
+            return NSError(domain: "", code: Int(kAudioUnitErr_FormatNotSupported), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_FormatNotSupported"])
+        case kAudioUnitErr_Uninitialized:
+            return NSError(domain: "", code: Int(kAudioUnitErr_Uninitialized), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_Uninitialized"])
+        case kAudioUnitErr_InvalidScope:
+            return NSError(domain: "", code: Int(kAudioUnitErr_InvalidScope), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_InvalidScope"])
+        case kAudioUnitErr_PropertyNotWritable:
+            return NSError(domain: "", code: Int(kAudioUnitErr_PropertyNotWritable), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_PropertyNotWritable"])
+        case kAudioUnitErr_CannotDoInCurrentContext:
+            return NSError(domain: "", code: Int(kAudioUnitErr_CannotDoInCurrentContext), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_CannotDoInCurrentContext"])
+        case kAudioUnitErr_InvalidPropertyValue:
+            return NSError(domain: "", code: Int(kAudioUnitErr_InvalidPropertyValue), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_InvalidPropertyValue"])
+        case kAudioUnitErr_PropertyNotInUse:
+            return NSError(domain: "", code: Int(kAudioUnitErr_PropertyNotInUse), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_PropertyNotInUse"])
+        case kAudioUnitErr_Initialized:
+            return NSError(domain: "", code: Int(kAudioUnitErr_Initialized), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_Initialized"])
+        case kAudioUnitErr_InvalidOfflineRender:
+            return NSError(domain: "", code: Int(kAudioUnitErr_InvalidOfflineRender), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_InvalidOfflineRender"])
+        case kAudioUnitErr_Unauthorized:
+            return NSError(domain: "", code: Int(kAudioUnitErr_Unauthorized), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_Unauthorized"])
+        case kAudioUnitErr_MIDIOutputBufferFull:
+            return NSError(domain: "", code: Int(kAudioUnitErr_MIDIOutputBufferFull), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_MIDIOutputBufferFull"])
+        case kAudioComponentErr_InstanceTimedOut:
+            return NSError(domain: "", code: Int(kAudioComponentErr_InstanceTimedOut), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioComponentErr_InstanceTimedOut"])
+        case kAudioComponentErr_InstanceInvalidated:
+            return NSError(domain: "", code: Int(kAudioComponentErr_InstanceInvalidated), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioComponentErr_InstanceInvalidated"])
+        case kAudioUnitErr_RenderTimeout:
+            return NSError(domain: "", code: Int(kAudioUnitErr_RenderTimeout), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_RenderTimeout"])
+        case kAudioUnitErr_ExtensionNotFound:
+            return NSError(domain: "", code: Int(kAudioUnitErr_ExtensionNotFound), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_ExtensionNotFound"])
+        case kAudioUnitErr_InvalidParameterValue:
+            return NSError(domain: "", code: Int(kAudioUnitErr_InvalidParameterValue), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_InvalidParameterValue"])
+        case kAudioUnitErr_InvalidFilePath:
+            return NSError(domain: "", code: Int(kAudioUnitErr_InvalidFilePath), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_InvalidFilePath"])
+        case kAudioUnitErr_MissingKey:
+            return NSError(domain: "", code: Int(kAudioUnitErr_MissingKey), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_MissingKey"])
+        case kAudio_UnimplementedError:
+            return NSError(domain: "", code: Int(kAudio_UnimplementedError), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudio_UnimplementedError"])
+        case kAudio_FileNotFoundError:
+            return NSError(domain: "", code: Int(kAudio_FileNotFoundError), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudio_FileNotFoundError"])
+        case kAudio_FilePermissionError:
+            return NSError(domain: "", code: Int(kAudio_FilePermissionError), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudio_FilePermissionError"])
+        case kAudio_TooManyFilesOpenError:
+            return NSError(domain: "", code: Int(kAudio_TooManyFilesOpenError), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudio_TooManyFilesOpenError"])
+        case kAudio_BadFilePathError:
+            return NSError(domain: "", code: Int(kAudio_BadFilePathError), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudio_BadFilePathError"])
+        case kAudio_ParamError:
+            return NSError(domain: "", code: Int(kAudio_ParamError), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudio_ParamError"])
+        case kAudio_MemFullError:
+            return NSError(domain: "", code: Int(kAudio_MemFullError), userInfo: [NSLocalizedFailureReasonErrorKey:"kAudio_MemFullError"])
+        case noErr:
+            return nil
+        default:
+            return NSError(domain: "", code: -1, userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_Unknow"])
+        }
+    }
+    
+    public static func active() {
+        guard AVAudioSession.sharedInstance().category != .playback else {
+            return
+        }
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback)
+            try AVAudioSession.sharedInstance().setActive(true, options: [])
+        } catch let error {
+            debugPrint(error.localizedDescription)
         }
     }
     

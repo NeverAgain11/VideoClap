@@ -162,7 +162,9 @@ class ViewController: UIViewController {
             track.timeMapping = CMTimeMapping(source: source, target: target)
             track.mediaURL = Bundle.main.url(forResource: "02.Ellis - Clear My Head (Radio Edit) [NCS]", withExtension: "mp3", subdirectory: "Mat")
             if #available(iOS 11.0, *) {
-//                track.audioEffectProvider = VCGhostAudioEffectProvider()
+                track.audioEffectProvider = VCChildrenAudioEffectProvider()
+            } else {
+                track.audioEffectProvider = VCChildrenAudioEffectProvider2()
             }
             let desc = VCAudioVolumeRampDescription(startVolume: 0.0,
                                                     endVolume: 1.0,
@@ -172,10 +174,9 @@ class ViewController: UIViewController {
         }
         
         do {
-            let trasition = VCCubeTransition()
-            let t = VCTransition()
-            t.transition = trasition
-            addTransition(t)
+            let trasition = VCTransition()
+            trasition.transition = VCCubeTransition()
+            addTransition(trasition)
         }
         
         do {

@@ -8,10 +8,8 @@
 import SSPlayer
 import AVFoundation
 
-public enum VCPlayerManualRenderingMode: Int {
-
+public enum VCManualRenderingMode: Int {
     case offline = 0
-
     case realtime = 1
 }
 
@@ -23,35 +21,11 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         return videoClap
     }()
     
-    internal var lottieTrackEnumor: [String : VCLottieTrackDescription] = [:]
-    
-    lazy var playerView: SSPlayerView = {
-        let playerView = SSPlayerView(player: self)
-        playerView.isHidden = true
-        return playerView
-    }()
-    
-    lazy var renderView: UIView = {
-        let view = UIView()
+    public lazy var containerView: VCPlayerContainerView = {
+        let view = VCPlayerContainerView(player: self)
         return view
     }()
     
-    lazy var laminationImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleToFill
-        return imageView
-    }()
-    
-    public lazy var containerView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .lightGray
-        return view
-    }()
-    
-    public lazy var lottiePreviewDic: [String : VCLottiePreview] = {
-        return [:]
-    }()
-
     private var stopRenderFlag: Bool = false
     
     private var playingBlock: ((_ time: CMTime) -> Void)?
@@ -60,7 +34,11 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
     
     private var observeQueue: DispatchQueue = .main
     
-    public private(set) var manualRenderingMode: VCPlayerManualRenderingMode = .realtime
+    public private(set) var manualRenderingMode: VCManualRenderingMode = .realtime
+    
+    private var images: [String : CIImage] = [:]
+    
+    private var cacheAttributes: [UICollectionViewLayoutAttributes] = []
     
     public override init() {
         super.init()
@@ -70,63 +48,34 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         guard containerView.superview != nil else {
             return
         }
-
-        containerView.addSubview(playerView)
-        containerView.addSubview(renderView)
-        
-        playerView.snp.remakeConstraints { (make) in
-            make.center.equalToSuperview()
-            make.size.equalTo(videoClap.videoDescription.renderSize)
-        }
-        
-        renderView.snp.remakeConstraints { (make) in
-            make.center.equalToSuperview()
-            make.size.equalTo(videoClap.videoDescription.renderSize)
-        }
-        
-//        let trackBundle = videoClap.videoDescription.trackBundle
-//
-//        lottieTrackEnumor = trackBundle.lottieTracks.reduce([:]) { (result, track) in
-//            var mutable = result
-//            if let animationView = track.animationView {
-//                let scle = CGFloat(videoClap.videoDescription.renderScale)
-//                animationView.frame.size = CGSize(width: 100, height: 100).applying(.init(scaleX: scle, y: scle))
-//            }
-//            mutable[track.id] = track
-//            return mutable
-//        }
-//
-//        containerView.addSubview(renderView)
-//
-//        renderView.snp.remakeConstraints { (make) in
-//            make.center.equalToSuperview()
-//            make.size.equalTo(videoClap.videoDescription.renderSize)
-//        }
-//
-//        do {
-//            for lottieTrack in trackBundle.lottieTracks {
-//                if let _ = lottiePreviewDic[lottieTrack.id] {
-//
-//                } else {
-//                    let preview = VCLottiePreview()
-//                    renderView.addSubview(preview)
-//                    preview.setup(lottieTrack: lottieTrack, renderSize: videoClap.videoDescription.renderSize)
-//                    lottiePreviewDic[lottieTrack.id] = preview
-//                }
-//            }
-//        }
-//
-//        renderView.addSubview(laminationImageView)
-//
-//        laminationImageView.snp.remakeConstraints { (make) in
-//            make.edges.equalToSuperview()
-//        }
     }
     
     public func draw(images: [String : CIImage], blackImage: CIImage) -> CIImage? {
         if stopRenderFlag {
             return nil
         }
+//        self.images = images
+//        self.cacheAttributes = []
+//        let group = DispatchGroup()
+//        for (index, image) in images.enumerated() {
+//            let attributes = UICollectionViewLayoutAttributes(forCellWith: IndexPath(item: index, section: 0))
+//            group.enter()
+//            DispatchQueue.main.async {
+//                attributes.frame = self.containerView.collectionView.bounds
+//                group.leave()
+//            }
+//            group.wait()
+//            self.cacheAttributes.append(attributes)
+//        }
+//
+//        group.enter()
+//        DispatchQueue.main.async {
+//            self.containerView.reloadDataWithoutAnimation()
+//            group.leave()
+//        }
+//        group.wait()
+//        return nil
+        
         var finalFrame: CIImage?
         
         finalFrame = images.sorted { (lhs, rhs) -> Bool in
@@ -140,11 +89,13 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         if let ciImage = finalFrame {
             let cgImage = CIContext.share.createCGImage(ciImage, from: CGRect(origin: .zero, size: videoClap.videoDescription.renderSize.scaling(videoClap.videoDescription.renderScale)))
             DispatchQueue.main.async {
-                self.renderView.layer.contents = cgImage
+                self.containerView.renderView.layer.contents = cgImage
+//                self.containerView.reloadDataWithoutAnimation()
             }
         } else {
             DispatchQueue.main.async {
-                self.renderView.layer.contents = nil
+                self.containerView.renderView.layer.contents = nil
+//                self.containerView.reloadDataWithoutAnimation()
             }
         }
         return nil
@@ -260,6 +211,27 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
                 completionHandler(url, error)
             }
         }
+    }
+    
+}
+
+extension VCPlayer: VCViewLayoutDelegate, UICollectionViewDataSource {
+    
+    public func layoutAttributes() -> [UICollectionViewLayoutAttributes]? {
+        return cacheAttributes
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return cacheAttributes.count
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "VCPreviewCell", for: indexPath) as! VCPreviewCell
+        let image = self.images.sorted { (lhs, rhs) -> Bool in
+            return lhs.value.indexPath > rhs.value.indexPath
+        }[indexPath.item].value
+        cell.imageView.image = UIImage(ciImage: image)
+        return cell
     }
     
 }
