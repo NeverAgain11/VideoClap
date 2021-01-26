@@ -96,8 +96,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         finish(finalFrame)
     }
     
-    public func handle(audios: [String : VCAudioTrackDescription],
-                       trackID: String,
+    public func handle(audioTrack: VCAudioTrackDescription,
                        timeRange: CMTimeRange,
                        inCount: CMItemCount,
                        inFlag: MTAudioProcessingTapFlags,
@@ -109,9 +108,9 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             return
         }
         
-        guard let audioTrack = audios[trackID], let url = audioTrack.mediaURL else { return }
+        guard let url = audioTrack.mediaURL else { return }
 
-        if #available(iOS 11.0, *), let audioEffectProvider = audioTrack.audioEffectProvider {
+        if let audioEffectProvider = audioTrack.audioEffectProvider {
             do {
                 let audioFile = try AVAudioFile(forReading: url)
                 let pcmFormat = audioFile.processingFormat

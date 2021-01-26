@@ -11,12 +11,10 @@ import AVFoundation
 /// 使用Token 强制持用  VCAudioProcessingTapProcessProtocol对象，防止在使用MTAudioProcessingTap时 MTAudioProcessingTapCallbacks  process回调中取不到 VCAudioProcessingTapProcessProtocol 对象导致内存访问错误
 public class VCTapToken: NSObject {
     var processCallback: VCAudioProcessingTapProcessProtocol
-    var trackID: String
-    var audios: [String : VCAudioTrackDescription]
+    var audioTrack: VCAudioTrackDescription
     
-    init(trackID: String, audios: [String : VCAudioTrackDescription], processCallback: VCAudioProcessingTapProcessProtocol) {
-        self.trackID = trackID
+    init(processCallback: VCAudioProcessingTapProcessProtocol, audioTrack: VCAudioTrackDescription) {
         self.processCallback = processCallback
-        self.audios = audios
+        self.audioTrack = audioTrack
     }
 }

@@ -63,14 +63,9 @@ internal class VCVideoCompositor: NSObject {
         try addEmptyTrack(timeRange: CMTimeRange(start: .zero, duration: max(composition.duration, videoDuration)), onCompositionTrack: compositionTrack)
         
         var audioMixInputParametersGroup: [AVMutableAudioMixInputParameters] = []
-        let audios = trackBundle.audioTracks.dic()
         for (_, trackInfos) in existAudioTrackDic {
             for audioTrack in trackInfos {
-                if let compositionTrack = audioTrack.compositionTrack,
-                    let inputParameters = addAudioMix(audioTrack: compositionTrack,
-                                                     audioTrackID: audioTrack.persistentTrackID,
-                                                     track: audioTrack,
-                                                     audios: audios) {
+                if let inputParameters = addAudioMix(track: audioTrack) {
                     audioMixInputParametersGroup.append(inputParameters)
                 }
             }
@@ -403,13 +398,13 @@ internal class VCVideoCompositor: NSObject {
         return videoComposition
     }
     
-    private func addAudioMix(audioTrack: AVMutableCompositionTrack, audioTrackID: CMPersistentTrackID, track: VCAudioTrackDescription, audios: [String : VCAudioTrackDescription]) -> AVMutableAudioMixInputParameters? {
+    private func addAudioMix(track: VCAudioTrackDescription) -> AVMutableAudioMixInputParameters? {
         if track.audioVolumeRampDescriptions.isEmpty && track.audioEffectProvider == nil {
             return nil
         }
-        
-        let inputParams = AVMutableAudioMixInputParameters(track: audioTrack)
-        inputParams.trackID = audioTrackID
+        guard let compositionTrack = track.compositionTrack else { return nil }
+        let inputParams = AVMutableAudioMixInputParameters(track: compositionTrack)
+        inputParams.trackID = track.persistentTrackID
         var existTimeRanges: [CMTimeRange] = []
         for audioVolumeRampDescription in track.audioVolumeRampDescriptions {
             guard audioVolumeRampDescription.timeRange.isValid else {
@@ -429,8 +424,8 @@ internal class VCVideoCompositor: NSObject {
         }
         
         do {
-            let cookie = VCTapToken(trackID: track.id, audios: audios, processCallback: requestCallbackHandler)
-            try inputParams.setAudioProcessingTap(cookie: cookie)
+            let token = VCTapToken(processCallback: requestCallbackHandler, audioTrack: track)
+            try inputParams.setAudioProcessingTap(token: token)
         } catch let error {
             log.error(error)
         }
