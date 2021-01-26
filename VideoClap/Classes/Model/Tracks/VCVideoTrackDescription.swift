@@ -46,6 +46,10 @@ public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescr
         return copyObj
     }
     
+    public override func originImage(time: CMTime, compensateTimeRange: CMTimeRange?) -> CIImage? {
+        return self.originImage(time: time, renderSize: .zero, renderScale: 1.0, compensateTimeRange: compensateTimeRange)
+    }
+    
     public override func originImage(time: CMTime, renderSize: CGSize = .zero, renderScale: CGFloat = 1.0, compensateTimeRange: CMTimeRange?) -> CIImage? {
         locker.object(forKey: #function).lock()
         defer {
@@ -61,7 +65,9 @@ public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescr
             generator.appliesPreferredTrackTransform = true
             generator.requestedTimeToleranceAfter = .zero
             generator.requestedTimeToleranceBefore = .zero
-            generator.maximumSize = renderSize.scaling(renderScale)
+            if renderSize != .zero {
+                generator.maximumSize = renderSize.scaling(renderScale)
+            }
             
             do {
                 let cgimage = try generator.copyCGImage(at: time, actualTime: nil)

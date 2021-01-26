@@ -71,6 +71,15 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         return copyObj
     }
     
+    public func originImage(time: CMTime, compensateTimeRange: CMTimeRange?) -> CIImage? {
+        locker.object(forKey: #function).lock()
+        defer {
+            locker.object(forKey: #function).unlock()
+        }
+        guard let url = self.mediaURL else { return nil }
+        return image(url: url, size: nil)
+    }
+    
     public func originImage(time: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage? {
         locker.object(forKey: #function).lock()
         defer {

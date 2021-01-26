@@ -51,6 +51,10 @@ public class VCTextTrackDescription: VCImageTrackDescription {
         return copyObj
     }
     
+    public override func originImage(time: CMTime, compensateTimeRange: CMTimeRange?) -> CIImage? {
+        return originImage(time: time, renderSize: .zero, renderScale: 0.0, compensateTimeRange: compensateTimeRange)
+    }
+    
     public override func originImage(time: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage? {
         locker.object(forKey: #function).lock()
         defer {
