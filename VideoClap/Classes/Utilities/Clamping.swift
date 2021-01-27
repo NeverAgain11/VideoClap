@@ -23,9 +23,3 @@ struct Clamping<Value: Comparable> {
     set { value = min(max(range.lowerBound, newValue), range.upperBound) }
   }
 }
-
-extension Comparable {
-    func clamped(to limits: ClosedRange<Self>) -> Self {
-        return min(max(self, limits.lowerBound), limits.upperBound)
-    }
-}

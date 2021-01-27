@@ -162,8 +162,12 @@ open class VideoClap: NSObject, VCMediaServicesObserver {
         
         let timer = Timer.every(0.1) { (timer: Timer) in
             if progress.isCancelled {
-                timer.invalidate()
-                session.cancelExport()
+                if timer.isValid {
+                    timer.invalidate()
+                }
+                if session.status != .cancelled {
+                    session.cancelExport()
+                }
             } else {
                 progress.completedUnitCount = Int64(min(1.0, session.progress) * Float(den))
                 progressHandler(progress)

@@ -131,7 +131,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
                     let translation = CGAffineTransform(translationX: center.x, y: center.y)
                     transform = transform.concatenating(translation)
                 case .rect(let rect):
-                    let point = rect.normalizeCenter
+                    let point = rect.center
                     let center = CGPoint(x: point.x * actualRenderSize.width, y: point.y * actualRenderSize.height)
                     let translation = CGAffineTransform(translationX: center.x, y: center.y)
                     transform = transform.concatenating(translation)
@@ -160,8 +160,8 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
                 
             case .rect(let rect):
                 let extent = frame.extent
-                let width = actualRenderSize.width * rect.normalizeWidth // 宽度，基于像素
-                let height = actualRenderSize.height * rect.normalizeHeight // 高度，基于像素
+                let width = actualRenderSize.width * rect.width // 宽度，基于像素
+                let height = actualRenderSize.height * rect.width // 高度，基于像素
                 let scaleX = width / extent.size.width
                 let scaleY = height / extent.size.height
                 let scale = CGAffineTransform(scaleX: scaleX, y: scaleY)

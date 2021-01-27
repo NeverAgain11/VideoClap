@@ -69,7 +69,7 @@ public class VCLottieTrackDescription: VCImageTrackDescription {
                 return
             }
             let progress = CGFloat(animationPlayTime.seconds.truncatingRemainder(dividingBy: animation.duration)).map(from: 0...CGFloat(animation.duration), to: 0...1)
-            if progress.isNaN && progress.isInfinite {
+            if progress.isNaN || progress.isInfinite {
                 handler(nil)
                 return
             }

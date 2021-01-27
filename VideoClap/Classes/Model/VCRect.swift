@@ -8,23 +8,67 @@
 import AVFoundation
 
 public struct VCRect {
-    public var normalizeCenter: CGPoint
-    public var normalizeWidth: CGFloat
-    public var normalizeHeight: CGFloat
+    
+    public var center: CGPoint
+    public var size: CGSize
+    
+    public var x: CGFloat {
+        get {
+            return center.x
+        }
+        set {
+            center.x = newValue
+        }
+    }
+    
+    public var y: CGFloat {
+        get {
+            return center.y
+        }
+        set {
+            center.y = newValue
+        }
+    }
+    
+    public var width: CGFloat {
+        get {
+            return size.width
+        }
+        set {
+            size.width = newValue
+        }
+    }
+    
+    public var height: CGFloat {
+        get {
+            return size.height
+        }
+        set {
+            size.height = newValue
+        }
+    }
     
     public static var zero: VCRect {
-        return VCRect(normalizeCenter: .zero, normalizeSize: .zero)
+        return VCRect(center: .zero, size: .zero)
     }
     
-    public init(normalizeCenter: CGPoint, normalizeSize: CGSize) {
-        self.normalizeCenter = normalizeCenter
-        self.normalizeWidth = normalizeSize.width
-        self.normalizeHeight = normalizeSize.height
+    public init(x centerX: CGFloat, y centerY: CGFloat, width: CGFloat, height: CGFloat) {
+        self.center = CGPoint(x: centerX, y: centerY)
+        self.size = CGSize(width: width, height: height)
     }
     
-    public init(normalizeCenter: CGPoint, normalizeWidth: CGFloat, normalizeHeight: CGFloat) {
-        self.normalizeCenter = normalizeCenter
-        self.normalizeWidth = normalizeWidth
-        self.normalizeHeight = normalizeHeight
+    public init(x centerX: CGFloat, y centerY: CGFloat, size: CGSize) {
+        self.center = CGPoint(x: centerX, y: centerY)
+        self.size = size
+    }
+    
+    public init(center: CGPoint, size: CGSize) {
+        self.center = center
+        self.size = size
+    }
+    
+    public init(center: CGPoint, width: CGFloat, height: CGFloat) {
+        self.center = center
+        self.size = CGSize(width: width, height: height)
     }
 }

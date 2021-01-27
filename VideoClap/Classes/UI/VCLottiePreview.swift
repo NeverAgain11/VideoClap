@@ -51,10 +51,10 @@ public class VCLottiePreview: UIView {
             make.edges.equalToSuperview()
         }
         
-        let size = CGSize(width: lottieTrack.rect.normalizeWidth * renderSize.width,
-                          height: lottieTrack.rect.normalizeHeight * renderSize.height)
-        let centerX = lottieTrack.rect.normalizeCenter.x * renderSize.width
-        let centerY = (1.0 - lottieTrack.rect.normalizeCenter.y) * renderSize.height
+        let size = CGSize(width: lottieTrack.rect.width * renderSize.width,
+                          height: lottieTrack.rect.height * renderSize.height)
+        let centerX = lottieTrack.rect.center.x * renderSize.width
+        let centerY = (1.0 - lottieTrack.rect.center.y) * renderSize.height
         frame.size = size
         frame.center = CGPoint(x: centerX, y: centerY)
     }
@@ -72,8 +72,8 @@ public class VCLottiePreview: UIView {
             let newFrame = self.frame.applying(.init(translationX: translation.x, y: translation.y))
             frame = newFrame
             
-            lottieTrack.rect.normalizeCenter.x = newFrame.midX / superview.bounds.width
-            lottieTrack.rect.normalizeCenter.y = 1.0 - newFrame.midY / superview.bounds.height
+            lottieTrack.rect.center.x = newFrame.midX / superview.bounds.width
+            lottieTrack.rect.center.y = 1.0 - newFrame.midY / superview.bounds.height
             sender.setTranslation(.zero, in: self)
             
         case .ended:
@@ -91,13 +91,13 @@ public class VCLottiePreview: UIView {
             break
             
         case .changed:
-            lottieTrack.rect.normalizeWidth = lottieTrack.rect.normalizeWidth * sender.scale
-            lottieTrack.rect.normalizeHeight = lottieTrack.rect.normalizeHeight * sender.scale
+            lottieTrack.rect.width = lottieTrack.rect.width * sender.scale
+            lottieTrack.rect.height = lottieTrack.rect.height * sender.scale
 
-            let newSize = CGSize(width: lottieTrack.rect.normalizeWidth * renderSize.width,
-                                 height: lottieTrack.rect.normalizeHeight * renderSize.height)
-            let centerX = lottieTrack.rect.normalizeCenter.x * renderSize.width
-            let centerY = (1.0 - lottieTrack.rect.normalizeCenter.y) * renderSize.height
+            let newSize = CGSize(width: lottieTrack.rect.width * renderSize.width,
+                                 height: lottieTrack.rect.height * renderSize.height)
+            let centerX = lottieTrack.rect.center.x * renderSize.width
+            let centerY = (1.0 - lottieTrack.rect.center.y) * renderSize.height
             frame.size = newSize
             frame.center = CGPoint(x: centerX, y: centerY)
             sender.scale = 1.0

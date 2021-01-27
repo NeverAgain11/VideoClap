@@ -104,7 +104,7 @@ class ViewController: UIViewController {
             track.indexPath = IndexPath(item: 0, section: 1000)
             track.timeRange = CMTimeRange(start: 0.0, duration: 5.0)
             track.mediaURL = Bundle.main.url(forResource: "test3.jpg", withExtension: nil, subdirectory: "Mat")
-            track.imageLayout = .rect(.init(normalizeCenter: CGPoint(x: 0.9, y: 0.1), normalizeWidth: 0.1, normalizeHeight: 0.1))
+            track.imageLayout = .rect(.init(center: CGPoint(x: 0.9, y: 0.1), width: 0.1, height: 0.1))
             trackBundle.imageTracks.append(track)
         }
         
@@ -194,10 +194,10 @@ class ViewController: UIViewController {
                 animationSticker.indexPath = IndexPath(item: index, section: 901)
                 animationSticker.id = "animationSticker\(index)"
                 let size: CGSize = CGSize(width: 0.35 / ratio, height: 0.35)
-                animationSticker.rect = VCRect(normalizeCenter: CGPoint(x: CGFloat.random(in: 0.0...1.0), y: CGFloat.random(in: 0.0...1.0)),
-                                               normalizeSize: size)
+                animationSticker.rect = VCRect(center: CGPoint(x: CGFloat.random(in: 0.0...1.0), y: CGFloat.random(in: 0.0...1.0)),
+                                               size: size)
                 animationSticker.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10))
-                animationSticker.mediaURL = Bundle.main.url(forResource: "Watermelon.json", withExtension: nil, subdirectory: "Mat/LottieAnimations")
+                animationSticker.mediaURL = resourceURL(filename: "Watermelon.json")
                 trackBundle.imageTracks.append(animationSticker)
             }
         }
@@ -213,6 +213,17 @@ class ViewController: UIViewController {
             textTrack.text = NSAttributedString(string: "按键或把手把字和符号打印在纸上的机械，有手打和电打两种。\n在大多数办公室，电脑已经取代了打字机。\n她拿起一张纸，把它哗哗啦啦地塞到打字机中。",
                                                 attributes: [.foregroundColor : UIColor.red, .font : UIFont.systemFont(ofSize: 30, weight: .bold)])
             trackBundle.imageTracks.append(textTrack)
+        }
+        
+        do {
+            let gifTrack = VCGIFTrackDescription()
+            gifTrack.indexPath = IndexPath(item: 0, section: 1001)
+            let rect = VCRect(x: 0.5, y: 0.5, width: .random(in: 0..<1.0), height: .random(in: 0..<1.0))
+            gifTrack.imageLayout = .rect(rect)
+            gifTrack.id = "gifTrack"
+            gifTrack.timeRange = CMTimeRange(start: 0.0, end: 30.0)
+            gifTrack.mediaURL = resourceURL(filename: "d6943138af1.gif")
+            trackBundle.imageTracks.append(gifTrack)
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
@@ -237,6 +248,10 @@ class ViewController: UIViewController {
 //        export(fileName: nil) { }
         
 //        allCasesExportVideo()
+    }
+    
+    func resourceURL(filename: String) -> URL? {
+        Bundle.main.url(forResource: filename, withExtension: nil, subdirectory: "Mat")
     }
     
     func getTransition(type: TransitionType) -> VCTransitionProtocol {

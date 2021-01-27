@@ -26,6 +26,9 @@ TODO: Add long description of the pod here.
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'lai001' => '1104698042@qq.com' }
   s.source           = { :git => 'https://github.com/lai001/VideoClap.git', :tag => s.version.to_s }
+  s.platform         = :ios, "9.0"
+  s.swift_version    = '5.0'
+  s.ios.deployment_target = '9.0'
   
   s.dependency 'SwiftyBeaver'
   s.dependency 'lottie-ios'
@@ -36,9 +39,6 @@ TODO: Add long description of the pod here.
   
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '9.0'
-  s.swift_version = '5.0'
-  
   s.subspec 'Extension' do |ss|
     ss.source_files = 'VideoClap/Classes/Extension/**/*'
   end
