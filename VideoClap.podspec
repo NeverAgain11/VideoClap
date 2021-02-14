@@ -86,6 +86,18 @@ TODO: Add long description of the pod here.
       ss.source_files = 'VideoClap/Classes/UI/**/*'
   end
   
+  s.subspec 'TextEffect' do |ss|
+      ss.source_files = 'VideoClap/Classes/TextEffect/**/*'
+  end
+  
+  s.subspec 'CoreText' do |ss|
+      ss.source_files = 'VideoClap/Classes/CoreText/**/*'
+  end
+  
+  s.subspec 'AudioEngine' do |ss|
+      ss.source_files = 'VideoClap/Classes/AudioEngine/**/*'
+  end
+  
   s.pod_target_xcconfig = {
     'MTL_COMPILER_FLAGS' => '-fcikernel',
     'MTLLINKER_FLAGS' => '-cikernel',

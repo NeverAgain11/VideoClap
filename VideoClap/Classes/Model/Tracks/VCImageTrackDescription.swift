@@ -71,6 +71,10 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         return copyObj
     }
     
+    public func prepare(description: VCVideoDescription) {
+        
+    }
+    
     public func originImage(time: CMTime, compensateTimeRange: CMTimeRange?) -> CIImage? {
         locker.object(forKey: #function).lock()
         defer {

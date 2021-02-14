@@ -17,6 +17,8 @@ public protocol VCTrackDescriptionProtocol: NSCopying, NSMutableCopying, Identif
     
     var timeRange: CMTimeRange { get set }
     
+    func prepare(description: VCVideoDescription)
+    
 }
 
 public protocol VCScaleTrackDescriptionProtocol: VCTrackDescriptionProtocol {

@@ -208,10 +208,12 @@ class ViewController: UIViewController {
             textTrack.id = "textTrack"
             textTrack.imageLayout = .center(CGPoint(x: 0.5, y: 0.5))
             textTrack.timeRange = CMTimeRange(start: 0.0, end: 10.0)
-            textTrack.isTypewriter = true
-            textTrack.rotateRadian = .pi * 0.15
-            textTrack.text = NSAttributedString(string: "按键或把手把字和符号打印在纸上的机械，有手打和电打两种。\n在大多数办公室，电脑已经取代了打字机。\n她拿起一张纸，把它哗哗啦啦地塞到打字机中。",
-                                                attributes: [.foregroundColor : UIColor.red, .font : UIFont.systemFont(ofSize: 30, weight: .bold)])
+            textTrack.textEffectProvider = VCRotationTextEffect(rotationType: .rotate(25.0))
+//            textTrack.rotateRadian = .pi * 0.15
+            textTrack.text = AttributedStringBuilder(text: "按键或把手把字和符号打印在纸上的机械，有手打和电打两种。\n在大多数办公室，电脑已经取代了打字机。\n她拿起一张纸，把它哗哗啦啦地塞到打字机中。")
+//                .addAttributes(value: [.foregroundColor : UIColor.clear, .font : UIFont.systemFont(ofSize: 90, weight: .bold), .strokeWidth: -3.0, .strokeColor: UIColor.blue])
+                .addAttributes(value: [.foregroundColor : UIColor.red, .font : UIFont.systemFont(ofSize: 40, weight: .bold)])
+                .build()
             trackBundle.imageTracks.append(textTrack)
         }
         

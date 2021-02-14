@@ -108,22 +108,14 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             return
         }
         
-        guard let url = audioTrack.mediaURL else { return }
-
-        if let audioEffectProvider = audioTrack.audioEffectProvider {
-            do {
-                let audioFile = try AVAudioFile(forReading: url)
-                let pcmFormat = audioFile.processingFormat
-                audioEffectProvider.handle(timeRange: timeRange,
-                                           inCount: inCount,
-                                           inFlag: inFlag,
-                                           outBuffer: outBuffer,
-                                           outCount: outCount,
-                                           outFlag: outFlag,
-                                           pcmFormat: pcmFormat)
-            } catch let error {
-                log.error(error)
-            }
+        if let audioEffectProvider = audioTrack.audioEffectProvider, let pcmFormat = audioTrack.processingFormat {
+            audioEffectProvider.handle(timeRange: timeRange,
+                                       inCount: inCount,
+                                       inFlag: inFlag,
+                                       outBuffer: outBuffer,
+                                       outCount: outCount,
+                                       outFlag: outFlag,
+                                       pcmFormat: pcmFormat)
         }
     }
 

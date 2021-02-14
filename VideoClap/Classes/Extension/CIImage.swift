@@ -20,4 +20,24 @@ public extension CIImage {
         }
     }
     
+    internal func draw(at point: CGPoint) {
+        UIImage(ciImage: self).draw(at: point)
+    }
+    
+    internal func draw(at point: CGPoint, blendMode: CGBlendMode, alpha: CGFloat) {
+        UIImage(ciImage: self).draw(at: point, blendMode: blendMode, alpha: alpha)
+    }
+    
+    internal func draw(in rect: CGRect) {
+        UIImage(ciImage: self).draw(in: rect)
+    }
+    
+    internal func draw(in rect: CGRect, blendMode: CGBlendMode, alpha: CGFloat) {
+        UIImage(ciImage: self).draw(in: rect, blendMode: blendMode, alpha: alpha)
+    }
+    
+    internal func drawAsPattern(in rect: CGRect) {
+        UIImage(ciImage: self).drawAsPattern(in: rect)
+    }
+    
 }

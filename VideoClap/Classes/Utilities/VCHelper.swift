@@ -11,6 +11,16 @@ import AVFoundation
 
 public class VCHelper: NSObject {
     
+    internal static func runInMainThread(_ closure: @escaping () -> Void) {
+        if Thread.current.isMainThread {
+            closure()
+        } else {
+            DispatchQueue.main.async {
+                closure()
+            }
+        }
+    }
+    
     internal static func bundle() -> Bundle {
         let bundleName: String = "VideoClap"
         var bundle: Bundle?

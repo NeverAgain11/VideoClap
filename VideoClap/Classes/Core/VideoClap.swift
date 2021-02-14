@@ -68,6 +68,10 @@ open class VideoClap: NSObject, VCMediaServicesObserver {
     }
     
     public func playerItemForPlay() throws -> AVPlayerItem {
+        let trackBundle = videoDescription.trackBundle
+        trackBundle.audioTracks.forEach({ $0.prepare(description: videoDescription) })
+        trackBundle.videoTracks.forEach({ $0.prepare(description: videoDescription) })
+        trackBundle.imageTracks.forEach({ $0.prepare(description: videoDescription) })
         let playerItem = try videoCompositor.playerItemForPlay()
         return playerItem
     }

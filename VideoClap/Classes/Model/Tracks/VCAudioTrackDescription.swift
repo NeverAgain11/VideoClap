@@ -29,6 +29,8 @@ public class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol 
     
     public var audioEffectProvider: VCAudioEffectProviderProtocol?
     
+    public internal(set) var processingFormat: AVAudioFormat?
+    
     public override init() {
         super.init()
     }
@@ -47,6 +49,16 @@ public class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol 
         copyObj.audioEffectProvider         = audioEffectProvider
         copyObj.sourceTimeRange             = sourceTimeRange
         return copyObj
+    }
+    
+    public func prepare(description: VCVideoDescription) {
+        guard let url = mediaURL else { return }
+        do {
+            let audioFile = try AVAudioFile(forReading: url)
+            processingFormat = audioFile.processingFormat
+        } catch let error {
+            log.warning(error)
+        }
     }
     
 }
