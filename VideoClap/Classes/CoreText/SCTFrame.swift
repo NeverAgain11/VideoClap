@@ -95,7 +95,7 @@ class SCTFrame: NSObject {
             for run in line.glyphRuns {
                 for (index, glyphPosition) in run.glyphPositions.enumerated() {
                     var boundingRect = run.boundingRects()[index]
-                    boundingRect.origin = CGPointAdd(boundingRect.origin, CGPointAdd(glyphPosition, origin))
+                    boundingRect.origin = boundingRect.origin.add(glyphPosition).add(origin)
                     rects.append(boundingRect)
                 }
             }

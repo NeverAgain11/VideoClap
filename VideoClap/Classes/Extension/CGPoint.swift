@@ -7,6 +7,10 @@
 
 import Foundation
 
-func CGPointAdd(_ lhs: CGPoint, _ rhs: CGPoint) -> CGPoint {
-    return CGPoint(x: lhs.x + rhs.x, y: lhs.y + rhs.y)
+extension CGPoint {
+    
+    func add(_ point: CGPoint) -> CGPoint {
+        return CGPoint(x: self.x + point.x, y: self.y + point.y)
+    }
+    
 }

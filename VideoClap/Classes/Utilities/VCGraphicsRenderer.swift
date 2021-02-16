@@ -15,6 +15,24 @@ public class VCGraphicsRenderer: NSObject {
     
     public var opaque: Bool = false
     
+    public override init() {
+        super.init()
+    }
+    
+    public init(_ rendererSize: CGSize = .zero, scale: CGFloat = 1.0, opaque: Bool = false) {
+        super.init()
+        rendererRect.size = rendererSize
+        self.scale = scale
+        self.opaque = opaque
+    }
+    
+    public init(_ rendererRect: CGRect = .zero, scale: CGFloat = 1.0, opaque: Bool = false) {
+        super.init()
+        self.rendererRect = rendererRect
+        self.scale = scale
+        self.opaque = opaque
+    }
+    
     public func jpegData(withCompressionQuality compressionQuality: CGFloat, flipY: Bool = false, actions: (CGContext) -> Void) -> Data? {
         return self.image(flipY: flipY, actions: actions)?.jpegData(compressionQuality: compressionQuality)
     }

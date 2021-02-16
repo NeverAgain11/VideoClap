@@ -40,4 +40,13 @@ public extension CIImage {
         UIImage(ciImage: self).drawAsPattern(in: rect)
     }
     
+    internal func withTintColor(_ color: UIColor) -> CIImage {
+        let renderer = VCGraphicsRenderer(self.extent.size)
+        return renderer.ciImage { (_) in
+            color.setFill()
+            UIRectFill(extent)
+            self.draw(at: .zero, blendMode: .destinationIn, alpha: 1.0)
+        } ?? self
+    }
+    
 }
