@@ -349,7 +349,8 @@ class ViewController: UIViewController {
         vcplayer.reload()
         playButton.isSelected = true
         
-        player.observePlayingTime { (time: CMTime) in
+        player.observePlayingTime { [weak self] (time: CMTime) in
+            guard let self = self else { return }
             self.timer()
         }
         
@@ -418,7 +419,8 @@ class ViewController: UIViewController {
             
         case .ended:
             if Scope.cacheIsPlaying {
-                player.observePlayingTime { (time: CMTime) in
+                player.observePlayingTime { [weak self] (time: CMTime) in
+                    guard let self = self else { return }
                     self.timer()
                 }
                 player.play()
@@ -427,7 +429,8 @@ class ViewController: UIViewController {
         case .moved:
             let duration = player.currentItem?.asset.duration ?? CMTime(seconds: 1.0)
             let time = CMTime(seconds: duration.seconds * Double(slider.value))
-            player.seekSmoothly(to: time) { _ in
+            player.seekSmoothly(to: time) { [weak self] _ in
+                guard let self = self else { return }
                 self.timer()
             }
             
@@ -445,7 +448,8 @@ class ViewController: UIViewController {
         let duration = player.currentItem?.duration.seconds ?? 1
         let time = CMTime(seconds: Double(newValue) * duration)
         
-        player.seekSmoothly(to: time) { [unowned self] _ in
+        player.seekSmoothly(to: time) { [weak self] _ in
+            guard let self = self else { return }
             self.timer()
             if cacheIsPlaying {
                 self.player.play()
@@ -487,7 +491,8 @@ class ViewController: UIViewController {
         } else {
             player.play()
             playButton.isSelected = true
-            player.observePlayingTime { (time: CMTime) in
+            player.observePlayingTime { [weak self] (time: CMTime) in
+                guard let self = self else { return }
                 self.timer()
             }
         }

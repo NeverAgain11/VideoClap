@@ -17,7 +17,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         return VCHelper.image(color: .black, size: videoDescription.renderSize.scaling(videoDescription.renderScale))
     }
     
-    public var renderTarget: VCRenderTarget = VCOfflineRenderTarget()
+    public weak var renderTarget: VCRenderTarget?
     
     public func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
         self.compositionTime = compositionTime
@@ -91,7 +91,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             preprocessFinishedImages.removeValue(forKey: transition.toId)
         }
         
-        let finalFrame: CIImage? = renderTarget.draw(images: preprocessFinishedImages, blackImage: self.blackImage)
+        let finalFrame: CIImage? = renderTarget?.draw(images: preprocessFinishedImages, blackImage: self.blackImage)
         
         finish(finalFrame)
     }

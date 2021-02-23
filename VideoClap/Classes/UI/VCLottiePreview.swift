@@ -6,7 +6,6 @@
 //
 
 import AVFoundation
-import SwiftyBeaver
 import SnapKit
 
 public class VCLottiePreview: UIView {

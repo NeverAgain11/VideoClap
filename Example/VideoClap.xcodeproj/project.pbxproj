@@ -16,6 +16,7 @@
 		8A138D6D2554D55B0088ECA8 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A138D622554D55B0088ECA8 /* Images.xcassets */; };
 		8A138D842554D7010088ECA8 /* Mat in Resources */ = {isa = PBXBuildFile; fileRef = 8A138D832554D7010088ECA8 /* Mat */; };
 		8A8CE53B255176E0002E935C /* Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8CE53A255176E0002E935C /* Util.swift */; };
+		8A8D9FCC25E338040015113A /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8D9FCB25E338040015113A /* MainViewController.swift */; };
 		8AAF3B1F258CB26600C0F790 /* TestTrackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AAF3B1E258CB26600C0F790 /* TestTrackView.swift */; };
 		8AC694902551606A00CD1D6D /* TestWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC6948F2551606A00CD1D6D /* TestWindow.swift */; };
 /* End PBXBuildFile section */
@@ -35,6 +36,7 @@
 		8A138D642554D55B0088ECA8 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8A138D832554D7010088ECA8 /* Mat */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Mat; path = ../../../../Mat; sourceTree = "<group>"; };
 		8A8CE53A255176E0002E935C /* Util.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Util.swift; sourceTree = "<group>"; };
+		8A8D9FCB25E338040015113A /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		8AAF3B1E258CB26600C0F790 /* TestTrackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestTrackView.swift; sourceTree = "<group>"; };
 		8AC6948F2551606A00CD1D6D /* TestWindow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestWindow.swift; sourceTree = "<group>"; };
 		96E95A14EE0F218F43EEE3A2 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
@@ -77,6 +79,7 @@
 			children = (
 				8A138D582554D55B0088ECA8 /* Resources */,
 				607FACD51AFB9204008FA782 /* AppDelegate.swift */,
+				8A8D9FCB25E338040015113A /* MainViewController.swift */,
 				607FACD71AFB9204008FA782 /* ViewController.swift */,
 				8A0D4E162585E2A100C08E7D /* TestTimeScaleView.swift */,
 				8AAF3B1E258CB26600C0F790 /* TestTrackView.swift */,
@@ -259,6 +262,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8A8D9FCC25E338040015113A /* MainViewController.swift in Sources */,
 				8AAF3B1F258CB26600C0F790 /* TestTrackView.swift in Sources */,
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
@@ -401,7 +405,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
-				MTLLINKER_FLAGS = "";
+				MTLLINKER_FLAGS = "-cikernel";
 				MTL_COMPILER_FLAGS = "-fcikernel";
 				PRODUCT_BUNDLE_IDENTIFIER = com.lai.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -424,7 +428,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
-				MTLLINKER_FLAGS = "";
+				MTLLINKER_FLAGS = "-cikernel";
 				MTL_COMPILER_FLAGS = "-fcikernel";
 				PRODUCT_BUNDLE_IDENTIFIER = com.lai.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";

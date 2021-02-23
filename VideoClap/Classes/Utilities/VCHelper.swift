@@ -23,6 +23,10 @@ public class VCHelper: NSObject {
     
     internal static func bundle() -> Bundle {
         let bundleName: String = "VideoClap"
+        return bundle(bundleName: bundleName)
+    }
+    
+    internal static func bundle(bundleName: String) -> Bundle {
         var bundle: Bundle?
         if let url = Bundle.main.url(forResource: "Frameworks/\(bundleName).framework/\(bundleName).bundle", withExtension: nil) {
             bundle = Bundle(url: url)
@@ -33,24 +37,19 @@ public class VCHelper: NSObject {
         return bundle ?? Bundle(for: VideoClap.self)
     }
     
-    internal static func defaultMetallib() -> URL? {
-        let bundleName: String = "VideoClap"
-        var defaultMetallib: URL?
-        
-        if let frameworkUrl = Bundle.main.url(forResource: "Frameworks/\(bundleName).framework", withExtension: nil) {
-            defaultMetallib = frameworkUrl.appendingPathComponent("default.metallib")
-        }
-        if defaultMetallib == nil, let url = Bundle.main.url(forResource: bundleName, withExtension: "bundle") {
-            defaultMetallib = Bundle(url: url)?.url(forResource: "default", withExtension: "metallib")
-        }
-        return defaultMetallib
+    internal static func metalLibURL(name: String) -> URL? {
+        return bundle().url(forResource: name, withExtension: "metallib")
+    }
+    
+    internal static func defaultMetalLibURL() -> URL? {
+        return self.metalLibURL(name: "default")
     }
     
     @available(iOS 11.0, *)
     internal static func kernel(functionName: String) -> CIKernel? {
         do {
-            if let lib = VCHelper.defaultMetallib() {
-                let data = try Data(contentsOf: lib)
+            if let url = bundle().url(forResource: functionName, withExtension: "ci.metallib") {
+                let data = try Data(contentsOf: url)
                 let kernel = try CIKernel(functionName: functionName, fromMetalLibraryData: data)
                 return kernel
             } else {

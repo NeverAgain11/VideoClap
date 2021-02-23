@@ -20,6 +20,7 @@ PODS:
     - VideoClap/CoreText (= 0.1.0)
     - VideoClap/CustomFilter (= 0.1.0)
     - VideoClap/Extension (= 0.1.0)
+    - VideoClap/Metal (= 0.1.0)
     - VideoClap/MetalLibs (= 0.1.0)
     - VideoClap/Model (= 0.1.0)
     - VideoClap/Protocol (= 0.1.0)
@@ -64,6 +65,13 @@ PODS:
     - SwiftyBeaver
     - SwiftyTimer
   - VideoClap/Extension (0.1.0):
+    - lottie-ios
+    - SDWebImage
+    - SnapKit
+    - SSPlayer
+    - SwiftyBeaver
+    - SwiftyTimer
+  - VideoClap/Metal (0.1.0):
     - lottie-ios
     - SDWebImage
     - SnapKit
@@ -167,8 +175,8 @@ SPEC CHECKSUMS:
   SSPlayer: 6299c67bde2d7a5f64292dccac0e6ddd45bfdd91
   SwiftyBeaver: 2e8acd6fc90c6d0a27055867a290794926d57c02
   SwiftyTimer: 02dd6cf10cbc71cbf67cec494f6e5eb782102543
-  VideoClap: 3d2097ca3a87e32b2642f25ea3bf9866f21b267d
+  VideoClap: d015550bafa1b58ddc9dc223fe3a26dd6a9e29bf
 
 PODFILE CHECKSUM: 027e2717dbb0c8e7d2fdab52a20152fde90af79f
 
-COCOAPODS: 1.9.1
+COCOAPODS: 1.10.1

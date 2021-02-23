@@ -7,7 +7,7 @@
 
 import SwiftyBeaver
 
-internal let log: SwiftyBeaver.Type = {
+private let _log: SwiftyBeaver.Type = {
 //    #if DEBUG
     let console = ConsoleDestination()
     console.asynchronously = false
@@ -16,3 +16,47 @@ internal let log: SwiftyBeaver.Type = {
 //    #endif
     return SwiftyBeaver.self
 }()
+
+public class log {
+    
+    public static func debug(_ message: Any...,
+                             file: String = #file,
+                             _ function: String = #function,
+                             line: Int = #line,
+                             context: Any? = nil) {
+        _log.debug(message, file, function, line: line, context: context)
+    }
+    
+    public static func error(_ message: Any...,
+                             file: String = #file,
+                             _ function: String = #function,
+                             line: Int = #line,
+                             context: Any? = nil) {
+        _log.error(message, file, function, line: line, context: context)
+    }
+    
+    public static func warning(_ message: Any...,
+                               file: String = #file,
+                               _ function: String = #function,
+                               line: Int = #line,
+                               context: Any? = nil) {
+        _log.warning(message, file, function, line: line, context: context)
+    }
+    
+    public static func info(_ message: Any...,
+                            file: String = #file,
+                            _ function: String = #function,
+                            line: Int = #line,
+                            context: Any? = nil) {
+        _log.info(message, file, function, line: line, context: context)
+    }
+    
+    public static func verbose(_ message: Any...,
+                               file: String = #file,
+                               _ function: String = #function,
+                               line: Int = #line,
+                               context: Any? = nil) {
+        _log.verbose(message, file, function, line: line, context: context)
+    }
+    
+}

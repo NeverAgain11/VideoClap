@@ -32,6 +32,9 @@ open class VCSquareswireFilter: CIFilter {
     """
     
     private static let kernel: CIKernel? = {
+        if #available(iOS 11.0, *), let kernel = VCHelper.kernel(functionName: "Squareswire") {
+            return kernel
+        }
         return CIKernel(source: sourceCode)
     }()
     

@@ -98,18 +98,19 @@ TODO: Add long description of the pod here.
       ss.source_files = 'VideoClap/Classes/AudioEngine/**/*'
   end
   
+  s.subspec 'Metal' do |ss|
+      ss.source_files = 'VideoClap/Classes/Metal/**/*'
+  end
+  
   s.pod_target_xcconfig = {
     'MTL_COMPILER_FLAGS' => '-fcikernel',
     'MTLLINKER_FLAGS' => '-cikernel',
   }
-  
-#  s.source_files = 'VideoClap/Classes/**/*'
-  
+
    s.resource_bundles = {
      'VideoClap' => ['VideoClap/Assets/*.mov']
    }
-
-  # s.public_header_files = 'Pod/Classes/**/*.h'
-  # s.frameworks = 'UIKit', 'MapKit'
-  # s.dependency 'AFNetworking', '~> 2.3'
+   
+   s.ios.pod_target_xcconfig = { 'METAL_LIBRARY_OUTPUT_DIR' => '${TARGET_BUILD_DIR}/VideoClap.bundle' }
+   
 end
