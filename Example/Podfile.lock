@@ -165,7 +165,7 @@ EXTERNAL SOURCES:
 
 CHECKOUT OPTIONS:
   SSPlayer:
-    :commit: faf4f9c4696a3ee46a2e4860913f530a58630410
+    :commit: 99478cc15d39afb5783c1b3bec3ca3d8469b6a2a
     :git: https://github.com/lai001/SSPlayer.git
 
 SPEC CHECKSUMS:
@@ -175,8 +175,8 @@ SPEC CHECKSUMS:
   SSPlayer: 6299c67bde2d7a5f64292dccac0e6ddd45bfdd91
   SwiftyBeaver: 2e8acd6fc90c6d0a27055867a290794926d57c02
   SwiftyTimer: 02dd6cf10cbc71cbf67cec494f6e5eb782102543
-  VideoClap: d015550bafa1b58ddc9dc223fe3a26dd6a9e29bf
+  VideoClap: 3ba84a2c5ba6e98c52ad196fcb66bc6b252bbcf9
 
-PODFILE CHECKSUM: 027e2717dbb0c8e7d2fdab52a20152fde90af79f
+PODFILE CHECKSUM: 5552830189b08e6ae4bc11840cdb9c7da091963f
 
 COCOAPODS: 1.10.1

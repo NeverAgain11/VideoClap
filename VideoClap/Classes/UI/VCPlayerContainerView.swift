@@ -10,9 +10,9 @@ import AVFoundation
 
 public class VCPlayerContainerView: UIView {
     
-    let player: VCPlayer
+    public weak var player: VCPlayer?
     
-    lazy var playerView: SSPlayerView = {
+    public lazy var playerView: SSPlayerView = {
         let playerView = SSPlayerView(player: player)
         return playerView
     }()
@@ -53,12 +53,18 @@ public class VCPlayerContainerView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    deinit {
+        playerView.player = nil
+    }
+    
     public override func layoutSubviews() {
         super.layoutSubviews()
-        let rect = AVMakeRect(aspectRatio: self.player.videoClap.videoDescription.renderSize, insideRect: self.bounds)
-        playerView.frame = rect
-        renderView.frame = rect
-        collectionView.frame = rect
+        if let _player = self.player {
+            let rect = AVMakeRect(aspectRatio: _player.videoClap.videoDescription.renderSize, insideRect: self.bounds)
+            playerView.frame = rect
+            renderView.frame = rect
+            collectionView.frame = rect
+        }
     }
     
     public func reloadDataWithoutAnimation() {

@@ -35,9 +35,10 @@ class ViewController: UIViewController {
         return vcplayer
     }
     
-    var containerView: UIView {
-        return vcplayer.containerView
-    }
+    public lazy var containerView: VCPlayerContainerView = {
+        let view = VCPlayerContainerView(player: vcplayer)
+        return view
+    }()
     
     lazy var vcplayer: VCPlayer = {
         let player = VCPlayer()
@@ -82,6 +83,19 @@ class ViewController: UIViewController {
     let reverseVideo = VCReverseVideo()
     
     let ratio: CGFloat = 9.0 / 16.0
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: TransitionNotification, object: nil)
+    }
+    
+    init() {
+        super.init(nibName: nil, bundle: nil)
+        player.containerView = self.containerView
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -250,6 +264,16 @@ class ViewController: UIViewController {
 //        export(fileName: nil) { }
         
 //        allCasesExportVideo()
+        do {
+            let url = resourceURL(filename: "Bitters At The Saloon.mp3").unsafelyUnwrapped
+//            let file = try AVAudioFile(forReading: url)
+            var ref: ExtAudioFileRef?
+            let status = ExtAudioFileOpenURL(url as CFURL, &ref)
+            
+            log.debug(status)
+        } catch let error {
+            log.error(error)
+        }
     }
     
     func resourceURL(filename: String) -> URL? {

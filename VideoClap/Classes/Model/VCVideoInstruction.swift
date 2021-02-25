@@ -7,25 +7,25 @@
 
 import AVFoundation
 
-internal class VCVideoInstruction: NSObject, AVVideoCompositionInstructionProtocol {
+public class VCVideoInstruction: NSObject, AVVideoCompositionInstructionProtocol {
     
-    var timeRange: CMTimeRange = .zero
+    public var timeRange: CMTimeRange = .zero
     
-    var enablePostProcessing: Bool = false
+    public var enablePostProcessing: Bool = false
     
-    var containsTweening: Bool = false
+    public var containsTweening: Bool = false
     
-    var requiredSourceTrackIDs: [NSValue]?
+    public var requiredSourceTrackIDs: [NSValue]?
     
     var requiredSourceTrackIDsDic: [CMPersistentTrackID : VCVideoTrackDescription] = [:]
     
-    var passthroughTrackID: CMPersistentTrackID = kCMPersistentTrackID_Invalid
+    public var passthroughTrackID: CMPersistentTrackID = kCMPersistentTrackID_Invalid
     
     weak var videoProcessProtocol: VCVideoProcessProtocol?
     
-    var trackBundle: VCTrackBundle = VCTrackBundle()
+    public var trackBundle: VCTrackBundle = VCTrackBundle()
     
-    var transitions: [VCTransition] = []
+    public var transitions: [VCTransition] = []
     
     var trackCompensateTimeRange: [String:CMTimeRange] = [:]
 }

@@ -11,8 +11,8 @@ import VideoClap
 
 class MainViewController: UITableViewController {
 
-    lazy var controllers: [UIViewController] = {
-        return [ViewController(), TestTimeScaleView(), TestTrackView()]
+    lazy var controllers: [UIViewController.Type] = {
+        return [ViewController.self, TestTimeScaleView.self, TestTrackView.self, MetalViewController.self]
     }()
     
     override func viewDidLoad() {
@@ -28,13 +28,13 @@ class MainViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
-        cell.textLabel?.text = String(describing: controllers[indexPath.item].classForCoder)
+        cell.textLabel?.text = String(describing: controllers[indexPath.item])
         return cell
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let controller = controllers[indexPath.item]
-        navigationController?.pushViewController(controller, animated: true)
+        navigationController?.pushViewController(controller.init(), animated: true)
     }
 
 }

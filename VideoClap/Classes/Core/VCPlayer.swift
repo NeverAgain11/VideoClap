@@ -21,10 +21,7 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         return videoClap
     }()
     
-    public lazy var containerView: VCPlayerContainerView = {
-        let view = VCPlayerContainerView(player: self)
-        return view
-    }()
+    public weak var containerView: VCPlayerContainerView?
     
     private var stopRenderFlag: Bool = false
     
@@ -40,12 +37,14 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
     
     private var cacheAttributes: [UICollectionViewLayoutAttributes] = []
     
+    private let offlineRenderTarget = VCOfflineRenderTarget()
+    
     public override init() {
         super.init()
     }
     
     public func contextChanged() {
-        guard containerView.superview != nil else {
+        guard containerView?.superview != nil else {
             return
         }
     }
@@ -89,12 +88,12 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         if let ciImage = finalFrame {
             let cgImage = CIContext.share.createCGImage(ciImage, from: CGRect(origin: .zero, size: videoClap.videoDescription.renderSize.scaling(videoClap.videoDescription.renderScale)))
             DispatchQueue.main.async {
-                self.containerView.renderView.layer.contents = cgImage
+                self.containerView?.renderView.layer.contents = cgImage
 //                self.containerView.reloadDataWithoutAnimation()
             }
         } else {
             DispatchQueue.main.async {
-                self.containerView.renderView.layer.contents = nil
+                self.containerView?.renderView.layer.contents = nil
 //                self.containerView.reloadDataWithoutAnimation()
             }
         }
@@ -163,7 +162,7 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         if currentItem == nil {
             throw NSError(domain: "", code: 1, userInfo: [NSLocalizedFailureReasonErrorKey : ""])
         } else {
-            videoClap.requestCallbackHandler.renderTarget = VCOfflineRenderTarget()
+            videoClap.requestCallbackHandler.renderTarget = offlineRenderTarget
             manualRenderingMode = .offline
             self.removePlayingTimeObserver()
             super.pause()

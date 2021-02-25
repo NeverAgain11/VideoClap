@@ -75,7 +75,8 @@ TODO: Add long description of the pod here.
   end
   
   s.subspec 'MetalLibs' do |ss|
-    ss.source_files = 'VideoClap/Classes/MetalLibs/**/*.metal'
+    ss.source_files = 'VideoClap/Classes/MetalLibs/**/*.{h,metal}'
+    ss.public_header_files = 'VideoClap/Classes/Metal/**/*.h'
   end
   
   s.subspec 'AudioEffects' do |ss|
@@ -102,10 +103,10 @@ TODO: Add long description of the pod here.
       ss.source_files = 'VideoClap/Classes/Metal/**/*'
   end
   
-  s.pod_target_xcconfig = {
-    'MTL_COMPILER_FLAGS' => '-fcikernel',
-    'MTLLINKER_FLAGS' => '-cikernel',
-  }
+#  s.pod_target_xcconfig = {
+#    'MTL_COMPILER_FLAGS' => '-fcikernel',
+#    'MTLLINKER_FLAGS' => '-cikernel',
+#  }
 
    s.resource_bundles = {
      'VideoClap' => ['VideoClap/Assets/*.mov']
@@ -113,4 +114,5 @@ TODO: Add long description of the pod here.
    
    s.ios.pod_target_xcconfig = { 'METAL_LIBRARY_OUTPUT_DIR' => '${TARGET_BUILD_DIR}/VideoClap.bundle' }
    
+#   s.framework = 'Metal'
 end
