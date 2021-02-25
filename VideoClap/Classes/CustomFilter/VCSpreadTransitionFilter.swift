@@ -41,7 +41,7 @@ open class VCSpreadTransitionFilter: CIFilter {
         vec2 p = -.5 + fragCoord.xy / iResolution.xy;
         p.x *= iResolution.x/iResolution.y;
         
-        float color = 4.47281 * sin(iTime * 1.35) * iResolution.x / iResolution.y - (3.*length(2.*p));
+        float color = 4.47281 * iTime * 1.35 * iResolution.x / iResolution.y - (3.*length(2.*p));
         
         vec3 coord = vec3(atan(p.x,p.y)/6.2832+.5, length(p)*.4, .5);
         
