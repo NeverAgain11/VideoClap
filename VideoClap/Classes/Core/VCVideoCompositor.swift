@@ -384,11 +384,13 @@ internal class VCVideoCompositor: NSObject {
     
     private func buildVideoComposition(videoDescription: VCVideoDescription, instructions: [VCVideoInstruction]) -> AVMutableVideoComposition {
         let videoComposition = AVMutableVideoComposition()
+        #if !targetEnvironment(simulator)
         if #available(iOS 10.0, *) {
             videoComposition.colorPrimaries = AVVideoColorPrimaries_SMPTE_C
             videoComposition.colorTransferFunction = AVVideoTransferFunction_ITU_R_709_2
             videoComposition.colorYCbCrMatrix = AVVideoYCbCrMatrix_ITU_R_601_4
         }
+        #endif
         
         videoComposition.frameDuration = CMTime(seconds: 1 / videoDescription.fps, preferredTimescale: 600)
         videoComposition.instructions = instructions
