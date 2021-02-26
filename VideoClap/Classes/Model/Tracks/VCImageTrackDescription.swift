@@ -46,6 +46,8 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
     
     public let locker = VCLocker()
     
+    public internal(set) var trackCompensateTimeRange: CMTimeRange?
+    
     public override init() {
         super.init()
     }
@@ -291,7 +293,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
             sizeIdentifier = "_fullsize_"
         }
         let key = url.path + sizeIdentifier
-        if let cacheImage = VCImageCache.share.image(forKey: key) {
+        if let cacheImage = VCImageCache.share.ciImage(forKey: key) {
             return cacheImage
         } else {
             var optionalImage = CIImage(contentsOf: url)

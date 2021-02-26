@@ -12,6 +12,7 @@ import SnapKit
 import MetalKit
 import GLKit
 import VideoClap
+import Photos
 
 extension UIColor {
     
@@ -210,8 +211,18 @@ class MetalViewController: UIViewController {
             let closure = VCHelper.measure()
             var url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("\(Date().description(with: Locale.current)).png")
             MetalDevice.share.saveTexture(texture, format: .png, url: url)
+            PHPhotoLibrary.shared().performChanges {
+                PHAssetChangeRequest.creationRequestForAssetFromImage(atFileURL: url)
+            } completionHandler: { (_, _) in
+                
+            }
             url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("\(Date().description(with: Locale.current)).jpeg")
             MetalDevice.share.saveTexture(texture, format: .jpeg, url: url)
+            PHPhotoLibrary.shared().performChanges {
+                PHAssetChangeRequest.creationRequestForAssetFromImage(atFileURL: url)
+            } completionHandler: { (_, _) in
+                
+            }
             log.debug(closure())
         }
     }

@@ -8,15 +8,14 @@
 import Foundation
 import SDWebImage
 
-class ThumbnailCache: SDImageCache {
+class ThumbnailCache: NSObject {
     
-    private static let _shared: SDImageCache = {
-        let cache = SDImageCache()
-        cache.config.maxMemoryCost = UInt(Float(ProcessInfo().physicalMemory) * 0.1)
+    private static let _shared: VCImageCache = {
+        let cache = VCImageCache(maxMemoryCost: .low)
         return cache
     }()
     
-    override class var shared: SDImageCache {
+    class var shared: VCImageCache {
         return _shared
     }
     

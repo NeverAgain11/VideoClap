@@ -264,16 +264,6 @@ class ViewController: UIViewController {
 //        export(fileName: nil) { }
         
 //        allCasesExportVideo()
-        do {
-            let url = resourceURL(filename: "Bitters At The Saloon.mp3").unsafelyUnwrapped
-//            let file = try AVAudioFile(forReading: url)
-            var ref: ExtAudioFileRef?
-            let status = ExtAudioFileOpenURL(url as CFURL, &ref)
-            
-            log.debug(status)
-        } catch let error {
-            log.error(error)
-        }
     }
     
     func resourceURL(filename: String) -> URL? {
@@ -363,8 +353,8 @@ class ViewController: UIViewController {
     }
     
     func addTransition(_ trasition: VCTransition) {
-        trasition.fromId = "imageTrack"
-        trasition.toId = "videoTrack"
+        trasition.fromTrack = videoDescription.trackBundle.imageTracks.first(where: { $0.id == "imageTrack" })
+        trasition.toTrack = videoDescription.trackBundle.videoTracks.first(where: { $0.id == "videoTrack" })
         trasition.range = VCRange(left: 0.5, right: 0.5)
         videoDescription.transitions = [trasition]
     }

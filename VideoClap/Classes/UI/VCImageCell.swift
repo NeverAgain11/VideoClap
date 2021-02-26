@@ -8,18 +8,18 @@
 import Foundation
 import SnapKit
 
-class VCImageCell: UICollectionViewCell {
+open class VCImageCell: UICollectionViewCell {
     
-    var id: String = ""
+    public var id: String = ""
     
-    lazy var imageView: UIImageView = {
+    public lazy var imageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
         return imageView
     }()
     
-    override init(frame: CGRect) {
+    public override init(frame: CGRect) {
         super.init(frame: frame)
         contentView.addSubview(imageView)
         imageView.snp.makeConstraints { (make) in
@@ -27,7 +27,7 @@ class VCImageCell: UICollectionViewCell {
         }
     }
     
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     

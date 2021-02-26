@@ -88,7 +88,7 @@ public class VCHelper: NSObject {
         let key = lutImageURL.path
         var lutImage: CIImage?
         
-        if let image = VCImageCache.share.image(forKey: key) {
+        if let image = VCImageCache.share.ciImage(forKey: key) {
             lutImage = image
         } else {
             lutImage = CIImage(contentsOf: lutImageURL)
@@ -110,7 +110,7 @@ public class VCHelper: NSObject {
     
     static func image(color: UIColor, size: CGSize) -> CIImage {
         let key = "__custom_color_image" + size.debugDescription + color.debugDescription
-        if let cacheImage = VCImageCache.share.image(forKey: key) {
+        if let cacheImage = VCImageCache.share.ciImage(forKey: key) {
             return cacheImage
         } else {
             let renderer = VCGraphicsRenderer()

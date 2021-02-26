@@ -9,9 +9,9 @@ import AVFoundation
 
 public class VCTransition: NSObject, NSCopying, NSMutableCopying {
     
-    public var fromId: String = ""
+    public var fromTrack: VCImageTrackDescription?
     
-    public var toId: String = ""
+    public var toTrack: VCImageTrackDescription?
     
     /// 只有当轨道不重叠，但是需要过渡动画的时候，这个属性才会起作用
     public var range: VCRange = VCRange(left: 0.5, right: 0.5)
@@ -20,9 +20,9 @@ public class VCTransition: NSObject, NSCopying, NSMutableCopying {
     
     public var transition: VCTransitionProtocol = VCAlphaTransition()
     
-    public init(fromId: String = "", toId: String = "", range: VCRange = VCRange(left: 0.0, right: 0.0), transition: VCTransitionProtocol = VCAlphaTransition()) {
-        self.fromId = fromId
-        self.toId = toId
+    public init(fromTrack: VCImageTrackDescription? = nil, toTrack: VCImageTrackDescription? = nil, range: VCRange = VCRange(left: 0.0, right: 0.0), transition: VCTransitionProtocol = VCAlphaTransition()) {
+        self.fromTrack = fromTrack
+        self.toTrack = toTrack
         self.range = range
         self.transition = transition
     }
@@ -36,7 +36,7 @@ public class VCTransition: NSObject, NSCopying, NSMutableCopying {
     }
     
     public func mutableCopy(with zone: NSZone? = nil) -> Any {
-        let copyObj = VCTransition(fromId: fromId, toId: toId, range: range, transition: transition)
+        let copyObj = VCTransition(fromTrack: fromTrack, toTrack: toTrack, range: range, transition: transition)
         copyObj.timeRange = timeRange
         return copyObj
     }

@@ -18,21 +18,30 @@ class TestTrackView: UIViewController {
         return scrollView
     }()
     
-    lazy var videoTrackView: VCVideoTrackView = {
-        let view = VCVideoTrackView()
-        view.backgroundColor = UIColor.lightGray
-        return view
-    }()
-    
-    lazy var imageTrackView: VCImageTrackView = {
-        let view = VCImageTrackView()
-        view.backgroundColor = UIColor.lightGray
-        return view
+    lazy var models: [VCImageTrackViewModel] = {
+        var models: [VCImageTrackViewModel] = []
+        do {
+            let model = VCImageTrackViewModel()
+            model.timeControl = self.timeControl
+            model.cellConfig = ImageCellConfig(imageTrack: imageTrack)
+            model.cellSize = CGSize(width: height, height: height)
+            models.append(model)
+        }
+        do {
+            for _ in 0..<50 {
+                let model = VCImageTrackViewModel()
+                model.timeControl = self.timeControl
+                model.cellConfig = VideoCellConfig(videoTrack: videoTrack)
+                model.cellSize = CGSize(width: height, height: height)
+                models.append(model)
+            }
+        }
+        return models
     }()
     
     lazy var videoTrack: VCVideoTrackDescription = {
         let track = VCVideoTrackDescription()
-        let source = CMTimeRange(start: 0, end: 5)
+        let source = CMTimeRange(start: 0, end: 100)
         let target = source
         track.timeMapping = CMTimeMapping(source: source, target: target)
         track.mediaURL = Bundle.main.url(forResource: "video0.mp4", withExtension: nil, subdirectory: "Mat")
@@ -41,9 +50,26 @@ class TestTrackView: UIViewController {
     
     lazy var imageTrack: VCImageTrackDescription = {
         let track = VCImageTrackDescription()
-        track.timeRange = CMTimeRange(start: 5, end: 10)
+        track.timeRange = CMTimeRange(start: 0, end: 100)
         track.mediaURL = Bundle.main.url(forResource: "watch-dogs-2-12000x8000-season-pass-hd-4k-8k-3105.JPG", withExtension: nil, subdirectory: "Mat")
         return track
+    }()
+    
+    lazy var layout: UICollectionViewFlowLayout = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.minimumLineSpacing = 0
+        layout.minimumInteritemSpacing = 0
+        return layout
+    }()
+    
+    lazy var trackCollectionView: UICollectionView = {
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
+        collectionView.dataSource = self
+        collectionView.delegate = self
+        collectionView.isScrollEnabled = false
+        return collectionView
     }()
     
     internal lazy var pinchGR: UIPinchGestureRecognizer = {
@@ -69,24 +95,14 @@ class TestTrackView: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        
-        videoTrackView.timeControl = timeControl
-        videoTrackView.cellSize = CGSize(width: height, height: height)
-        videoTrackView.videoTrack = videoTrack
-        videoTrackView.reloadData(displayRect: CGRect(x: 0, y: 0, width: view.bounds.width, height: height))
-        videoTrackView.frame = CGRect(x: 0, y: 0, width: CGFloat(videoTrack.timeMapping.target.duration.value) * timeControl.widthPerTimeVale, height: height)
-        
-        imageTrackView.timeControl = timeControl
-        imageTrackView.cellSize = CGSize(width: height, height: height)
-        imageTrackView.imageTrack = imageTrack
-        imageTrackView.reloadData(displayRect: CGRect(x: 0, y: 0, width: view.bounds.width, height: height))
-        imageTrackView.frame = CGRect(x: videoTrackView.frame.maxX, y: 0, width: CGFloat(imageTrack.timeRange.duration.value) * timeControl.widthPerTimeVale, height: height)
-        
-        scrollView.contentSize.width = videoTrackView.frame.width + imageTrackView.frame.width
+        scrollView.contentSize.width = totalWidth()
         scrollView.contentSize.height = height
         scrollView.contentInset.left = view.frame.width / 2
         scrollView.contentInset.right = scrollView.contentInset.left
         scrollView.contentOffset.x = -scrollView.contentInset.left
+        trackCollectionView.frame.size = CGSize(width: scrollView.contentSize.width, height: height)
+        trackCollectionView.reloadData()
+        updateVisibleRect()
     }
     
     @objc internal func pinchGRHandler(_ sender: UIPinchGestureRecognizer) {
@@ -100,7 +116,7 @@ class TestTrackView: UIViewController {
     public func handle(state: UIGestureRecognizer.State, scale: CGFloat) {
         switch state {
         case .began:
-            videoTrackView.isStopLoadThumbnail = true
+            models.forEach({ $0.isStopLoadThumbnail = true })
             scrollView.delegate = nil
             
         case .changed:
@@ -108,7 +124,7 @@ class TestTrackView: UIViewController {
             update(scale: scale)
             
         case .ended:
-            videoTrackView.isStopLoadThumbnail = false
+            models.forEach({ $0.isStopLoadThumbnail = false })
             update(scale: 1.0)
             scrollView.delegate = self
             
@@ -128,18 +144,36 @@ class TestTrackView: UIViewController {
             return
         }
         timeControl.setScale(timeControl.scale * scale)
-        
-        videoTrackView.frame = CGRect(x: 0, y: 0, width: CGFloat(videoTrack.timeMapping.target.duration.value) * timeControl.widthPerTimeVale, height: height)
-        imageTrackView.frame = CGRect(x: videoTrackView.frame.maxX, y: 0, width: CGFloat(imageTrack.timeRange.duration.value) * timeControl.widthPerTimeVale, height: height)
-        
-        scrollView.contentSize.width = videoTrackView.frame.width + imageTrackView.frame.width
-        
+        scrollView.contentSize.width = totalWidth()
+        trackCollectionView.frame.size = CGSize(width: scrollView.contentSize.width, height: height)
         fixPosition()
-        
+        updateVisibleRect()
+    }
+    
+    func totalWidth() -> CGFloat {
+        var width: CGFloat = 0
+        for index in 0..<models.count {
+            let size = collectionView(trackCollectionView, layout: layout, sizeForItemAt: IndexPath(item: index, section: 0))
+            width += size.width
+        }
+        return width
+    }
+    
+    func updateVisibleRect() {
+        trackCollectionView.collectionViewLayout.invalidateLayout()
         let targetX = scrollView.contentOffset.x
-        let rect = CGRect(x: max(0, targetX), y: 0, width: scrollView.bounds.width, height: scrollView.bounds.height)
-        videoTrackView.reloadData(displayRect: rect)
-        imageTrackView.reloadData(displayRect: rect)
+        let rect = CGRect(x: max(0, targetX), y: 0, width: scrollView.bounds.width, height: height)
+        let layoutAttributesForElements = trackCollectionView.collectionViewLayout.layoutAttributesForElements(in: rect) ?? []
+        for layoutAttributes in layoutAttributesForElements {
+            if layoutAttributes.frame.intersects(rect) {
+                let model = models[layoutAttributes.indexPath.item]
+                UIView.performWithoutAnimation {
+                    model.minX = layoutAttributes.frame.origin.x
+                    model.collectionView.frame.size = CGSize(width: model.expectWidth() ?? .zero, height: height)
+                    model.reloadData(displayRect: rect)
+                }
+            }
+        }
     }
     
 }
@@ -154,10 +188,7 @@ extension TestTrackView: UIScrollViewDelegate {
         var currentTime = CMTime(seconds: Double(percentage) * timeControl.duration.seconds, preferredTimescale: VCTimeControl.timeBase)
         currentTime = min(max(.zero, currentTime), timeControl.duration)
         timeControl.setTime(currentTime: currentTime)
-        let targetX = scrollView.contentOffset.x
-        let rect = CGRect(x: max(0, targetX), y: 0, width: scrollView.bounds.width, height: videoTrackView.bounds.height)
-        videoTrackView.reloadData(displayRect: rect)
-        imageTrackView.reloadData(displayRect: rect)
+        updateVisibleRect()
     }
     
 }
@@ -165,8 +196,7 @@ extension TestTrackView: UIScrollViewDelegate {
 extension TestTrackView {
     
     func setupUI() {
-        scrollView.addSubview(videoTrackView)
-        scrollView.addSubview(imageTrackView)
+        scrollView.addSubview(trackCollectionView)
         view.addSubview(scrollView)
         setupConstraints()
         
@@ -180,6 +210,32 @@ extension TestTrackView {
             make.top.equalToSuperview().offset(160)
             make.height.equalTo(height)
         }
+    }
+    
+}
+
+extension TestTrackView: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return models.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
+        let model = models[indexPath.item]
+        if model.collectionView.superview != nil {
+            model.collectionView.removeFromSuperview()
+        }
+        cell.contentView.addSubview(model.collectionView)
+        model.collectionView.frame.size = CGSize(width: model.expectWidth() ?? .zero, height: cell.bounds.height)
+        model.minX = cell.frame.origin.x
+        return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let model = models[indexPath.item]
+        let width = model.expectWidth() ?? .zero
+        return CGSize(width: width, height: height)
     }
     
 }

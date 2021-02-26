@@ -56,7 +56,7 @@ public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescr
             locker.object(forKey: #function).unlock()
         }
         let storeKey = id + "_\(time.value)_\(time.timescale)"
-        if let cacheImage = VCImageCache.share.image(forKey: storeKey) {
+        if let cacheImage = VCImageCache.share.ciImage(forKey: storeKey) {
             return cacheImage
         } else if let videoUrl = self.mediaURL {
             var frame: CIImage?

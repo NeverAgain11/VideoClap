@@ -21,9 +21,13 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     
     public func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
         self.compositionTime = compositionTime
+        guard let renderTarget = self.renderTarget else {
+            finish(nil)
+            return
+        }
         var preprocessFinishedImages: [String:CIImage] = [:]
         for imageTrack in item.instruction.trackBundle.imageTracks {
-            let compensateTimeRange: CMTimeRange? = item.instruction.trackCompensateTimeRange[imageTrack.id]
+            let compensateTimeRange: CMTimeRange? = imageTrack.trackCompensateTimeRange
             let time = CMTimeSubtract(compositionTime, imageTrack.timeRange.start)
             
             guard var image = imageTrack.originImage(time: time,
@@ -42,7 +46,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         }
         
         for imageTrack in item.instruction.trackBundle.videoTracks {
-            let compensateTimeRange: CMTimeRange? = item.instruction.trackCompensateTimeRange[imageTrack.id]
+            let compensateTimeRange: CMTimeRange? = imageTrack.trackCompensateTimeRange
             var image: CIImage? = item.sourceFrameDic[imageTrack.id]
             
             if image == nil, let compensateTimeRange = compensateTimeRange {
@@ -75,23 +79,24 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             if progress.isNaN {
                 continue
             }
-            
-            guard let fromImage = preprocessFinishedImages[transition.fromId] else { continue }
-            guard let toImage = preprocessFinishedImages[transition.toId] else { continue }
+            guard let fromTrack = transition.fromTrack else { continue }
+            guard let toTrack = transition.toTrack else { continue }
+            guard let fromImage = preprocessFinishedImages[fromTrack.id] else { continue }
+            guard let toImage = preprocessFinishedImages[toTrack.id] else { continue }
             guard let image = transition.transition.transition(renderSize: self.videoDescription.renderSize.scaling(self.videoDescription.renderScale),
                                                                progress: Float(progress),
-                                                               fromImage: fromImage,
-                                                               toImage: toImage) else {
+                                                               fromImage: fromImage.composited(over: blackImage),
+                                                               toImage: toImage.composited(over: blackImage)) else {
                 continue
             }
-            let key = transition.fromId + "🔗" + transition.toId
+            let key = fromTrack.id + "🔗" + toTrack.id
             image.indexPath = min(fromImage.indexPath, toImage.indexPath)
             preprocessFinishedImages[key] = image
-            preprocessFinishedImages.removeValue(forKey: transition.fromId)
-            preprocessFinishedImages.removeValue(forKey: transition.toId)
+            preprocessFinishedImages.removeValue(forKey: fromTrack.id)
+            preprocessFinishedImages.removeValue(forKey: toTrack.id)
         }
         
-        let finalFrame: CIImage? = renderTarget?.draw(images: preprocessFinishedImages, blackImage: self.blackImage)
+        let finalFrame: CIImage? = renderTarget.draw(images: preprocessFinishedImages, blackImage: self.blackImage)
         
         finish(finalFrame)
     }

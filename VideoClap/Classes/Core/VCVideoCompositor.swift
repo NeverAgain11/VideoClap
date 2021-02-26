@@ -225,17 +225,11 @@ internal class VCVideoCompositor: NSObject {
         let trackBundle = videoDescription.trackBundle
         let imageTracks = trackBundle.imageTracks
         
-        let trackDescriptions: [VCImageTrackDescription] = imageTracks + videoTracks
-        let enumor = trackDescriptions.dic()
-        
         var transitions: [VCTransition] = []
-        
-        var trackCompensateTimeRange: [String:CMTimeRange] = [:]
         
         (videoDescription.transitions as NSArray).enumerateObjects(options: .concurrent) { (obj, index, outStop) in
             guard let transition = obj as? VCTransition else { return }
-            guard enumor[transition.fromId] != nil || enumor[transition.toId] != nil else { return }
-            guard let fromTrack = enumor[transition.fromId], let toTrack = enumor[transition.toId], fromTrack.timeRange.end >= toTrack.timeRange.start else { return }
+            guard let fromTrack = transition.fromTrack, let toTrack = transition.toTrack, fromTrack.timeRange.end >= toTrack.timeRange.start else { return }
 
             if fromTrack.timeRange.end == toTrack.timeRange.start {
                 // 两个轨道没有重叠，但是需要过渡动画，根据 'range' 计算出过渡时间
@@ -244,8 +238,8 @@ internal class VCVideoCompositor: NSObject {
                 
                 transition.timeRange = CMTimeRange(start: start, end: end)
                 
-                trackCompensateTimeRange[transition.fromId] = CMTimeRange(start: fromTrack.timeRange.start, end: transition.timeRange.end)
-                trackCompensateTimeRange[transition.toId] = CMTimeRange(start: transition.timeRange.start, end: toTrack.timeRange.end)
+                fromTrack.trackCompensateTimeRange = CMTimeRange(start: fromTrack.timeRange.start, end: transition.timeRange.end)
+                toTrack.trackCompensateTimeRange = CMTimeRange(start: transition.timeRange.start, end: toTrack.timeRange.end)
                 
                 locker.object(forKey: "transitions").lock()
                 transitions.append(transition)
@@ -311,12 +305,11 @@ internal class VCVideoCompositor: NSObject {
             }
 
             instruction.transitions = transitions.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
-            instruction.trackCompensateTimeRange = trackCompensateTimeRange
             
             for transition in instruction.transitions {
                 
-                let fromTrack = enumor[transition.fromId]
-                let toTrack = enumor[transition.toId]
+                let fromTrack = transition.fromTrack
+                let toTrack = transition.toTrack
                 
                 switch fromTrack {
                 case let track as VCVideoTrackDescription:
