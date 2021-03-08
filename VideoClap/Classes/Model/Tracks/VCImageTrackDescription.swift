@@ -167,7 +167,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
             case .rect(let rect):
                 let extent = frame.extent
                 let width = actualRenderSize.width * rect.width // 宽度，基于像素
-                let height = actualRenderSize.height * rect.width // 高度，基于像素
+                let height = actualRenderSize.height * rect.height // 高度，基于像素
                 let scaleX = width / extent.size.width
                 let scaleY = height / extent.size.height
                 let scale = CGAffineTransform(scaleX: scaleX, y: scaleY)
