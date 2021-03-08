@@ -26,6 +26,10 @@ public func LLog(_ items: Any...,
     print(output)
 }
 
+func resourceURL(filename: String) -> URL? {
+    Bundle.main.url(forResource: filename, withExtension: nil, subdirectory: "Mat")
+}
+
 public extension UIImage {
 
     convenience init?(color: UIColor, size: CGSize = CGSize(width: 1, height: 1)) {

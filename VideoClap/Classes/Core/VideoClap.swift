@@ -22,7 +22,12 @@ open class VideoClap: NSObject, VCMediaServicesObserver {
     
     static let ExportFolder = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("VideoClapExportVideos")
     
-    public var requestCallbackHandler: VCRequestCallbackHandler = VCRequestCallbackHandler()
+    public var requestCallbackHandler: VCRequestCallbackHandler = VCRequestCallbackHandler() {
+        didSet {
+            let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler)
+            self.videoCompositor = videoCompositor
+        }
+    }
     
     public var videoDescription: VCVideoDescription {
         get {

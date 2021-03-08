@@ -30,12 +30,19 @@ public class VideoCellConfig: NSObject, CellConfig {
         self.imageGenerator = assetImageGenerator()
     }
     
+    deinit {
+        isStopLoadThumbnail = true
+        cancelAllCGImageGeneration()
+        imageGenerator = nil
+        videoTrack = nil
+    }
+    
     private func assetImageGenerator() -> VCAssetImageGenerator? {
         imageGenerator?.cancelAllCGImageGeneration()
         imageGenerator = nil
         guard let videoTrack = self.videoTrack else { return nil }
         guard let url = videoTrack.mediaURL else { return nil }
-        let asset = AVURLAsset(url: url)
+        let asset = AVURLAsset(url: URL(fileURLWithPath: url.path))
         if asset.tracks(withMediaType: .video).isEmpty || asset.isPlayable == false {
             return nil
         }
@@ -47,14 +54,18 @@ public class VideoCellConfig: NSObject, CellConfig {
         imageGenerator?.cancelAllCGImageGeneration()
     }
     
-    public func duration() -> CMTime {
-        return videoTrack?.timeRange.duration ?? .zero
+    public func duration() -> CMTime? {
+        return videoTrack?.timeRange.duration
+    }
+    
+    public func targetTimeRange() -> CMTimeRange? {
+        return videoTrack?.timeRange
     }
     
     public func updateCell(cell: VCImageCell, index: Int, timeControl: VCTimeControl) {
         guard let videoTrack = self.videoTrack else { return }
         guard timeControl.widthPerTimeVale.isZero == false else { return }
-        let timeValue: CMTimeValue = CMTimeValue(CGFloat(index) * cellSize.width / timeControl.widthPerTimeVale) + videoTrack.timeRange.start.value
+        let timeValue: CMTimeValue = CMTimeValue(CGFloat(index) * cellSize.width / timeControl.widthPerTimeVale) + videoTrack.sourceTimeRange.start.value
         let time: CMTime = CMTime(value: timeValue, timescale: VCTimeControl.timeBase)
         cell.id = "\(timeValue)"
         if isStopLoadThumbnail == false {
@@ -72,6 +83,10 @@ public class VideoCellConfig: NSObject, CellConfig {
         self.cellSize = newCellSize
         let scale: CGFloat = UIScreen.main.scale
         imageGenerator?.maximumSize = newCellSize.applying(.init(scaleX: scale, y: scale))
+    }
+    
+    public func placeholderImage() -> UIImage? {
+        return nil
     }
     
 }

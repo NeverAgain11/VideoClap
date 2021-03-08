@@ -12,6 +12,7 @@ import SnapKit
 import Photos
 import VideoClap
 import SSPlayer
+import MobileCoreServices
 
 class NavigationController: UINavigationController {
     
@@ -19,20 +20,16 @@ class NavigationController: UINavigationController {
 
 class ViewController: UIViewController {
 
-    var requestCallbackHandler: VCRequestCallbackHandler {
-        return videoClap.requestCallbackHandler
-    }
-    
     var videoDescription: VCVideoDescription {
-        return videoClap.videoDescription
-    }
-    
-    var videoClap: VideoClap {
-        return vcplayer.videoClap
+        return player.videoDescription
     }
     
     var player: VCPlayer {
         return vcplayer
+    }
+    
+    var trackBundle: VCTrackBundle {
+        return videoDescription.trackBundle
     }
     
     public lazy var containerView: VCPlayerContainerView = {
@@ -80,7 +77,10 @@ class ViewController: UIViewController {
         return item
     }()
     
-    let reverseVideo = VCReverseVideo()
+    lazy var addButton: UIBarButtonItem = {
+        let item = UIBarButtonItem(title: "添加", style: .plain, target: self, action: #selector(addButtonDidTap))
+        return item
+    }()
     
     let ratio: CGFloat = 9.0 / 16.0
     
@@ -90,7 +90,7 @@ class ViewController: UIViewController {
     
     init() {
         super.init(nibName: nil, bundle: nil)
-        player.containerView = self.containerView
+        player.realTimeRenderTarget = self.containerView
     }
     
     required init?(coder: NSCoder) {
@@ -101,23 +101,18 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         VideoClap.cleanExportFolder()
         
-        PHPhotoLibrary.requestAuthorization { (_) in
-            
-        }
         NotificationCenter.default.addObserver(self, selector: #selector(transitionChange), name: TransitionNotification, object: nil)
         setupUI()
         videoDescription.fps = 24.0
         videoDescription.renderScale = UIScreen.main.scale
         videoDescription.renderSize = CGSize(width: view.bounds.width * ratio, height: view.bounds.width)
-        
-        let trackBundle = videoDescription.trackBundle
-        
+
         do {
             let track = VCImageTrackDescription()
             track.id = "waterMarkTrack"
             track.indexPath = IndexPath(item: 0, section: 1000)
             track.timeRange = CMTimeRange(start: 0.0, duration: 5.0)
-            track.mediaURL = Bundle.main.url(forResource: "test3.jpg", withExtension: nil, subdirectory: "Mat")
+            track.mediaURL = resourceURL(filename: "test3.jpg")
             track.imageLayout = .rect(.init(center: CGPoint(x: 0.9, y: 0.1), width: 0.1, height: 0.1))
             trackBundle.imageTracks.append(track)
         }
@@ -127,14 +122,16 @@ class ViewController: UIViewController {
             trajectory.movementRatio = 0.1
             let track = VCVideoTrackDescription()
             track.indexPath = IndexPath(item: 0, section: 900)
-            track.canvasStyle = .image(Bundle.main.url(forResource: "test1.jpg", withExtension: nil, subdirectory: "Mat") ?? URL(fileURLWithPath: ""))
+            if let url = resourceURL(filename: "test1.jpg") {
+                track.canvasStyle = .image(url)
+            }
             track.trajectory = trajectory
             track.id = "videoTrack"
             let source = CMTimeRange(start: 5.0, duration: 1)
             let target = CMTimeRange(start: 5.0, end: 6.0)
             track.timeMapping = CMTimeMapping(source: source, target: target)
-            track.mediaURL = Bundle.main.url(forResource: "video0.mp4", withExtension: nil, subdirectory: "Mat")
-            track.lutImageURL = Bundle.main.url(forResource: "lut_filter_27", withExtension: "jpg", subdirectory: "Mat")
+            track.mediaURL = resourceURL(filename: "video0.mp4")
+            track.lutImageURL = resourceURL(filename: "lut_filter_27.jpg")
             trackBundle.videoTracks.append(track)
         }
         
@@ -149,8 +146,8 @@ class ViewController: UIViewController {
             let source = CMTimeRange(start: 5.0, duration: 4)
             let target = CMTimeRange(start: 6, end: 10.0)
             track.timeMapping = CMTimeMapping(source: source, target: target)
-            track.mediaURL = Bundle.main.url(forResource: "video0.mp4", withExtension: nil, subdirectory: "Mat")
-//            track.lutImageURL = Bundle.main.url(forResource: "lut_filter_27", withExtension: "jpg", subdirectory: "Mat")
+            track.mediaURL = resourceURL(filename: "video0.mp4")
+//            track.lutImageURL = resourceURL(filename: "lut_filter_27.jpg")
             trackBundle.videoTracks.append(track)
         }
         
@@ -159,11 +156,13 @@ class ViewController: UIViewController {
             trajectory.movementRatio = 0.1
             let track = VCImageTrackDescription()
             track.indexPath = IndexPath(item: 1, section: 900)
-            track.canvasStyle = .image(Bundle.main.url(forResource: "test4.jpg", withExtension: nil, subdirectory: "Mat") ?? URL(fileURLWithPath: ""))
+            if let url = resourceURL(filename: "test4.jpg") {
+                track.canvasStyle = .image(url)
+            }
             track.trajectory = trajectory
             track.id = "imageTrack"
             track.timeRange = CMTimeRange(start: 0.0, duration: 5.0)
-            track.mediaURL = Bundle.main.url(forResource: "test3.jpg", withExtension: nil, subdirectory: "Mat")
+            track.mediaURL = resourceURL(filename: "test3.jpg")
 //            track.cropedRect = CGRect(x: 0.5, y: 0.2, width: 0.5, height: 0.5)
             trackBundle.imageTracks.append(track)
         }
@@ -174,7 +173,7 @@ class ViewController: UIViewController {
             let source = CMTimeRange(start: 0, end: 10.0)
             let target = CMTimeRange(start: 0, end: 10.0)
             track.timeMapping = CMTimeMapping(source: source, target: target)
-            track.mediaURL = Bundle.main.url(forResource: "02.Ellis - Clear My Head (Radio Edit) [NCS]", withExtension: "mp3", subdirectory: "Mat")
+            track.mediaURL = resourceURL(filename: "02.Ellis - Clear My Head (Radio Edit) [NCS].mp3")
             if #available(iOS 11.0, *) {
                 track.audioEffectProvider = VCChildrenAudioEffectProvider()
             } else {
@@ -198,7 +197,7 @@ class ViewController: UIViewController {
             lamination.indexPath = IndexPath(item: 1, section: 999)
             lamination.id = "laminationTrack"
             lamination.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: 10))
-            lamination.mediaURL = Bundle.main.url(forResource: "Anniversary1", withExtension: "png", subdirectory: "Mat")
+            lamination.mediaURL = resourceURL(filename: "Anniversary1.png")
             trackBundle.imageTracks.append(lamination)
         }
         
@@ -242,32 +241,10 @@ class ViewController: UIViewController {
             trackBundle.imageTracks.append(gifTrack)
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            return
-            do {
-                let track = VCImageTrackDescription()
-                track.id = "imageTrack1"
-                track.timeRange = CMTimeRange(start: 10.0, duration: 5.0)
-                track.mediaURL = Bundle.main.url(forResource: "test4", withExtension: "jpg", subdirectory: "Mat")
-                trackBundle.imageTracks.append(track)
-                self.vcplayer.reload()
-            }
-        }
-        
-//        reverseVideo.reverse(input: Bundle.main.url(forResource: "video0", withExtension: "mp4", subdirectory: "Mat")!) { (progress: Progress) in
-//            LLog(progress.fractionCompleted)
-//        } completionCallback: { (url, error) in
-//            
-//        }
-
         initPlay()
 //        export(fileName: nil) { }
         
 //        allCasesExportVideo()
-    }
-    
-    func resourceURL(filename: String) -> URL? {
-        Bundle.main.url(forResource: filename, withExtension: nil, subdirectory: "Mat")
     }
     
     func getTransition(type: TransitionType) -> VCTransitionProtocol {
@@ -536,12 +513,20 @@ class ViewController: UIViewController {
         }
     }
     
+    @objc func addButtonDidTap(_ sender: UIBarButtonItem) {
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        picker.mediaTypes = UIImagePickerController.availableMediaTypes(for: .photoLibrary) ?? []
+        picker.delegate = self
+        present(picker, animated: true, completion: nil)
+    }
+    
 }
 
 extension ViewController {
     
     func setupNavBar() {
-        navigationItem.rightBarButtonItem = exportButton
+        navigationItem.rightBarButtonItems = [exportButton, addButton]
     }
     
     func setupUI() {
@@ -571,6 +556,59 @@ extension ViewController {
             make.left.equalTo(playButton.snp.right).offset(10)
             make.centerY.equalTo(playButton)
         }
+    }
+    
+}
+
+extension ViewController: (UIImagePickerControllerDelegate & UINavigationControllerDelegate) {
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        if #available(iOS 11.0, *) {
+            let type = (info[UIImagePickerController.InfoKey.mediaType] as? String ?? "") as CFString
+            switch type {
+            case kUTTypeMovie, kUTTypeVideo:
+                if let url = info[UIImagePickerController.InfoKey.mediaURL] as? URL {
+                    let asset = AVAsset(url: url)
+                    let tracks = self.trackBundle.imageTracks + self.trackBundle.videoTracks
+                    let start = tracks.max { (lhs, rhs) -> Bool in
+                        return lhs.timeRange.end < rhs.timeRange.end
+                    }?.timeRange.end ?? .zero
+                    
+                    let videoTrack = VCVideoTrackDescription()
+                    videoTrack.id = UUID().uuidString
+                    videoTrack.sourceTimeRange = CMTimeRange(start: .zero, duration: asset.duration.seconds)
+                    videoTrack.timeRange = CMTimeRange(start: start.seconds, duration: asset.duration.seconds)
+                    videoTrack.mediaURL = url
+                    self.trackBundle.videoTracks.append(videoTrack)
+                    
+                    self.vcplayer.reload(time: .zero, closure: nil)
+                }
+                
+            case kUTTypeImage:
+                if let url = info[UIImagePickerController.InfoKey.imageURL] as? URL {
+                    let tracks = self.trackBundle.imageTracks + self.trackBundle.videoTracks
+                    let start = tracks.max { (lhs, rhs) -> Bool in
+                        return lhs.timeRange.end < rhs.timeRange.end
+                    }?.timeRange.end ?? .zero
+                    
+                    let track = VCImageTrackDescription()
+                    track.id = UUID().uuidString
+                    track.timeRange = CMTimeRange(start: start.seconds, duration: 3.0)
+                    track.mediaURL = url
+                    self.trackBundle.imageTracks.append(track)
+                    
+                    self.vcplayer.reload(time: .zero, closure: nil)
+                }
+                
+            default:
+                break
+            }
+        }
+        picker.dismiss(animated: true, completion: nil)
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true, completion: nil)
     }
     
 }

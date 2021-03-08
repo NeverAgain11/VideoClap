@@ -39,7 +39,7 @@ public class VCAssetImageGenerator: AVAssetImageGenerator {
             return
         }
         
-        if let cacheImage = ThumbnailCache.shared.uiImage(forKey: cacheKey) {
+        if let cacheImage = ThumbnailCache.shared.image(forKey: cacheKey) {
             handler(time,
                     cacheImage,
                     time,

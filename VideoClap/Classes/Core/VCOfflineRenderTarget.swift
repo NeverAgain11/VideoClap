@@ -9,11 +9,7 @@ import Foundation
 
 public class VCOfflineRenderTarget: NSObject, VCRenderTarget {
     
-    public func contextChanged() {
-        
-    }
-    
-    public func draw(images: [String : CIImage], blackImage: CIImage) -> CIImage? {
+    public func draw(images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
         var finalFrame: CIImage?
         
         finalFrame = images.sorted { (lhs, rhs) -> Bool in

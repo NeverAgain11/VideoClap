@@ -34,25 +34,6 @@ public class VCLottieTrackDescription: VCImageTrackDescription {
     
     internal let contentMode: UIView.ContentMode = .scaleAspectFit
     
-//    internal var animation: Animation?
-    
-//    public override var mediaURL: URL?
-//    {
-//        didSet {
-//            if let path = mediaURL?.path {
-//                animation = Animation.filepath(path)
-//            } else {
-//                animation = nil
-//            }
-//            if animation == nil {
-//                self.animationView = nil
-//            }
-//            reloadViewFlag = true
-//        }
-//    }
-    
-//    private var reloadViewFlag: Bool = true
-    
     public override func prepare(description: VCVideoDescription) {
         super.prepare(description: description)
         if let path = mediaURL?.path, let animation = Animation.filepath(path) {
@@ -66,16 +47,6 @@ public class VCLottieTrackDescription: VCImageTrackDescription {
     
     func animationFrame(animationPlayTime: CMTime, handler: @escaping (_ frame: CIImage?) -> Void) {
         DispatchQueue.main.async {
-//            if self.reloadViewFlag {
-//                self.reloadViewFlag = false
-//                if let animation = self.animation {
-//                    self.animationView = AnimationView()
-//                    self.animationView?.contentMode = self.contentMode
-//                    self.animationView?.animation = animation
-//                    self.animationView?.frame = self.frame
-//                    self.animationView?.setNeedsDisplay()
-//                }
-//            }
             guard let animationView = self.animationView, let animation = animationView.animation else {
                 handler(nil)
                 return
@@ -113,8 +84,14 @@ public class VCLottieTrackDescription: VCImageTrackDescription {
         copyObj.canvasStyle      = canvasStyle
         copyObj.imageLayout      = imageLayout
         copyObj.indexPath        = indexPath
-//        copyObj.animation        = animation
-        copyObj.animationView    = animationView
+        if let animationView = self.animationView {
+            let copyAnimationView = AnimationView()
+            copyAnimationView.contentMode = animationView.contentMode
+            copyAnimationView.animation = animationView.animation
+            copyAnimationView.frame = animationView.frame
+            copyAnimationView.setNeedsDisplay()
+            copyObj.animationView = copyAnimationView
+        }
         return copyObj
     }
     

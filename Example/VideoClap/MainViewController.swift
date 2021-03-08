@@ -7,16 +7,19 @@
 //
 
 import UIKit
-import VideoClap
+import Photos
 
 class MainViewController: UITableViewController {
 
     lazy var controllers: [UIViewController.Type] = {
-        return [ViewController.self, TestTimeScaleView.self, TestTrackView.self, MetalViewController.self]
+        return [ViewController.self, TestTimeScaleView.self, TestTrackView.self, MetalViewController.self, TestTrackView2.self]
     }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        PHPhotoLibrary.requestAuthorization { (_) in
+            
+        }
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")

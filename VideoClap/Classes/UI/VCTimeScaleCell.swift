@@ -11,22 +11,26 @@ import SnapKit
 
 public class VCTimeScaleCell: UICollectionViewCell {
     
-    lazy var dotLabel: UILabel = {
+    public lazy var dotLabel: UILabel = {
         let label = UILabel()
         label.text = "・"
         label.textColor = UIColor.lightText
         label.textAlignment = .center
+        label.font = UIFont.systemFont(ofSize: 9, weight: .medium)
+        label.textColor = #colorLiteral(red: 0.6, green: 0.6, blue: 0.6, alpha: 1)
         return label
     }()
     
-    lazy var keyTimeLabel: UILabel = {
+    public lazy var keyTimeLabel: UILabel = {
         let label = UILabel()
         label.textColor = UIColor.lightText
         label.textAlignment = .center
+        label.font = UIFont.systemFont(ofSize: 9, weight: .medium)
+        label.textColor = #colorLiteral(red: 0.6, green: 0.6, blue: 0.6, alpha: 1)
         return label
     }()
     
-    override init(frame: CGRect) {
+    public override init(frame: CGRect) {
         super.init(frame: frame)
         contentView.addSubview(dotLabel)
         contentView.addSubview(keyTimeLabel)
@@ -40,7 +44,7 @@ public class VCTimeScaleCell: UICollectionViewCell {
         }
     }
     
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     

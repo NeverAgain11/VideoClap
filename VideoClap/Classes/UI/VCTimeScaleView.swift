@@ -39,7 +39,7 @@ public class VCTimeScaleView: UIView {
     }
     
     private func validate() -> Bool {
-        if datasourceCount <= 0 || cellWidth <= 0 {
+        if datasourceCount < 0 || cellWidth <= 0 {
             return false
         }
         return true
@@ -49,7 +49,7 @@ public class VCTimeScaleView: UIView {
         guard validate() else {
             return
         }
-        frame.size.width = cellWidth * CGFloat(datasourceCount)
+        frame.size.width = timeControl.maxLength
         guard let attributes = layoutAttributesForElements(in: rect) else {
             return
         }
@@ -67,11 +67,14 @@ public class VCTimeScaleView: UIView {
         let low = min(datasourceCount, Int(ceil(rect.maxX / cellWidth)) )
         var attributes: [UICollectionViewLayoutAttributes] = []
         if low <= upper {
-            return nil
+            let attr = UICollectionViewLayoutAttributes(forCellWith: IndexPath(item: 0, section: 0))
+            attr.frame = CGRect(origin: CGPoint(x: 0, y: 0), size: CGSize(width: cellWidth, height: self.bounds.height))
+            attributes.append(attr)
+            return attributes
         }
         let cellSize = CGSize(width: cellWidth, height: self.bounds.height)
         let y: CGFloat = 0
-        for index in upper..<low {
+        for index in upper...low {
             let x: CGFloat = CGFloat(index) * cellWidth
             let attr = UICollectionViewLayoutAttributes(forCellWith: IndexPath(item: index, section: 0))
             attr.frame = CGRect(origin: CGPoint(x: x, y: y), size: cellSize)
@@ -82,6 +85,8 @@ public class VCTimeScaleView: UIView {
     
     private func cellForItemAt(index: Int, attribute: UICollectionViewLayoutAttributes) -> VCTimeScaleCell {
         let cell = VCTimeScaleCell(frame: attribute.frame)
+        cell.backgroundColor = self.backgroundColor
+        cell.contentView.backgroundColor = cell.backgroundColor
         let time = CMTime(value: timeControl.intervalTime.value * Int64(index), timescale: VCTimeControl.timeBase)
         
         if time.value % 600 == 0 {
@@ -91,7 +96,11 @@ public class VCTimeScaleView: UIView {
             let remaind = time.value - seconds * 600
             cell.keyTimeLabel.text = "\(remaind / 20)f"
         }
- 
+        if index == datasourceCount {
+            cell.dotLabel.isHidden = true
+        } else {
+            cell.dotLabel.isHidden = false
+        }
         return cell
     }
     

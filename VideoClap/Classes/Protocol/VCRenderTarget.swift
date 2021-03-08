@@ -8,5 +8,5 @@
 import Foundation
 
 public protocol VCRenderTarget: NSObject {
-    func draw(images: [String:CIImage], blackImage: CIImage) -> CIImage?
+    func draw(images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage?
 }

@@ -173,10 +173,6 @@ class MetalViewController: UIViewController {
         self.draw(in: renderView)
     }
     
-    func resourceURL(filename: String) -> URL? {
-        Bundle.main.url(forResource: filename, withExtension: nil, subdirectory: "Mat")
-    }
-    
     func setupUI() {
         view.addSubview(renderView)
         view.addSubview(slider)

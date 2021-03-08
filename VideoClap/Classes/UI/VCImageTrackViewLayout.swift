@@ -7,22 +7,22 @@
 
 import UIKit
 
-public protocol VCMainTrackViewLayoutDelegate: NSObject {
+public protocol VCImageTrackViewLayoutDelegate: NSObject {
     var displayRect: CGRect? { get set }
     var cellSize: CGSize { get set }
     var datasourceCount: Int { get set }
-    var minX: CGFloat { get set }
+    func frame() -> CGRect
 }
 
-public class VCMainTrackViewLayout: UICollectionViewLayout {
+public class VCImageTrackViewLayout: UICollectionViewLayout {
     
-    public var delegate: VCMainTrackViewLayoutDelegate?
+    public weak var delegate: VCImageTrackViewLayoutDelegate?
     
     public override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
         guard let delegate = self.delegate else { return nil }
         guard var displayRect = delegate.displayRect else { return nil }
         
-        displayRect.origin.x -= delegate.minX
+        displayRect.origin.x -= delegate.frame().minX
         
         var attrs: [UICollectionViewLayoutAttributes] = []
         
@@ -32,7 +32,7 @@ public class VCMainTrackViewLayout: UICollectionViewLayout {
         
         let upper = max(0, Int(floor(displayRect.minX / cellWidth)) )
         let low = min(datasourceCount, Int(ceil(displayRect.maxX / cellWidth)) )
-        
+
         if low <= upper {
             return nil
         }

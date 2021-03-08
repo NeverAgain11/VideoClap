@@ -11,16 +11,21 @@ import AVFoundation
 public protocol CellConfig: NSObject {
     func cellSizeUpdate(newCellSize: CGSize)
     func updateCell(cell: VCImageCell, index: Int, timeControl: VCTimeControl)
-    func duration() -> CMTime
+    func placeholderImage() -> UIImage?
+    func duration() -> CMTime?
+    func targetTimeRange() -> CMTimeRange?
+    func cancelAllCGImageGeneration()
 }
 
 public class ImageCellConfig: NSObject, CellConfig {
     
     public var imageTrack: VCImageTrackDescription?
     
-    private var semaphore = DispatchSemaphore(value: 1)
-    
-    private var loadImageQueue = DispatchQueue(label: "com.lai001.loadimage", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
+    private static var loadImageQueue: OperationQueue = {
+        var loadImageQueue = OperationQueue()
+        loadImageQueue.maxConcurrentOperationCount = 1
+        return loadImageQueue
+    }()
     
     private var cellSize: CGSize = .zero
     
@@ -34,7 +39,7 @@ public class ImageCellConfig: NSObject, CellConfig {
         let baseSize = CGSize(width: 50, height: 50).applying(.init(scaleX: scale, y: scale))
         let size: CGSize = cellSize == .zero ? baseSize : cellSize.applying(.init(scaleX: scale, y: scale))
         let key = url.path
-        if let cacheImage = ThumbnailCache.shared.uiImage(forKey: key) {
+        if let cacheImage = ThumbnailCache.shared.image(forKey: key) {
             return cacheImage
         } else {
             var optionalImage = CIImage(contentsOf: url)
@@ -45,20 +50,19 @@ public class ImageCellConfig: NSObject, CellConfig {
                 frame = frame.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
                 if let cgImage = CIContext.share.createCGImage(frame, from: CGRect(origin: .zero, size: frame.extent.size)) {
                     optionalImage = CIImage(cgImage: cgImage)
+                    ThumbnailCache.shared.storeImage(toMemory: UIImage(cgImage: cgImage), forKey: key)
                 }
             }
-            ThumbnailCache.shared.storeImage(toMemory: optionalImage, forKey: key)
-            return ThumbnailCache.shared.uiImage(forKey: key)
+            return ThumbnailCache.shared.image(forKey: key)
         }
     }
     
     private func generateThumbnailAsynchronously(url: URL, closure: @escaping (UIImage?) -> Void) {
-        loadImageQueue.async {
-            self.semaphore.wait()
+        ImageCellConfig.loadImageQueue.addOperation { [weak self] in
+            guard let self = self else { return }
             let image = self.thumbnail(url: url)
             DispatchQueue.main.async {
                 closure(image)
-                self.semaphore.signal()
             }
         }
     }
@@ -71,6 +75,10 @@ public class ImageCellConfig: NSObject, CellConfig {
         guard let imageTrack = self.imageTrack else { return }
         guard let mediaURL = imageTrack.mediaURL else { return }
         cell.id = mediaURL.path
+        if let cacheImage = ThumbnailCache.shared.image(forKey: mediaURL.path) {
+            cell.imageView.image = cacheImage
+            return
+        }
         generateThumbnailAsynchronously(url: mediaURL) { (image) in
             if cell.id == mediaURL.path {
                 cell.imageView.image = image
@@ -78,8 +86,25 @@ public class ImageCellConfig: NSObject, CellConfig {
         }
     }
     
-    public func duration() -> CMTime {
-        return imageTrack?.timeRange.duration ?? .zero
+    public func duration() -> CMTime? {
+        return imageTrack?.timeRange.duration
+    }
+    
+    public func targetTimeRange() -> CMTimeRange? {
+        return imageTrack?.timeRange
+    }
+    
+    public func cancelAllCGImageGeneration() {
+        
+    }
+    
+    public func placeholderImage() -> UIImage? {
+        guard let imageTrack = self.imageTrack else { return nil }
+        guard let mediaURL = imageTrack.mediaURL else { return nil }
+        if let cacheImage = ThumbnailCache.shared.image(forKey: mediaURL.path) {
+            return cacheImage
+        }
+        return nil
     }
     
 }

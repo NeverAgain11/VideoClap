@@ -15,15 +15,16 @@ public enum VCManualRenderingMode: Int {
 
 public class VCPlayer: SSPlayer, VCRenderTarget {
     
-    public private(set) lazy var videoClap: VideoClap = {
+    private lazy var videoClap: VideoClap = {
         let videoClap = VideoClap()
         videoClap.requestCallbackHandler.renderTarget = self
         return videoClap
     }()
     
-    public weak var containerView: VCPlayerContainerView?
-    
-    private var stopRenderFlag: Bool = false
+    public lazy var videoDescription: VCVideoDescription = {
+        let des = VCVideoDescription()
+        return des
+    }()
     
     private var playingBlock: ((_ time: CMTime) -> Void)?
     
@@ -33,108 +34,63 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
     
     public private(set) var manualRenderingMode: VCManualRenderingMode = .realtime
     
-    private var images: [String : CIImage] = [:]
+    public var offlineRenderTarget = VCOfflineRenderTarget()
     
-    private var cacheAttributes: [UICollectionViewLayoutAttributes] = []
-    
-    private let offlineRenderTarget = VCOfflineRenderTarget()
-    
+    public weak var realTimeRenderTarget: VCPlayerContainerView?
+
     public override init() {
         super.init()
+        videoClap.videoDescription = self.videoDescription
     }
     
-    public func contextChanged() {
-        guard containerView?.superview != nil else {
-            return
+    public func draw(images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
+        var frame: CIImage?
+        switch manualRenderingMode {
+        case .offline:
+            frame = offlineRenderTarget.draw(images: images, blackImage: blackImage, renderSize: renderSize, renderScale: renderScale)
+        case .realtime:
+            frame = realTimeRenderTarget?.draw(images: images, blackImage: blackImage, renderSize: renderSize, renderScale: renderScale)
         }
-    }
-    
-    public func draw(images: [String : CIImage], blackImage: CIImage) -> CIImage? {
-        if stopRenderFlag {
-            return nil
-        }
-//        self.images = images
-//        self.cacheAttributes = []
-//        let group = DispatchGroup()
-//        for (index, image) in images.enumerated() {
-//            let attributes = UICollectionViewLayoutAttributes(forCellWith: IndexPath(item: index, section: 0))
-//            group.enter()
-//            DispatchQueue.main.async {
-//                attributes.frame = self.containerView.collectionView.bounds
-//                group.leave()
-//            }
-//            group.wait()
-//            self.cacheAttributes.append(attributes)
-//        }
-//
-//        group.enter()
-//        DispatchQueue.main.async {
-//            self.containerView.reloadDataWithoutAnimation()
-//            group.leave()
-//        }
-//        group.wait()
-//        return nil
-        
-        var finalFrame: CIImage?
-        
-        finalFrame = images.sorted { (lhs, rhs) -> Bool in
-            return lhs.value.indexPath > rhs.value.indexPath
-        }.reduce(finalFrame) { (result, args: (key: String, value: CIImage)) -> CIImage? in
-            return result?.composited(over: args.value) ?? args.value
-        }
-        
-        finalFrame = finalFrame?.composited(over: blackImage) ?? blackImage // 让背景变为黑色，防止出现图像重叠
-
-        if let ciImage = finalFrame {
-            let cgImage = CIContext.share.createCGImage(ciImage, from: CGRect(origin: .zero, size: videoClap.videoDescription.renderSize.scaling(videoClap.videoDescription.renderScale)))
-            DispatchQueue.main.async {
-                self.containerView?.renderView.layer.contents = cgImage
-//                self.containerView.reloadDataWithoutAnimation()
-            }
-        } else {
-            DispatchQueue.main.async {
-                self.containerView?.renderView.layer.contents = nil
-//                self.containerView.reloadDataWithoutAnimation()
-            }
-        }
-        return nil
-    }
-    
-    /// 替换掉当前的item
-    /// - Parameters:
-    ///   - item: 新的player item，替换掉当前的item
-    ///   - time: 要索引的时间，如果该参数nil，则会自动将新的player item索引到原来player item的时间，如果不为nil，新的player item会索引到该时间（范围在0到player item的时长）
-    /// - Returns: 最终的索引的时间
-    public func smoothReplaceCurrentItem(with item: AVPlayerItem?, time: CMTime? = nil) -> CMTime {
-        guard let newPlayerItem = item else {
-            super.replaceCurrentItem(with: item)
-            return .zero
-        }
-        stopRenderFlag = true
-        super.pause()
-        self.removePlayingTimeObserver()
-        var seekTime = time ?? videoClap.requestCallbackHandler.compositionTime
-        seekTime = CMTimeClampToRange(seekTime, range: CMTimeRange(start: .zero, duration: newPlayerItem.duration))
-        newPlayerItem.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero)
-        self.replaceCurrentItem(with: newPlayerItem)
-        self.stopRenderFlag = false
-        if let block = self.playingBlock {
-            self.observePlayingTime(forInterval: self.interval, queue: self.observeQueue, block: block)
-        }
-        return seekTime
+        return frame
     }
     
     /// 重新构建一个新的player item并替换掉当前的item
-    /// - Returns: 构建失败或者替换掉当前的item失败，返回nil，否则返回player item的索引时间
-    @discardableResult public func reload() -> CMTime? {
+    /// - Parameters:
+    ///   - time: 要索引的时间，如果该参数nil，则会自动将新的player item索引到原来player item的时间，如果不为nil，新的player item会索引到该时间（范围在0到player item的时长）
+    ///   - closure: 构建失败或者替换掉当前的item失败，返回nil，否则返回player item的索引时间
+    public func reload(time: CMTime? = nil, closure: ((CMTime?) -> Void)? = nil) {
         do {
+            super.pause()
+            self.currentItem?.cancelPendingSeeks()
+            self.cancelPendingPrerolls()
+            self.removePlayingTimeObserver()
+            
+            let oldRequestCallbackHandler = videoClap.requestCallbackHandler
+            oldRequestCallbackHandler.renderTarget = nil
+            
+            let newRequestCallbackHandler = VCRequestCallbackHandler()
+            newRequestCallbackHandler.videoDescription = self.videoDescription
+            newRequestCallbackHandler.renderTarget = self
+            videoClap.requestCallbackHandler = newRequestCallbackHandler
+            
             let newPlayerItem = try self.videoClap.playerItemForPlay()
-            contextChanged()
-            return self.smoothReplaceCurrentItem(with: newPlayerItem)
+            var seekTime = time ?? oldRequestCallbackHandler.compositionTime
+            seekTime = CMTimeClampToRange(seekTime, range: CMTimeRange(start: .zero, duration: newPlayerItem.duration))
+            newPlayerItem.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero) { (finished) in
+                self.replaceCurrentItem(with: newPlayerItem)
+                if finished {
+                    closure?(seekTime)
+                } else {
+                    closure?(nil)
+                }
+            }
+            if let block = self.playingBlock {
+                self.observePlayingTime(forInterval: self.interval, queue: self.observeQueue, block: block)
+            }
         } catch let error {
             log.error(error)
+            closure?(nil)
         }
-        return nil
     }
     
     /// 刷新当前帧，调用此方法会暂停视频的播放
@@ -145,7 +101,6 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
             return false
         }
         guard let item = currentItem else { return false }
-        contextChanged()
         let videoComposition = item.videoComposition?.mutableCopy() as? AVVideoComposition
         item.videoComposition = videoComposition
         return true
@@ -212,25 +167,8 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         }
     }
     
-}
-
-extension VCPlayer: VCViewLayoutDelegate, UICollectionViewDataSource {
-    
-    public func layoutAttributes() -> [UICollectionViewLayoutAttributes]? {
-        return cacheAttributes
-    }
-    
-    public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return cacheAttributes.count
-    }
-    
-    public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "VCPreviewCell", for: indexPath) as! VCPreviewCell
-        let image = self.images.sorted { (lhs, rhs) -> Bool in
-            return lhs.value.indexPath > rhs.value.indexPath
-        }[indexPath.item].value
-        cell.imageView.image = UIImage(ciImage: image)
-        return cell
+    public func estimateVideoDuration() -> CMTime {
+        return (try? videoClap.playerItemForPlay().asset.duration) ?? .zero
     }
     
 }

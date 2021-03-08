@@ -10,30 +10,19 @@ import AVFoundation
 
 public class VCPlayerContainerView: UIView {
     
-    public weak var player: VCPlayer?
+    public weak var player: VCPlayer? {
+        didSet {
+            playerView.player = player
+        }
+    }
     
-    public lazy var playerView: SSPlayerView = {
+    private lazy var playerView: SSPlayerView = {
         let playerView = SSPlayerView(player: player)
         return playerView
     }()
     
-    lazy var renderView: UIView = {
+    internal lazy var renderView: UIView = {
         let view = UIView()
-        return view
-    }()
-    
-    lazy var layout: VCViewLayout = {
-        let layout = VCViewLayout()
-        layout.delegate = player
-        return layout
-    }()
-    
-    lazy var collectionView: UICollectionView = {
-        let view = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        view.dataSource = player
-        view.delegate = player
-        view.register(VCPreviewCell.classForCoder(), forCellWithReuseIdentifier: "VCPreviewCell")
-        view.backgroundColor = .clear
         return view
     }()
     
@@ -46,10 +35,9 @@ public class VCPlayerContainerView: UIView {
         super.init(frame: frame)
         addSubview(playerView)
         addSubview(renderView)
-        addSubview(collectionView)
     }
     
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
@@ -60,17 +48,38 @@ public class VCPlayerContainerView: UIView {
     public override func layoutSubviews() {
         super.layoutSubviews()
         if let _player = self.player {
-            let rect = AVMakeRect(aspectRatio: _player.videoClap.videoDescription.renderSize, insideRect: self.bounds)
+            let rect = AVMakeRect(aspectRatio: _player.videoDescription.renderSize, insideRect: self.bounds)
+            guard rect.origin.x.isNaN == false,
+                  rect.origin.y.isNaN == false,
+                  rect.size.width.isNaN == false,
+                  rect.size.height.isNaN == false
+            else {
+                return
+            }
             playerView.frame = rect
             renderView.frame = rect
-            collectionView.frame = rect
         }
     }
     
-    public func reloadDataWithoutAnimation() {
-        UIView.performWithoutAnimation {
-            self.collectionView.reloadData()
+    public func draw(images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
+        var finalFrame: CIImage?
+        finalFrame = images.sorted { (lhs, rhs) -> Bool in
+            return lhs.value.indexPath > rhs.value.indexPath
+        }.reduce(finalFrame) { (result, args: (key: String, value: CIImage)) -> CIImage? in
+            return result?.composited(over: args.value) ?? args.value
         }
+        finalFrame = finalFrame?.composited(over: blackImage) ?? blackImage
+        if let ciImage = finalFrame {
+            let cgImage = CIContext.share.createCGImage(ciImage, from: CGRect(origin: .zero, size: renderSize.scaling(renderScale)))
+            DispatchQueue.main.async {
+                self.renderView.layer.contents = cgImage
+            }
+        } else {
+            DispatchQueue.main.async {
+                self.renderView.layer.contents = nil
+            }
+        }
+        return nil
     }
     
 }
