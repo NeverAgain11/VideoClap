@@ -31,6 +31,8 @@ public class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol 
     
     public internal(set) var processingFormat: AVAudioFormat?
     
+    public internal(set) var maxFrames: CMItemCount?
+    
     public override init() {
         super.init()
     }
@@ -52,13 +54,7 @@ public class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol 
     }
     
     public func prepare(description: VCVideoDescription) {
-        guard let url = mediaURL else { return }
-        do {
-            let audioFile = try AVAudioFile(forReading: url)
-            processingFormat = audioFile.processingFormat
-        } catch let error {
-            log.warning(error)
-        }
+
     }
     
 }

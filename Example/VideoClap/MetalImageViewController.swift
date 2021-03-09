@@ -29,7 +29,8 @@ class MetalImageViewController: UIViewController {
         super.viewDidLayoutSubviews()
         if let imageURL = resourceURL(filename: "test1.jpg"), let image = CIImage(contentsOf: imageURL) {
             imageView.image = image
-            imageView.contentMode = .scaleAspectFit
+            imageView.metalContentMode = .scaleAspectFit
+            imageView.redraw()
         }
     }
     

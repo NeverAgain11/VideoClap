@@ -21,10 +21,12 @@ public class VCPlayerContainerView: UIView {
         return playerView
     }()
     
-    internal lazy var renderView: UIView = {
-        let view = UIView()
+    internal lazy var renderView: MetalImageView = {
+        let view = MetalImageView()
         return view
     }()
+    
+    internal var isMetalAvailable: Bool = MetalDevice.share.device != nil
     
     public convenience init(player: VCPlayer) {
         self.init(frame: .zero, player: player)
@@ -70,13 +72,14 @@ public class VCPlayerContainerView: UIView {
         }
         finalFrame = finalFrame?.composited(over: blackImage) ?? blackImage
         if let ciImage = finalFrame {
-            let cgImage = CIContext.share.createCGImage(ciImage, from: CGRect(origin: .zero, size: renderSize.scaling(renderScale)))
-            DispatchQueue.main.async {
-                self.renderView.layer.contents = cgImage
-            }
-        } else {
-            DispatchQueue.main.async {
-                self.renderView.layer.contents = nil
+            if isMetalAvailable {
+                renderView.image = ciImage.cropped(to: CGRect(origin: .zero, size: renderSize.scaling(renderScale)))
+                renderView.redraw()
+            } else {
+                let cgImage = CIContext.share.createCGImage(ciImage, from: CGRect(origin: .zero, size: renderSize.scaling(renderScale)))
+                DispatchQueue.main.async {
+                    self.renderView.layer.contents = cgImage
+                }
             }
         }
         return nil

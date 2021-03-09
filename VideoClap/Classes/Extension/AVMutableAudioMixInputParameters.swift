@@ -24,7 +24,7 @@ extension AVMutableAudioMixInputParameters {
             clientInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(token).toOpaque()),
             init: tapInit,
             finalize: tapFinalize,
-            prepare: nil,
+            prepare: tapPrepare,
             unprepare: nil,
             process: tapProcess)
         
@@ -50,7 +50,10 @@ private func tapUnprepare(tap: MTAudioProcessingTap) {
 }
 
 private func tapPrepare(tap: MTAudioProcessingTap, maxFrames: CMItemCount, processingFormat: UnsafePointer<AudioStreamBasicDescription>) {
-    
+    let tapTokenStorage = Unmanaged<VCTapToken>.fromOpaque(MTAudioProcessingTapGetStorage(tap))
+    let tapToken = tapTokenStorage.takeUnretainedValue()
+    tapToken.audioTrack.processingFormat = AVAudioFormat(streamDescription: processingFormat)
+    tapToken.audioTrack.maxFrames = maxFrames
 }
 
 private func tapInit(tap: MTAudioProcessingTap, clientInfo: UnsafeMutableRawPointer?, tapStorageOut: UnsafeMutablePointer<UnsafeMutableRawPointer?>) {

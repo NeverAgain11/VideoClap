@@ -63,6 +63,7 @@ open class VCBaseAudioEffectProvider: NSObject, VCAudioEffectProviderProtocol {
                 try engine.renderOffline(engine.manualRenderingMaximumFrameCount, to: pcmbuffer)
                 
                 fillBuffer(outBuffer, use: pcmbuffer, inCount: inCount)
+                engine.disableManualRenderingMode()
                 engine.stop()
             }
         } catch let error {

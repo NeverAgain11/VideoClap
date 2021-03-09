@@ -12,16 +12,21 @@ import AVFoundation
 
 public class MetalImageView: MTKView {
     
+    public enum ContentMode {
+        case scaleAspectFit
+        case scaleToFill
+    }
+    
     public var image: CIImage? {
         didSet {
-            if let image = self.image {
-                texture = MetalDevice.share.makeTexture(width: Int(image.extent.size.width), height: Int(image.extent.size.height)).unsafelyUnwrapped
-                context.render(image, to: texture.unsafelyUnwrapped, commandBuffer: nil, bounds: image.extent, colorSpace: CGColorSpaceCreateDeviceRGB())
+            if let image = self.image, let _texture = MetalDevice.share.makeTexture(width: Int(image.extent.size.width), height: Int(image.extent.size.height)) {
+                texture = _texture
+                context.render(image, to: _texture, commandBuffer: nil, bounds: image.extent, colorSpace: CGColorSpaceCreateDeviceRGB())
             } else {
                 texture = nil
             }
-            let mode = self.contentMode
-            self.contentMode = mode
+            let mode = metalContentMode
+            self.metalContentMode = mode
         }
     }
     
@@ -54,15 +59,14 @@ public class MetalImageView: MTKView {
     
     var texture: MTLTexture?
     
-    public override var contentMode: UIView.ContentMode {
+    public var metalContentMode: MetalImageView.ContentMode = .scaleToFill {
         didSet {
             if let texture = self.texture {
-                switch contentMode {
+                switch metalContentMode {
                 case .scaleAspectFit:
                     fit(imageSize: CGSize(width: CGFloat(texture.width), height: CGFloat(texture.height)))
-                    self.draw(in: self)
-                default:
-                    break
+                case .scaleToFill:
+                    fill()
                 }
             }
         }
@@ -117,6 +121,16 @@ public class MetalImageView: MTKView {
         makeVertexBuffer()
     }
     
+    func fill() {
+        imageVertexs = []
+        imageVertexs.append(ImageVertex(position: simd_float2(1.0, 1.0), textureCoordinate: simd_float2(1.0, 1.0)))
+        imageVertexs.append(ImageVertex(position: simd_float2(-1.0, 1.0), textureCoordinate: simd_float2(0.0, 1.0)))
+        imageVertexs.append(ImageVertex(position: simd_float2(-1.0, -1.0), textureCoordinate: simd_float2(0.0, 0.0)))
+        imageVertexs.append(ImageVertex(position: simd_float2(1.0, 1.0), textureCoordinate: simd_float2(1.0, 1.0)))
+        imageVertexs.append(ImageVertex(position: simd_float2(-1.0, -1.0), textureCoordinate: simd_float2(0.0, 0.0)))
+        imageVertexs.append(ImageVertex(position: simd_float2(1.0, -1.0), textureCoordinate: simd_float2(1.0, 0.0)))
+    }
+    
     func makeVertexBuffer() {
         guard imageVertexs.count != 0 else {
             return
@@ -124,6 +138,10 @@ public class MetalImageView: MTKView {
         vertexBuffer = MetalDevice.share.makeBuffer(bytes: imageVertexs,
                                                     length: imageVertexs.count * MemoryLayout<ImageVertex>.size,
                                                     options: [])
+    }
+    
+    public func redraw() {
+        draw(in: self)
     }
     
 }
@@ -138,21 +156,19 @@ extension MetalImageView: MTKViewDelegate {
         guard let drawable = view.currentDrawable else { return }
         guard let commandBuffer = MetalDevice.share.makeCommandBuffer() else { return }
         guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
+        renderPassDescriptor.depthAttachment.loadAction = .dontCare
+        renderPassDescriptor.stencilAttachment.loadAction = .dontCare
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else { return }
         guard let pipelineState = pipelineState else { return }
-        
-        defer {
-            renderEncoder.endEncoding()
-            commandBuffer.present(drawable)
-            commandBuffer.commit()
-        }
-        
         renderEncoder.setRenderPipelineState(pipelineState)
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.setFragmentTexture(texture, index: 0)
         renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0,
                                      vertexCount: imageVertexs.count,
                                      instanceCount: imageVertexs.count / 3)
+        renderEncoder.endEncoding()
+        commandBuffer.present(drawable)
+        commandBuffer.commit()
     }
     
 }
