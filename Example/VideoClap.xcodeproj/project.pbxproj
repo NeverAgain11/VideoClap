@@ -15,6 +15,7 @@
 		8A138D6A2554D55B0088ECA8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8A138D5E2554D55B0088ECA8 /* Main.storyboard */; };
 		8A138D6D2554D55B0088ECA8 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A138D622554D55B0088ECA8 /* Images.xcassets */; };
 		8A138D842554D7010088ECA8 /* Mat in Resources */ = {isa = PBXBuildFile; fileRef = 8A138D832554D7010088ECA8 /* Mat */; };
+		8A31C81A25F77FB400467376 /* MetalImageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A31C81925F77FB400467376 /* MetalImageViewController.swift */; };
 		8A8CE53B255176E0002E935C /* Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8CE53A255176E0002E935C /* Util.swift */; };
 		8A8D9FCC25E338040015113A /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8D9FCB25E338040015113A /* MainViewController.swift */; };
 		8A9AACA425E51DD20042F57E /* MetalViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A9AACA325E51DD20042F57E /* MetalViewController.swift */; };
@@ -37,6 +38,7 @@
 		8A138D622554D55B0088ECA8 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		8A138D642554D55B0088ECA8 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8A138D832554D7010088ECA8 /* Mat */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Mat; path = ../../../../Mat; sourceTree = "<group>"; };
+		8A31C81925F77FB400467376 /* MetalImageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalImageViewController.swift; sourceTree = "<group>"; };
 		8A8CE53A255176E0002E935C /* Util.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Util.swift; sourceTree = "<group>"; };
 		8A8D9FCB25E338040015113A /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		8A9AACA325E51DD20042F57E /* MetalViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewController.swift; sourceTree = "<group>"; };
@@ -89,8 +91,9 @@
 				607FACD71AFB9204008FA782 /* ViewController.swift */,
 				8A0D4E162585E2A100C08E7D /* TestTimeScaleView.swift */,
 				8AAF3B1E258CB26600C0F790 /* TestTrackView.swift */,
-				8A9AACA325E51DD20042F57E /* MetalViewController.swift */,
 				8AE8760225EC8D89005526A1 /* TestTrackView2.swift */,
+				8A9AACA325E51DD20042F57E /* MetalViewController.swift */,
+				8A31C81925F77FB400467376 /* MetalImageViewController.swift */,
 			);
 			name = "Example for VideoClap";
 			path = VideoClap;
@@ -276,6 +279,7 @@
 				8A0D4E172585E2A100C08E7D /* TestTimeScaleView.swift in Sources */,
 				8A9AACA425E51DD20042F57E /* MetalViewController.swift in Sources */,
 				8AE8760325EC8D89005526A1 /* TestTrackView2.swift in Sources */,
+				8A31C81A25F77FB400467376 /* MetalImageViewController.swift in Sources */,
 				8A8CE53B255176E0002E935C /* Util.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
