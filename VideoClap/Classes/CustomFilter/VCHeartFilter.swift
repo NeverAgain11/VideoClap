@@ -12,17 +12,20 @@ open class VCHeartFilter: CIFilter {
     
     private static let sourceCode = """
 
-    float inHeart (vec2 p, vec2 center, float size, float2 renderSize) {
+    float inHeart (vec2 p, vec2 center, float size, float2 renderSize, float flag) {
         if (size==0.0) return 0.0;
         float ratio = renderSize.x / renderSize.y;
-            
+
         vec2 o = (p-center)/(1.6*size);
         o.x *= ratio;
+        if (flag == 1.0) {
+            o.y = 0.2 - o.y;
+        }
         float a = o.x*o.x+o.y*o.y - 0.3;
         return step(a*a*a, o.x*o.x*o.y*o.y*o.y);
     }
 
-    kernel vec4 transition (sampler inputImage, sampler inputTargetImage, float progress, float2 renderSize) {
+    kernel vec4 transition (sampler inputImage, sampler inputTargetImage, float progress, float2 renderSize, float flag) {
         vec2 uv0 = samplerCoord(inputImage);
         vec2 uv1 = samplerCoord(inputTargetImage);
 
@@ -32,7 +35,7 @@ open class VCHeartFilter: CIFilter {
         return mix(
             texture0Color,
             texture1Color,
-            inHeart(uv0, vec2(0.5, 0.4), progress, renderSize)
+            inHeart(uv0, vec2(0.5, 0.4), progress, renderSize, flag)
         );
     }
 
@@ -56,9 +59,16 @@ open class VCHeartFilter: CIFilter {
         guard let inputTargetImage = self.inputTargetImage else { return nil }
         var finalFrame: CIImage = inputImage
         
+        var flag: Float
+        if #available(iOS 13.0, *) {
+            flag = 1.0
+        } else {
+            flag = 0.0
+        }
+        
         finalFrame = kernel.apply(extent: finalFrame.extent, roiCallback: { (index, destRect) -> CGRect in
             return destRect
-        }, arguments: [finalFrame, inputTargetImage, inputTime.floatValue, renderSize]) ?? finalFrame
+        }, arguments: [finalFrame, inputTargetImage, inputTime.floatValue, renderSize, flag]) ?? finalFrame
         
         return finalFrame
     }
