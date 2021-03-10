@@ -21,8 +21,6 @@ public class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol 
     
     public var audioVolumeRampDescriptions: [VCAudioVolumeRampDescription] = []
     
-    public var prefferdTransform: CGAffineTransform? = nil
-    
     public var mediaURL: URL? = nil
     
     public var id: String = ""
@@ -46,10 +44,11 @@ public class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol 
         copyObj.mediaURL                    = mediaURL
         copyObj.id                          = id
         copyObj.timeRange                   = timeRange
-        copyObj.prefferdTransform           = prefferdTransform
         copyObj.audioVolumeRampDescriptions = audioVolumeRampDescriptions
         copyObj.audioEffectProvider         = audioEffectProvider
         copyObj.sourceTimeRange             = sourceTimeRange
+        copyObj.processingFormat            = processingFormat
+        copyObj.maxFrames                   = maxFrames
         return copyObj
     }
     

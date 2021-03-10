@@ -1,19 +1,20 @@
 PODS:
+  - FLAnimatedImage (1.0.15)
   - lottie-ios (3.1.9)
-  - SDWebImage (5.10.0):
-    - SDWebImage/Core (= 5.10.0)
-  - SDWebImage/Core (5.10.0)
+  - SDWebImage (5.10.4):
+    - SDWebImage/Core (= 5.10.4)
+  - SDWebImage/Core (5.10.4)
   - SnapKit (4.2.0)
   - SSPlayer (0.1.0)
   - SwiftyBeaver (1.9.3)
   - SwiftyTimer (2.1.0)
   - VideoClap (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
     - VideoClap/AudioEffects (= 0.1.0)
     - VideoClap/AudioEngine (= 0.1.0)
     - VideoClap/Core (= 0.1.0)
@@ -30,120 +31,121 @@ PODS:
     - VideoClap/UI (= 0.1.0)
     - VideoClap/Utilities (= 0.1.0)
   - VideoClap/AudioEffects (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/AudioEngine (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/Core (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/CoreText (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/CustomFilter (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/Extension (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/Metal (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/MetalLibs (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/Model (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
     - VideoClap/Model/Tracks (= 0.1.0)
   - VideoClap/Model/Tracks (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/Protocol (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/TextEffect (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/Trajectory (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/Transition (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/UI (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
   - VideoClap/Utilities (0.1.0):
-    - lottie-ios
-    - SDWebImage
-    - SnapKit
-    - SSPlayer
-    - SwiftyBeaver
-    - SwiftyTimer
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
 
 DEPENDENCIES:
+  - FLAnimatedImage (~> 1.0)
   - SnapKit (= 4.2.0)
   - SSPlayer (from `https://github.com/lai001/SSPlayer.git`)
   - SwiftyBeaver
@@ -151,6 +153,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
+    - FLAnimatedImage
     - lottie-ios
     - SDWebImage
     - SnapKit
@@ -169,14 +172,15 @@ CHECKOUT OPTIONS:
     :git: https://github.com/lai001/SSPlayer.git
 
 SPEC CHECKSUMS:
+  FLAnimatedImage: dd3db277b17e909ec3c7fd41adfce79b321d960e
   lottie-ios: 3a3758ef5a008e762faec9c9d50a39842f26d124
-  SDWebImage: 9169792e9eec3e45bba2a0c02f74bf8bd922d1ee
+  SDWebImage: c666b97e1fa9c64b4909816a903322018f0a9c84
   SnapKit: fe8a619752f3f27075cc9a90244d75c6c3f27e2a
   SSPlayer: 6299c67bde2d7a5f64292dccac0e6ddd45bfdd91
   SwiftyBeaver: 2e8acd6fc90c6d0a27055867a290794926d57c02
   SwiftyTimer: 02dd6cf10cbc71cbf67cec494f6e5eb782102543
-  VideoClap: 3ba84a2c5ba6e98c52ad196fcb66bc6b252bbcf9
+  VideoClap: f39d731962ee52e543aea626de352dc644e354b3
 
-PODFILE CHECKSUM: 5552830189b08e6ae4bc11840cdb9c7da091963f
+PODFILE CHECKSUM: ffb2f90b3cdb048a859997b098a964cd0c598efb
 
 COCOAPODS: 1.10.1

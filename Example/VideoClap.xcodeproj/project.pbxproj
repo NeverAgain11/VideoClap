@@ -22,6 +22,7 @@
 		8AAF3B1F258CB26600C0F790 /* TestTrackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AAF3B1E258CB26600C0F790 /* TestTrackView.swift */; };
 		8AC694902551606A00CD1D6D /* TestWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC6948F2551606A00CD1D6D /* TestWindow.swift */; };
 		8AE8760325EC8D89005526A1 /* TestTrackView2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE8760225EC8D89005526A1 /* TestTrackView2.swift */; };
+		8AFBD3D025F89D8500E9F22D /* LottieToGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AFBD3CF25F89D8500E9F22D /* LottieToGif.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +46,7 @@
 		8AAF3B1E258CB26600C0F790 /* TestTrackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestTrackView.swift; sourceTree = "<group>"; };
 		8AC6948F2551606A00CD1D6D /* TestWindow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestWindow.swift; sourceTree = "<group>"; };
 		8AE8760225EC8D89005526A1 /* TestTrackView2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestTrackView2.swift; sourceTree = "<group>"; };
+		8AFBD3CF25F89D8500E9F22D /* LottieToGif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottieToGif.swift; sourceTree = "<group>"; };
 		96E95A14EE0F218F43EEE3A2 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		F37C55F6C6452329825B51C3 /* Pods_VideoClap_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_VideoClap_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -94,6 +96,7 @@
 				8AE8760225EC8D89005526A1 /* TestTrackView2.swift */,
 				8A9AACA325E51DD20042F57E /* MetalViewController.swift */,
 				8A31C81925F77FB400467376 /* MetalImageViewController.swift */,
+				8AFBD3CF25F89D8500E9F22D /* LottieToGif.swift */,
 			);
 			name = "Example for VideoClap";
 			path = VideoClap;
@@ -241,6 +244,7 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-VideoClap_Example/Pods-VideoClap_Example-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/FLAnimatedImage/FLAnimatedImage.framework",
 				"${BUILT_PRODUCTS_DIR}/SDWebImage/SDWebImage.framework",
 				"${BUILT_PRODUCTS_DIR}/SSPlayer/SSPlayer.framework",
 				"${BUILT_PRODUCTS_DIR}/SnapKit/SnapKit.framework",
@@ -251,6 +255,7 @@
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FLAnimatedImage.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SDWebImage.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SSPlayer.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SnapKit.framework",
@@ -273,6 +278,7 @@
 			files = (
 				8A8D9FCC25E338040015113A /* MainViewController.swift in Sources */,
 				8AAF3B1F258CB26600C0F790 /* TestTrackView.swift in Sources */,
+				8AFBD3D025F89D8500E9F22D /* LottieToGif.swift in Sources */,
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
 				8AC694902551606A00CD1D6D /* TestWindow.swift in Sources */,

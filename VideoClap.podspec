@@ -30,12 +30,12 @@ TODO: Add long description of the pod here.
   s.swift_version    = '5.0'
   s.ios.deployment_target = '9.0'
   
-  s.dependency 'SwiftyBeaver'
-  s.dependency 'lottie-ios'
-  s.dependency 'SwiftyTimer'
-  s.dependency 'SDWebImage'
-  s.dependency 'SSPlayer'
-  s.dependency 'SnapKit'
+  s.dependency 'SwiftyBeaver', '~> 1.9.3'
+  s.dependency 'lottie-ios', '~> 3.1.9'
+  s.dependency 'SwiftyTimer', '~> 2.1.0'
+  s.dependency 'SDWebImage', '~> 5.10.0'
+  s.dependency 'SSPlayer', '~> 0.1.0'
+  s.dependency 'SnapKit', '~> 4.2.0'
   
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
