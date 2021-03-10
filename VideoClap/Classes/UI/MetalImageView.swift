@@ -19,14 +19,18 @@ public class MetalImageView: MTKView {
     
     public var image: CIImage? {
         didSet {
-            if let image = self.image, let _texture = MetalDevice.share.makeTexture(width: Int(image.extent.size.width), height: Int(image.extent.size.height)) {
-                texture = _texture
-                context.render(image, to: _texture, commandBuffer: nil, bounds: image.extent, colorSpace: CGColorSpaceCreateDeviceRGB())
+            if let image = self.image {
+                if let texture = cacheOrNewTexture(size: image.extent.size) {
+                    drawableSize = CGSize(width: texture.width, height: texture.height)
+                    context.render(image, to: texture, commandBuffer: nil, bounds: image.extent, colorSpace: CGColorSpaceCreateDeviceRGB())
+                    let mode = metalContentMode
+                    self.metalContentMode = mode
+                }
             } else {
-                texture = nil
+                self.texture = nil
+                let mode = metalContentMode
+                self.metalContentMode = mode
             }
-            let mode = metalContentMode
-            self.metalContentMode = mode
         }
     }
     
@@ -140,6 +144,19 @@ public class MetalImageView: MTKView {
                                                     options: [])
     }
     
+    func cacheOrNewTexture(size: CGSize) -> MTLTexture? {
+        if let _texture = self.texture {
+            if _texture.height == Int(size.height) && _texture.width == Int(size.width) {
+                
+            } else {
+                self.texture = MetalDevice.share.makeTexture(width: Int(size.width), height: Int(size.height))
+            }
+        } else {
+            self.texture = MetalDevice.share.makeTexture(width: Int(size.width), height: Int(size.height))
+        }
+        return self.texture
+    }
+    
     public func redraw() {
         draw(in: self)
     }
@@ -154,10 +171,10 @@ extension MetalImageView: MTKViewDelegate {
     
     public func draw(in view: MTKView) {
         guard let drawable = view.currentDrawable else { return }
-        guard let commandBuffer = MetalDevice.share.makeCommandBuffer() else { return }
         guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
         renderPassDescriptor.depthAttachment.loadAction = .dontCare
         renderPassDescriptor.stencilAttachment.loadAction = .dontCare
+        guard let commandBuffer = MetalDevice.share.makeCommandBuffer() else { return }
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else { return }
         guard let pipelineState = pipelineState else { return }
         renderEncoder.setRenderPipelineState(pipelineState)

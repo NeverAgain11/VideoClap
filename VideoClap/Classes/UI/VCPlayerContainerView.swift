@@ -8,6 +8,11 @@
 import SSPlayer
 import AVFoundation
 
+public enum RenderApi {
+    case opengles
+    case metal
+}
+
 public class VCPlayerContainerView: UIView {
     
     public weak var player: VCPlayer? {
@@ -26,17 +31,42 @@ public class VCPlayerContainerView: UIView {
         return view
     }()
     
+    lazy var glkView: GLImageView = {
+        let view = GLImageView(frame: .zero)
+        return view
+    }()
+    
+    public internal(set) var renderApi: RenderApi = .opengles
+    
     internal var isMetalAvailable: Bool = MetalDevice.share.device != nil
     
-    public convenience init(player: VCPlayer) {
-        self.init(frame: .zero, player: player)
+    public override var backgroundColor: UIColor? {
+        didSet {
+            playerView.backgroundColor = backgroundColor
+            renderView.backgroundColor = backgroundColor
+        }
     }
     
-    public init(frame: CGRect, player: VCPlayer) {
+    public convenience init(player: VCPlayer? = nil, renderApi: RenderApi = .opengles) {
+        self.init(frame: .zero, player: player, renderApi: renderApi)
+    }
+    
+    public init(frame: CGRect, player: VCPlayer? = nil, renderApi: RenderApi = .opengles) {
         self.player = player
         super.init(frame: frame)
-        addSubview(playerView)
-        addSubview(renderView)
+        _ = playerView
+        if isMetalAvailable == false {
+            self.renderApi = .opengles
+        } else {
+            self.renderApi = renderApi
+        }
+        
+        switch self.renderApi {
+        case .opengles:
+            addSubview(glkView)
+        case .metal:
+            addSubview(renderView)
+        }
     }
     
     public required init?(coder: NSCoder) {
@@ -58,8 +88,8 @@ public class VCPlayerContainerView: UIView {
             else {
                 return
             }
-            playerView.frame = rect
             renderView.frame = rect
+            glkView.frame = rect
         }
     }
     
@@ -71,15 +101,14 @@ public class VCPlayerContainerView: UIView {
             return result?.composited(over: args.value) ?? args.value
         }
         finalFrame = finalFrame?.composited(over: blackImage) ?? blackImage
-        if let ciImage = finalFrame {
-            if isMetalAvailable {
-                renderView.image = ciImage.cropped(to: CGRect(origin: .zero, size: renderSize.scaling(renderScale)))
+        if var ciImage = finalFrame {
+            ciImage = ciImage.cropped(to: CGRect(origin: .zero, size: renderSize.scaling(renderScale)))
+            switch renderApi {
+            case .opengles:
+                glkView.image = ciImage
+            case .metal:
+                renderView.image = ciImage
                 renderView.redraw()
-            } else {
-                let cgImage = CIContext.share.createCGImage(ciImage, from: CGRect(origin: .zero, size: renderSize.scaling(renderScale)))
-                DispatchQueue.main.async {
-                    self.renderView.layer.contents = cgImage
-                }
             }
         }
         return nil
