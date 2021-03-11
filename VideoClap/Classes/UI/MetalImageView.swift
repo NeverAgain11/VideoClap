@@ -184,8 +184,11 @@ extension MetalImageView: MTKViewDelegate {
                                      vertexCount: imageVertexs.count,
                                      instanceCount: imageVertexs.count / 3)
         renderEncoder.endEncoding()
-        commandBuffer.present(drawable)
+        commandBuffer.addScheduledHandler { _ in
+            drawable.present()
+        }
         commandBuffer.commit()
+        draw()
     }
     
 }
