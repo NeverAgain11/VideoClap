@@ -19,6 +19,31 @@ open class VCVideoDescription: NSObject, NSCopying, NSMutableCopying {
     
     public var transitions: [VCTransition] = []
     
+    /**
+     # AVVideoColorPrimaries_ITU_R_709_2
+     # AVVideoColorPrimaries_SMPTE_C
+     # AVVideoColorPrimaries_P3_D65
+     # AVVideoColorPrimaries_ITU_R_2020
+     */
+    @available(iOS 10.0, *)
+    public lazy var colorPrimaries: String? = nil
+    
+    /**
+     # AVVideoTransferFunction_ITU_R_709_2
+     # AVVideoTransferFunction_SMPTE_ST_2084_PQ
+     # AVVideoTransferFunction_ITU_R_2100_HLG
+     */
+    @available(iOS 10.0, *)
+    public lazy var colorTransferFunction: String? = nil
+    
+    /**
+     # AVVideoYCbCrMatrix_ITU_R_709_2
+     # AVVideoYCbCrMatrix_ITU_R_601_4
+     # AVVideoYCbCrMatrix_ITU_R_2020
+     */
+    @available(iOS 10.0, *)
+    public lazy var colorYCbCrMatrix: String? = nil
+    
     public func copy(with zone: NSZone? = nil) -> Any {
         return self
     }
