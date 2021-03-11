@@ -13,8 +13,8 @@ public class VCTimeScaleView: UIView {
     
     public let timeControl: VCTimeControl
     
-    internal lazy var cells: [VCTimeScaleCell] = {
-        let cells: [VCTimeScaleCell] = []
+    internal lazy var cellModels: [VCTimeScaleCellModel] = {
+        let cells: [VCTimeScaleCellModel] = []
         return cells
     }()
     
@@ -53,13 +53,18 @@ public class VCTimeScaleView: UIView {
         guard let attributes = layoutAttributesForElements(in: rect) else {
             return
         }
-        cells.forEach({ $0.removeFromSuperview() })
-        let newCells = attributes.map { (attribute) -> VCTimeScaleCell in
-            let cell = cellForItemAt(index: attribute.indexPath.item, attribute: attribute);
-            addSubview(cell);
-            return cell;
+        cellModels.forEach({ $0.dotLabel.removeFromSuperview(); $0.keyTimeLabel.removeFromSuperview() })
+        let newCells = attributes.map { (attribute) -> VCTimeScaleCellModel in
+            let cell = cellForItemAt(index: attribute.indexPath.item)
+            addSubview(cell.keyTimeLabel)
+            addSubview(cell.dotLabel)
+            cell.dotLabel.sizeToFit()
+            cell.keyTimeLabel.sizeToFit()
+            cell.dotLabel.center = attribute.frame.center
+            cell.keyTimeLabel.center = CGPoint(x: attribute.frame.minX, y: attribute.frame.midY)
+            return cell
         }
-        cells = newCells
+        cellModels = newCells
     }
     
     private func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
@@ -83,10 +88,8 @@ public class VCTimeScaleView: UIView {
         return attributes
     }
     
-    private func cellForItemAt(index: Int, attribute: UICollectionViewLayoutAttributes) -> VCTimeScaleCell {
-        let cell = VCTimeScaleCell(frame: attribute.frame)
-        cell.backgroundColor = self.backgroundColor
-        cell.contentView.backgroundColor = cell.backgroundColor
+    private func cellForItemAt(index: Int) -> VCTimeScaleCellModel {
+        let cell = VCTimeScaleCellModel()
         let time = CMTime(value: timeControl.intervalTime.value * Int64(index), timescale: VCTimeControl.timeBase)
         
         if time.value % 600 == 0 {
