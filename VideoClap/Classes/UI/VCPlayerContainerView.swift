@@ -11,6 +11,7 @@ import AVFoundation
 public enum RenderApi {
     case opengles
     case metal
+    case avPlayerLayer
 }
 
 public class VCPlayerContainerView: UIView {
@@ -44,6 +45,7 @@ public class VCPlayerContainerView: UIView {
         didSet {
             playerView.backgroundColor = backgroundColor
             renderView.backgroundColor = backgroundColor
+            glkView.backgroundColor = backgroundColor
         }
     }
     
@@ -56,7 +58,11 @@ public class VCPlayerContainerView: UIView {
         super.init(frame: frame)
         _ = playerView
         if isMetalAvailable == false {
-            self.renderApi = .opengles
+            if renderApi == .metal {
+                self.renderApi = .opengles
+            } else {
+                self.renderApi = renderApi
+            }
         } else {
             self.renderApi = renderApi
         }
@@ -66,6 +72,8 @@ public class VCPlayerContainerView: UIView {
             addSubview(glkView)
         case .metal:
             addSubview(renderView)
+        case .avPlayerLayer:
+            addSubview(playerView)
         }
     }
     
@@ -90,6 +98,7 @@ public class VCPlayerContainerView: UIView {
             }
             renderView.frame = rect
             glkView.frame = rect
+            playerView.frame = rect
         }
     }
     
@@ -109,6 +118,8 @@ public class VCPlayerContainerView: UIView {
             case .metal:
                 renderView.image = ciImage
                 renderView.redraw()
+            case .avPlayerLayer:
+                return ciImage
             }
         }
         return nil
