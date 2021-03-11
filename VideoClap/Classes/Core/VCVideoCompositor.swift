@@ -30,7 +30,7 @@ internal class VCVideoCompositor: NSObject {
     }
     
     private lazy var blackVideoAsset: AVURLAsset = {
-        let url = VCHelper.bundle().url(forResource: "black30s.mov", withExtension: nil) ?? URL(fileURLWithPath: "")
+        let url = VCHelper.bundle().url(forResource: "black30s_60fps.mov", withExtension: nil) ?? URL(fileURLWithPath: "")
         return AVURLAsset(url: url)
     }()
     
