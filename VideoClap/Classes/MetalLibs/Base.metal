@@ -1,5 +1,3 @@
-#define METAL_FILE
-
 #include <metal_stdlib>
 #include "Vertex.h"
 #include "Uniforms.h"

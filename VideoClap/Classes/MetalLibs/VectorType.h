@@ -10,7 +10,7 @@
 
 #include <simd/simd.h>
 
-#ifdef METAL_FILE
+#ifdef __METAL_STDLIB
 
 #define float4x4 metal::float4x4
 #define float2 metal::float2
