@@ -7,7 +7,7 @@
 
 import AVFoundation
 
-public struct VCRect {
+public struct VCRect: Equatable {
     
     public var center: CGPoint
     public var size: CGSize

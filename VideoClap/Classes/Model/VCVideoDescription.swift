@@ -50,11 +50,16 @@ open class VCVideoDescription: NSObject, NSCopying, NSMutableCopying {
     
     public func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCVideoDescription()
-        copyObj.renderSize  = self.renderSize
-        copyObj.renderScale = self.renderScale
-        copyObj.fps         = self.fps
-        copyObj.trackBundle = self.trackBundle.mutableCopy() as! VCTrackBundle
-        copyObj.transitions = self.transitions
+        copyObj.renderSize  = renderSize
+        copyObj.renderScale = renderScale
+        copyObj.fps         = fps
+        copyObj.trackBundle = trackBundle.mutableCopy() as! VCTrackBundle
+        copyObj.transitions = transitions
+        if #available(iOS 10.0, *) {
+            copyObj.colorPrimaries        = colorPrimaries
+            copyObj.colorTransferFunction = colorTransferFunction
+            copyObj.colorYCbCrMatrix      = colorYCbCrMatrix
+        }
         return copyObj
     }
     

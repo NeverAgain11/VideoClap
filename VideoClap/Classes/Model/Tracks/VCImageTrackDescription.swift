@@ -7,7 +7,7 @@
 
 import AVFoundation
 
-public enum VCImageLayout {
+public enum VCImageLayout: Equatable {
     case fit
     case fill
     case center(CGPoint)

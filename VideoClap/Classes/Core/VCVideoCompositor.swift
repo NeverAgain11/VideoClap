@@ -152,13 +152,15 @@ internal class VCVideoCompositor: NSObject {
         
         var persistentTrackID = persistentTrackHeaderID
         var existTrackInfoDic: [CMPersistentTrackID : [VCMediaTrackDescriptionProtocol]] = [:]
-        
-        for mediaTrack in mediaTracks {
+        let sortedMediaTracks = mediaTracks.sorted { (lhs, rhs) -> Bool in
+            return lhs.timeRange.start < rhs.timeRange.start
+        }
+        for mediaTrack in sortedMediaTracks {
             if let mediaURL = mediaTrack.mediaURL {
                 let asset = AVURLAsset(url: mediaURL, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
                 if let bestVideoTrack = asset.tracks(withMediaType: mediaType).first, let assetDuration = bestVideoTrack.asset?.duration {
                     if let compositionTrack = composition.track(withTrackID: persistentTrackID) {
-                        let existTimeRanges = compositionTrack.segments.filter({ $0.isEmpty == false }).map({ $0.timeMapping.source })
+                        let existTimeRanges = compositionTrack.segments.filter({ $0.isEmpty == false }).map({ $0.timeMapping.target })
                         if self.canInsertTimeRange(mediaTrack.timeRange, atExistingTimeRanges: existTimeRanges) {
                             
                         } else {
