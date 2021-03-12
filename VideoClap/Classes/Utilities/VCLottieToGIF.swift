@@ -15,47 +15,69 @@ public class VCLottieToGIF: NSObject {
     public func createGif(jsonURL: URL,
                           url: URL,
                           autoRemove: Bool = false,
-                          size: CGSize = CGSize(width: 100, height: 100),
-                          fps: TimeInterval = 24.0,
+                          sizeClosure: ((CGSize) -> CGSize)? = nil,
+                          fpsClosure: ((Double) -> Double)? = nil,
                           progessCallback: @escaping (Double) -> Void,
-                          clocure: @escaping (_ error: Error?) -> Void) {
+                          closure: @escaping (_ error: Error?) -> Void) -> (() -> Void) {
         if FileManager.default.fileExists(atPath: jsonURL.path) == false {
-            return clocure(NSError(domain: "", code: 0, userInfo: [:]))
-        }
-        if fps <= 0 || size.width <= 0 || size.height <= 0 {
-            return clocure(NSError(domain: "", code: 1, userInfo: [:]))
+            closure(NSError(domain: "", code: 0, userInfo: [:]))
+            return { }
         }
         if FileManager.default.fileExists(atPath: url.path) {
             if autoRemove {
                 do {
                     try FileManager.default.removeItem(at: url)
                 } catch let error {
-                    clocure(error)
+                    closure(error)
                 }
             } else {
-                return clocure(NSError(domain: "", code: 2, userInfo: [:]))
+                closure(NSError(domain: "", code: 1, userInfo: [:]))
+                return { }
             }
         }
-        guard let animation = Animation.filepath(jsonURL.path) else { return clocure(NSError(domain: "", code: 3, userInfo: [:])) }
-        if animation.duration <= 0 {
-            return clocure(NSError(domain: "", code: 4, userInfo: [:]))
+        guard let animation = Animation.filepath(jsonURL.path) else {
+            closure(NSError(domain: "", code: 2, userInfo: [:]))
+            return { }
         }
+        
+        let size = sizeClosure?(animation.size) ?? animation.size
+        let fps = fpsClosure?(animation.framerate) ?? animation.framerate
+        
         let animationView = AnimationView()
         animationView.contentMode = .scaleAspectFit
         animationView.animation = animation
         animationView.frame = CGRect(x: 0, y: 0, width: size.width, height: size.height)
         animationView.setNeedsDisplay()
+        
+        if fps <= 0 || animationView.frame.width <= 0 || animationView.frame.height <= 0 {
+            closure(NSError(domain: "", code: 3, userInfo: [:]))
+            return { }
+        }
+        
+        if animation.duration <= 0 {
+            closure(NSError(domain: "", code: 4, userInfo: [:]))
+            return { }
+        }
+        
+        var isCancel: Bool = false
+        
         DispatchQueue.global().async {
             let inter: TimeInterval = 1.0 / fps
             let group = DispatchGroup()
             let count = Int(animation.duration / inter)
             guard let destination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypeGIF, count, nil) else {
-                return clocure(NSError(domain: "", code: 5, userInfo: [:]))
+                closure(NSError(domain: "", code: 5, userInfo: [:]))
+                return
             }
             let fileProperties = [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]]
             let gifProperties = [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFDelayTime: inter]]
             CGImageDestinationSetProperties(destination, fileProperties as CFDictionary)
             for index in 0..<count {
+                if isCancel {
+                    CGImageDestinationFinalize(destination)
+                    closure(NSError(domain: "", code: 6, userInfo: [:]))
+                    return
+                }
                 let time = TimeInterval(index) * inter
                 group.enter()
                 self.animationFrame(animationView: animationView, animationPlayTime: time) { (image) in
@@ -68,7 +90,10 @@ public class VCLottieToGIF: NSObject {
                 group.wait()
             }
             CGImageDestinationFinalize(destination)
-            clocure(nil)
+            closure(nil)
+        }
+        return {
+            isCancel = true
         }
     }
     

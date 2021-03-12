@@ -32,6 +32,12 @@ class LottieToGif: UIViewController {
         return nf
     }()
     
+    var cancel: (() -> Void)?
+    
+    deinit {
+        cancel?()
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.addSubview(progressLabel)
@@ -46,12 +52,17 @@ class LottieToGif: UIViewController {
         let gif = VCLottieToGIF()
         let targetURL = URL(fileURLWithPath: (NSTemporaryDirectory() as NSString).appendingPathComponent("test.gif"))
         guard let jsonURL = resourceURL(filename: "MotionCorpse-Jrcanest.json") else { return }
-        gif.createGif(jsonURL: jsonURL, url: targetURL, autoRemove: true, size: CGSize(width: 600, height: 600), fps: 60) { [weak self] (progress) in
+        
+        cancel = gif.createGif(jsonURL: jsonURL, url: targetURL, autoRemove: true) { (frameSize) -> CGSize in
+            return CGSize(width: 600, height: 600)
+        } fpsClosure: { (frameRate) -> Double in
+            return 60
+        } progessCallback: { [weak self] (progress) in
             guard let self = self else { return }
             DispatchQueue.main.async {
                 self.progressLabel.text = self.nf.string(from: NSNumber(value: progress))
             }
-        } clocure: { [weak self] (error) in
+        } closure: { [weak self] (error) in
             guard let self = self else { return }
             DispatchQueue.main.async {
                 self.progressLabel.isHidden = true
