@@ -18,6 +18,7 @@
 		8A31C81A25F77FB400467376 /* MetalImageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A31C81925F77FB400467376 /* MetalImageViewController.swift */; };
 		8A8CE53B255176E0002E935C /* Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8CE53A255176E0002E935C /* Util.swift */; };
 		8A8D9FCC25E338040015113A /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8D9FCB25E338040015113A /* MainViewController.swift */; };
+		8A8E217325FCDDB500C1C624 /* MetalOfflineRenderTestController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8E217225FCDDB500C1C624 /* MetalOfflineRenderTestController.swift */; };
 		8A9AACA425E51DD20042F57E /* MetalViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A9AACA325E51DD20042F57E /* MetalViewController.swift */; };
 		8AAF3B1F258CB26600C0F790 /* TestTrackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AAF3B1E258CB26600C0F790 /* TestTrackView.swift */; };
 		8AC694902551606A00CD1D6D /* TestWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC6948F2551606A00CD1D6D /* TestWindow.swift */; };
@@ -42,6 +43,7 @@
 		8A31C81925F77FB400467376 /* MetalImageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalImageViewController.swift; sourceTree = "<group>"; };
 		8A8CE53A255176E0002E935C /* Util.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Util.swift; sourceTree = "<group>"; };
 		8A8D9FCB25E338040015113A /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
+		8A8E217225FCDDB500C1C624 /* MetalOfflineRenderTestController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalOfflineRenderTestController.swift; sourceTree = "<group>"; };
 		8A9AACA325E51DD20042F57E /* MetalViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewController.swift; sourceTree = "<group>"; };
 		8AAF3B1E258CB26600C0F790 /* TestTrackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestTrackView.swift; sourceTree = "<group>"; };
 		8AC6948F2551606A00CD1D6D /* TestWindow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestWindow.swift; sourceTree = "<group>"; };
@@ -97,6 +99,7 @@
 				8A9AACA325E51DD20042F57E /* MetalViewController.swift */,
 				8A31C81925F77FB400467376 /* MetalImageViewController.swift */,
 				8AFBD3CF25F89D8500E9F22D /* LottieToGif.swift */,
+				8A8E217225FCDDB500C1C624 /* MetalOfflineRenderTestController.swift */,
 			);
 			name = "Example for VideoClap";
 			path = VideoClap;
@@ -285,6 +288,7 @@
 				8A0D4E172585E2A100C08E7D /* TestTimeScaleView.swift in Sources */,
 				8A9AACA425E51DD20042F57E /* MetalViewController.swift in Sources */,
 				8AE8760325EC8D89005526A1 /* TestTrackView2.swift in Sources */,
+				8A8E217325FCDDB500C1C624 /* MetalOfflineRenderTestController.swift in Sources */,
 				8A31C81A25F77FB400467376 /* MetalImageViewController.swift in Sources */,
 				8A8CE53B255176E0002E935C /* Util.swift in Sources */,
 			);

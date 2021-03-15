@@ -8,6 +8,7 @@
 import Foundation
 import Metal
 import MetalKit
+import MobileCoreServices
 
 public enum ImageFormat {
     case png
@@ -67,12 +68,38 @@ public class MetalDevice: NSObject {
         return device?.makeDepthStencilState(descriptor: descriptor)
     }
     
-    public func makeTexture(width: Int, height: Int) -> MTLTexture? {
-        let texture2DDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm,
-                                                                         width: width,
-                                                                         height: height,
-                                                                         mipmapped: false)
+    public func makeTexture(width: Int, height: Int, pixelFormat: MTLPixelFormat = .bgra8Unorm) -> MTLTexture? {
+        let texture2DDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: pixelFormat,
+                                                                           width: width,
+                                                                           height: height,
+                                                                           mipmapped: false)
         texture2DDescriptor.usage = [.renderTarget, .shaderRead, .shaderWrite]
+        return device?.makeTexture(descriptor: texture2DDescriptor)
+    }
+    
+    public func makeDepthTexture(width: Int, height: Int, sampleCount: Int = 1) -> MTLTexture? {
+        let texture2DDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .depth32Float,
+                                                                           width: width,
+                                                                           height: height,
+                                                                           mipmapped: false)
+        texture2DDescriptor.usage = [.renderTarget]
+        texture2DDescriptor.storageMode = .private
+        if sampleCount > 1 {
+            texture2DDescriptor.sampleCount = sampleCount
+            texture2DDescriptor.textureType = .type2DMultisample
+        }
+        let texture = device?.makeTexture(descriptor: texture2DDescriptor)
+        return texture
+    }
+    
+    public func makeMultisampleTexture(width: Int, height: Int, pixelFormat: MTLPixelFormat = .bgra8Unorm, sampleCount: Int = 4) -> MTLTexture? {
+        let texture2DDescriptor = MTLTextureDescriptor()
+        texture2DDescriptor.width = width
+        texture2DDescriptor.height = height
+        texture2DDescriptor.pixelFormat = pixelFormat
+        texture2DDescriptor.usage = [.renderTarget, .shaderRead, .shaderWrite]
+        texture2DDescriptor.textureType = .type2DMultisample
+        texture2DDescriptor.sampleCount = sampleCount
         return device?.makeTexture(descriptor: texture2DDescriptor)
     }
     
@@ -99,13 +126,18 @@ public class MetalDevice: NSObject {
         textureLoader.newTexture(cgImage: cgImage, options: options, completionHandler: completionHandler)
     }
     
-    public func saveTexture(_ texture: MTLTexture, format: ImageFormat, url: URL, filpY: Bool = true) -> Bool {
+    public func saveTexture(_ texture: MTLTexture, format: ImageFormat, compressionQuality: CGFloat = 1.0, url: URL) -> Bool {
+        if MetalDevice.share.device == nil {
+            return false
+        }
+        
         if var ciImage = CIImage(mtlTexture: texture, options: [CIImageOption.colorSpace : CGColorSpaceCreateDeviceRGB()]) {
-            if filpY {
-                ciImage = ciImage.transformed(by: .init(scaleX: 1, y: -1))
-            }
+            ciImage = ciImage.transformed(by: .init(scaleX: 1, y: -1))
             let context = CIContext(mtlDevice: MetalDevice.share.device.unsafelyUnwrapped)
-            
+            var pixelFormat = CIFormat.BGRA8
+            if texture.pixelFormat == .rgba8Unorm {
+                pixelFormat = CIFormat.RGBA8
+            }
             switch format {
             case .jpeg:
                 do {
@@ -113,9 +145,8 @@ public class MetalDevice: NSObject {
                         try context.writeJPEGRepresentation(of: ciImage, to: url, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:])
                         return true
                     } else {
-                        if texture.pixelFormat == .bgra8Unorm,
-                           let cgImage = context.createCGImage(ciImage, from: ciImage.extent, format: .BGRA8, colorSpace: CGColorSpaceCreateDeviceRGB()),
-                           let data = UIImage(cgImage: cgImage).jpegData(compressionQuality: 1.0)
+                        if let cgImage = context.createCGImage(ciImage, from: ciImage.extent, format: pixelFormat, colorSpace: CGColorSpaceCreateDeviceRGB()),
+                           let data = UIImage(cgImage: cgImage).jpegData(compressionQuality: compressionQuality)
                         {
                             try data.write(to: url)
                             return true
@@ -128,11 +159,10 @@ public class MetalDevice: NSObject {
             case .png:
                 do {
                     if #available(iOS 11.0, *) {
-                        try context.writePNGRepresentation(of: ciImage, to: url, format: .BGRA8, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:])
+                        try context.writePNGRepresentation(of: ciImage, to: url, format: pixelFormat, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:])
                         return true
                     } else {
-                        if texture.pixelFormat == .bgra8Unorm,
-                           let cgImage = context.createCGImage(ciImage, from: ciImage.extent, format: .BGRA8, colorSpace: CGColorSpaceCreateDeviceRGB()),
+                        if let cgImage = context.createCGImage(ciImage, from: ciImage.extent, format: pixelFormat, colorSpace: CGColorSpaceCreateDeviceRGB()),
                            let data = UIImage(cgImage: cgImage).pngData()
                         {
                             try data.write(to: url)
@@ -145,6 +175,10 @@ public class MetalDevice: NSObject {
             }
         }
         return false
+    }
+    
+    fileprivate var releaseDataCallback: CGDataProviderReleaseDataCallback = { (directInfo: UnsafeMutableRawPointer?, data: UnsafeRawPointer, size: Int) in
+        data.deallocate()
     }
     
 }
