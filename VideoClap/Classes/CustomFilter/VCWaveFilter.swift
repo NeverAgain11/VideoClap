@@ -11,14 +11,15 @@ import CoreImage
 open class VCWaveFilter: CIFilter {
     
     private static let sourceCode = """
-    kernel vec4 YasicLUT(sampler inputImage, sampler inputTargetImage, float iTime) {
-        vec2 uv =  samplerCoord(inputImage);
-        vec4 texture0Color = sample(inputImage, samplerCoord(inputImage));
-        vec4 texture1Color = sample(inputTargetImage, samplerCoord(inputTargetImage));
+    kernel vec4 main(sampler inputImage, sampler inputTargetImage, float iTime, float2 renderSize, float amplitude, float angularVelocity, float frequency) {
+        vec2 dc = destCoord();
+        vec2 uv = dc / renderSize;
+        vec2 uv0 = samplerTransform(inputImage, dc);
+        vec2 uv1 = samplerTransform(inputTargetImage, dc);
 
-        float amplitude = 0.05;
-        float angularVelocity = 10.0;
-        float frequency = 10.0;
+        vec4 texture0Color = sample(inputImage, uv0);
+        vec4 texture1Color = sample(inputTargetImage, uv1);
+
         float initialPhase = frequency * cos(iTime);
         float offset = sin(iTime);
         float y = amplitude * sin((angularVelocity * uv.x) + initialPhase) + offset;
@@ -41,6 +42,14 @@ open class VCWaveFilter: CIFilter {
     
     @objc public var inputTime: NSNumber = 1.0
     
+    @objc public var renderSize: CIVector = CIVector(x: 0.0, y: 0.0)
+    
+    @objc public var amplitude: NSNumber = NSNumber(value: 0.05)
+    
+    @objc public var angularVelocity: NSNumber = NSNumber(value: 10.0)
+    
+    @objc public var frequency: NSNumber = NSNumber(value: 10.0)
+    
     public override var outputImage: CIImage? {
         guard let kernel = VCWaveFilter.kernel else { return nil }
         guard let inputImage = self.inputImage else { return nil }
@@ -49,7 +58,7 @@ open class VCWaveFilter: CIFilter {
         
         finalFrame = kernel.apply(extent: finalFrame.extent, roiCallback: { (index, destRect) -> CGRect in
             return destRect
-        }, arguments: [finalFrame, inputTargetImage, inputTime.floatValue]) ?? finalFrame
+        }, arguments: [finalFrame, inputTargetImage, inputTime.floatValue, renderSize, amplitude.floatValue, angularVelocity.floatValue, frequency.floatValue]) ?? finalFrame
         
         return finalFrame
     }
