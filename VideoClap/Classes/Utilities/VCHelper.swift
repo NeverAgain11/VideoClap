@@ -73,7 +73,7 @@ public class VCHelper: NSObject {
     }
     
     public static func applyLutFilter(lutImageURL: URL, intensity: Float, at image: UIImage) -> UIImage? {
-        let lutFilter = VCLutFilter()
+        let lutFilter = VCLutFilter.share
         lutFilter.inputIntensity = NSNumber(value: intensity)
         
         if let ciImage = image.ciImage {

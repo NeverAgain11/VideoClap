@@ -181,4 +181,30 @@ public class MetalDevice: NSObject {
         data.deallocate()
     }
     
+    func pixelBufferToMTLTexture(pixelBuffer: CVPixelBuffer, texturePixelFormat: MTLPixelFormat = .bgra8Unorm) -> MTLTexture? {
+        guard let device = self.device else { return nil }
+        var texture: MTLTexture?
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        var textureCache: CVMetalTextureCache?
+        if CVMetalTextureCacheCreate(nil, nil, device, nil, &textureCache) != kCVReturnSuccess {
+            return nil
+        }
+        var textureOut: CVMetalTexture?
+        if CVMetalTextureCacheCreateTextureFromImage(nil,
+                                                     textureCache.unsafelyUnwrapped,
+                                                     pixelBuffer,
+                                                     nil,
+                                                     texturePixelFormat,
+                                                     width,
+                                                     height,
+                                                     0,
+                                                     &textureOut) == kCVReturnSuccess {
+            texture = CVMetalTextureGetTexture(textureOut.unsafelyUnwrapped)
+            return texture
+        } else {
+            return nil
+        }
+    }
+    
 }

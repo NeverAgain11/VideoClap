@@ -30,6 +30,8 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
     
     private var renderContext: AVVideoCompositionRenderContext = .init()
     
+    private var actualRenderSize: CGSize = .zero
+    
     private lazy var ciContext: CIContext = {
         if let gpu = MTLCreateSystemDefaultDevice() {
             return CIContext(mtlDevice: gpu)
@@ -41,11 +43,12 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
     }()
     
     private var blackImage: CIImage {
-        VCHelper.image(color: .black, size: renderContext.size.scaling(renderContext.renderScale))
+        VCHelper.image(color: .black, size: actualRenderSize)
     }
     
     internal func renderContextChanged(_ newRenderContext: AVVideoCompositionRenderContext) {
         self.renderContext = newRenderContext
+        self.actualRenderSize = newRenderContext.size.scaling(newRenderContext.renderScale)
     }
     
     internal func startRequest(_ videoCompositionRequest: AVAsynchronousVideoCompositionRequest) {
@@ -67,11 +70,19 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
             videoProcessProtocol.handle(item: item,
                                         compositionTime: videoCompositionRequest.compositionTime,
                                         blackImage: blackImage) { (optionalImage: CIImage?) in
-                let image = optionalImage ?? self.blackImage
-                if let buffer = self.generateFinalBuffer(ciImage: image) {
-                    videoCompositionRequest.finish(withComposedVideoFrame: buffer)
+                if let image = optionalImage {
+                    if let buffer = self.generateFinalBuffer(ciImage: image) {
+                        videoCompositionRequest.finish(withComposedVideoFrame: buffer)
+                    } else {
+                        videoCompositionRequest.finish(with: VCVideoCompositingError.internalError)
+                    }
                 } else {
-                    videoCompositionRequest.finish(with: VCVideoCompositingError.internalError)
+                    if let id = videoCompositionRequest.sourceTrackIDs.first as? CMPersistentTrackID,
+                       let frame = videoCompositionRequest.sourceFrame(byTrackID: id) {
+                        videoCompositionRequest.finish(withComposedVideoFrame: frame)
+                    } else {
+                        videoCompositionRequest.finish(with: VCVideoCompositingError.internalError)
+                    }
                 }
             }
         } else {
@@ -89,7 +100,7 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
         guard let finalBuffer: CVPixelBuffer = renderContext.newPixelBuffer() else { return nil }
         
         ciContext.render(ciImage, to: finalBuffer,
-                         bounds: CGRect(origin: .zero, size: renderContext.size.scaling(renderContext.renderScale)),
+                         bounds: CGRect(origin: .zero, size: actualRenderSize),
                          colorSpace: colorSpace)
         return finalBuffer
     }
