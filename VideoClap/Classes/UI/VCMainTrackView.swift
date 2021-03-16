@@ -62,7 +62,7 @@ public class VCMainTrackViewLayout: UICollectionViewLayout {
     
 }
 
-public class VCMainTrackView: UIView, UICollectionViewDataSource, UICollectionViewDelegate, VCMainTrackViewDelegate {
+open class VCMainTrackView: UIView, UICollectionViewDataSource, UICollectionViewDelegate, VCMainTrackViewDelegate {
     
     public weak var viewDelegate: VCMainTrackViewDelegate?
     
