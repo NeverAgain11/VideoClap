@@ -68,10 +68,14 @@ open class VCLutFilter: CIFilter {
         finalFrame = kernel.apply(extent: finalFrame.extent, roiCallback: { (index, destRect) -> CGRect in
             return index == 0 ? destRect : lookupImage.extent
         }, arguments: [finalFrame, lookupImage, inputIntensity.floatValue]) ?? finalFrame
-        let origin = finalFrame.extent.origin
-        if let cgImage = context.createCGImage(finalFrame, from: finalFrame.extent) {
-            finalFrame = CIImage(cgImage: cgImage)
-            finalFrame = finalFrame.transformed(by: .init(translationX: origin.x, y: origin.y))
+        if #available(iOS 10.0, *) {
+            finalFrame = finalFrame.matchedFromWorkingSpace(to: CGColorSpaceCreateDeviceRGB()) ?? finalFrame
+        } else {
+            let origin = finalFrame.extent.origin
+            if let cgImage = context.createCGImage(finalFrame, from: finalFrame.extent) {
+                finalFrame = CIImage(cgImage: cgImage)
+                finalFrame = finalFrame.transformed(by: .init(translationX: origin.x, y: origin.y))
+            }
         }
         return finalFrame
     }
