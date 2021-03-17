@@ -36,20 +36,20 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
     
     public var offlineRenderTarget = VCOfflineRenderTarget()
     
-    public weak var realTimeRenderTarget: VCPlayerContainerView?
+    public weak var realTimeRenderTarget: VCRenderTarget?
 
     public override init() {
         super.init()
         videoClap.videoDescription = self.videoDescription
     }
     
-    public func draw(images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
+    public func draw(compositionTime: CMTime, images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
         var frame: CIImage?
         switch manualRenderingMode {
         case .offline:
-            frame = offlineRenderTarget.draw(images: images, blackImage: blackImage, renderSize: renderSize, renderScale: renderScale)
+            frame = offlineRenderTarget.draw(compositionTime: compositionTime, images: images, blackImage: blackImage, renderSize: renderSize, renderScale: renderScale)
         case .realtime:
-            frame = realTimeRenderTarget?.draw(images: images, blackImage: blackImage, renderSize: renderSize, renderScale: renderScale)
+            frame = realTimeRenderTarget?.draw(compositionTime: compositionTime, images: images, blackImage: blackImage, renderSize: renderSize, renderScale: renderScale)
         }
         return frame
     }
@@ -101,7 +101,17 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
             return false
         }
         guard let item = currentItem else { return false }
-        let videoComposition = item.videoComposition?.mutableCopy() as? AVVideoComposition
+        guard let videoComposition = item.videoComposition?.mutableCopy() as? AVMutableVideoComposition else { return false }
+        #if !targetEnvironment(simulator)
+        if #available(iOS 10.0, *) {
+        videoComposition.colorPrimaries = videoDescription.colorPrimaries
+        videoComposition.colorTransferFunction = videoDescription.colorTransferFunction
+        videoComposition.colorYCbCrMatrix = videoDescription.colorYCbCrMatrix
+        }
+        #endif
+        videoComposition.frameDuration = CMTime(seconds: 1 / videoDescription.fps, preferredTimescale: 600)
+        videoComposition.renderSize = videoDescription.renderSize
+        videoComposition.renderScale = Float(videoDescription.renderScale)
         item.videoComposition = videoComposition
         return true
     }

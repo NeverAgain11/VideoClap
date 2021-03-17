@@ -5,11 +5,11 @@
 //  Created by lai001 on 2021/1/16.
 //
 
-import Foundation
+import AVFoundation
 
 public class VCOfflineRenderTarget: NSObject, VCRenderTarget {
     
-    public func draw(images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
+    public func draw(compositionTime: CMTime, images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
         var finalFrame: CIImage?
         
         finalFrame = images.sorted { (lhs, rhs) -> Bool in

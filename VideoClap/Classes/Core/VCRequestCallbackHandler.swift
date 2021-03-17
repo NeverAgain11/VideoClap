@@ -96,7 +96,8 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
             preprocessFinishedImages.removeValue(forKey: toTrack.id)
         }
         
-        let finalFrame: CIImage? = renderTarget.draw(images: preprocessFinishedImages,
+        let finalFrame: CIImage? = renderTarget.draw(compositionTime: compositionTime,
+                                                     images: preprocessFinishedImages,
                                                      blackImage: blackImage,
                                                      renderSize: videoDescription.renderSize,
                                                      renderScale: videoDescription.renderScale)
