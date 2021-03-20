@@ -10,3 +10,7 @@ import AVFoundation
 public protocol VCRenderTarget: NSObject {
     func draw(compositionTime: CMTime, images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage?
 }
+
+public protocol VCRealTimeRenderTarget: VCRenderTarget {
+    var compositorClass: VCVideoCompositing.Type? { get }
+}

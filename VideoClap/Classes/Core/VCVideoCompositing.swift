@@ -13,17 +13,17 @@ internal enum VCVideoCompositingError: Error {
     case internalError
 }
 
-internal class VCVideoCompositing: NSObject, AVVideoCompositing {
+public class VCVideoCompositing: NSObject, AVVideoCompositing {
 
     internal typealias RequestCallback = (_ items: [VCRequestItem],
                                           _ compositionTime: CMTime,
                                           _ blackImage: CIImage,
                                           _ finish: (CIImage?) -> Void) -> Void
     
-    internal let sourcePixelBufferAttributes: [String : Any]? = [String(kCVPixelBufferPixelFormatTypeKey): kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
+    public let sourcePixelBufferAttributes: [String : Any]? = [String(kCVPixelBufferPixelFormatTypeKey): kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
                                                                  String(kCVPixelBufferOpenGLESCompatibilityKey): true]
     
-    internal let requiredPixelBufferAttributesForRenderContext: [String : Any] = [String(kCVPixelBufferPixelFormatTypeKey): kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
+    public let requiredPixelBufferAttributesForRenderContext: [String : Any] = [String(kCVPixelBufferPixelFormatTypeKey): kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
                                                                                   String(kCVPixelBufferOpenGLESCompatibilityKey): true]
     
     private let colorSpace = CGColorSpaceCreateDeviceRGB()
@@ -32,26 +32,22 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
     
     private var actualRenderSize: CGSize = .zero
     
-    private lazy var ciContext: CIContext = {
-        if let gpu = MTLCreateSystemDefaultDevice() {
-            return CIContext(mtlDevice: gpu)
-        }
-        if let eaglContext = EAGLContext(api: .openGLES3) ?? EAGLContext(api: .openGLES2) {
-            return CIContext(eaglContext: eaglContext)
-        }
-        return CIContext()
-    }()
+    private var ciContext: CIContext = CIContext.share
     
     private var blackImage: CIImage {
-        VCHelper.image(color: .black, size: actualRenderSize)
+        return VCHelper.image(color: .black, size: actualRenderSize)
     }
     
-    internal func renderContextChanged(_ newRenderContext: AVVideoCompositionRenderContext) {
+    public func renderContextChanged(_ newRenderContext: AVVideoCompositionRenderContext) {
         self.renderContext = newRenderContext
         self.actualRenderSize = newRenderContext.size.scaling(newRenderContext.renderScale)
     }
     
-    internal func startRequest(_ videoCompositionRequest: AVAsynchronousVideoCompositionRequest) {
+    public func startRequest(_ videoCompositionRequest: AVAsynchronousVideoCompositionRequest) {
+        processRequest(videoCompositionRequest)
+    }
+    
+    internal func processRequest(_ videoCompositionRequest: AVAsynchronousVideoCompositionRequest) {
         guard let instruction = videoCompositionRequest.videoCompositionInstruction as? VCVideoInstruction else {
             videoCompositionRequest.finish(with: VCVideoCompositingError.internalError)
             return
@@ -93,7 +89,6 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
                 videoCompositionRequest.finish(with: VCVideoCompositingError.internalError)
             }
         }
-
     }
  
     private func generateFinalBuffer(ciImage: CIImage) -> CVPixelBuffer? {
@@ -107,3 +102,106 @@ internal class VCVideoCompositing: NSObject, AVVideoCompositing {
     
 }
 
+public class VCRealTimeRenderVideoCompositing: VCVideoCompositing {
+    
+    private var pendingVideoCompositionRequests: [AVAsynchronousVideoCompositionRequest] = []
+    
+    private var timer: Timer?
+    
+    private var locker: NSLock = .init()
+    
+    private var queueLocker: DispatchSemaphore = .init(value: 1)
+    
+    private var timerQueue: DispatchQueue = .init(label: "timer", qos: .default, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
+    
+    deinit {
+        timer?.invalidate()
+        timer = nil
+        cancelAllPendingVideoCompositionRequests()
+    }
+    
+    public override func renderContextChanged(_ newRenderContext: AVVideoCompositionRenderContext) {
+        super.renderContextChanged(newRenderContext)
+        cancelAllPendingVideoCompositionRequests()
+        stopTimer()
+        tryStartTimer(frameDuration: newRenderContext.videoComposition.frameDuration.seconds)
+    }
+    
+    public override func startRequest(_ videoCompositionRequest: AVAsynchronousVideoCompositionRequest) {
+        if timer == nil {
+            processRequest(videoCompositionRequest)
+        } else {
+            enqueue(request: videoCompositionRequest)
+        }
+    }
+    
+    @objc internal func timerTick(_ timer: Timer) {
+        if let request = dequeue() {
+            processRequest(request)
+        }
+    }
+    
+    internal func startTimer(frameDuration: TimeInterval) {
+        timerQueue.async { [unowned self] in
+            self.timer = Timer.every(frameDuration) { [weak self] (timer) in
+                guard let self = self else { return }
+                self.timerTick(timer)
+            }
+            self.timer?.start(runLoop: .current, modes: .tracking, .default, .common)
+            RunLoop.current.run()
+        }
+    }
+    
+    internal func stopTimer() {
+        timerQueue.async { [unowned self] in
+            self.timer?.invalidate()
+            self.timer = nil
+        }
+    }
+    
+    internal func tryStartTimer(frameDuration: TimeInterval) {
+        timerQueue.async { [unowned self] in
+            guard self.timer == nil else {
+                return
+            }
+            self.timer = Timer.every(frameDuration) { [weak self] (timer) in
+                guard let self = self else { return }
+                self.timerTick(timer)
+            }
+            self.timer?.start(runLoop: .current, modes: .tracking, .default, .common)
+            RunLoop.current.run()
+        }
+    }
+    
+    private func enqueue(request: AVAsynchronousVideoCompositionRequest) {
+        queueLocker.wait()
+        defer {
+            queueLocker.signal()
+        }
+        pendingVideoCompositionRequests.append(request)
+    }
+    
+    private func dequeue() -> AVAsynchronousVideoCompositionRequest? {
+        queueLocker.wait()
+        defer {
+            queueLocker.signal()
+        }
+        guard pendingVideoCompositionRequests.isEmpty == false else {
+            return nil
+        }
+        let first = pendingVideoCompositionRequests.removeFirst()
+        return first
+    }
+    
+    internal func cancelAllPendingVideoCompositionRequests() {
+        locker.lock()
+        defer {
+            locker.unlock()
+        }
+        for videoCompositionRequest in pendingVideoCompositionRequests {
+            videoCompositionRequest.finishCancelledRequest()
+        }
+        self.pendingVideoCompositionRequests = []
+    }
+    
+}

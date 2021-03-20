@@ -8,16 +8,11 @@
 import SSPlayer
 import AVFoundation
 
-public enum VCManualRenderingMode: Int {
-    case offline = 0
-    case realtime = 1
-}
-
-public class VCPlayer: SSPlayer, VCRenderTarget {
+public class VCPlayer: SSPlayer {
     
     private lazy var videoClap: VideoClap = {
         let videoClap = VideoClap()
-        videoClap.requestCallbackHandler.renderTarget = self
+        
         return videoClap
     }()
     
@@ -32,26 +27,27 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
     
     private var observeQueue: DispatchQueue = .main
     
-    public private(set) var manualRenderingMode: VCManualRenderingMode = .realtime
-    
-    public var offlineRenderTarget = VCOfflineRenderTarget()
-    
-    public weak var realTimeRenderTarget: VCRenderTarget?
+    public weak var realTimeRenderTarget: VCRealTimeRenderTarget? {
+        didSet {
+            videoClap.requestCallbackHandler.renderTarget = realTimeRenderTarget
+        }
+    }
 
     public override init() {
         super.init()
         videoClap.videoDescription = self.videoDescription
     }
     
-    public func draw(compositionTime: CMTime, images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
-        var frame: CIImage?
-        switch manualRenderingMode {
-        case .offline:
-            frame = offlineRenderTarget.draw(compositionTime: compositionTime, images: images, blackImage: blackImage, renderSize: renderSize, renderScale: renderScale)
-        case .realtime:
-            frame = realTimeRenderTarget?.draw(compositionTime: compositionTime, images: images, blackImage: blackImage, renderSize: renderSize, renderScale: renderScale)
-        }
-        return frame
+    public override func play() {
+        super.play()
+        let frameDuration = 1.0 / videoDescription.fps
+        (currentItem?.customVideoCompositor as? VCRealTimeRenderVideoCompositing)?.tryStartTimer(frameDuration: frameDuration)
+    }
+    
+    public override func pause() {
+        super.pause()
+        (currentItem?.customVideoCompositor as? VCRealTimeRenderVideoCompositing)?.stopTimer()
+        (currentItem?.customVideoCompositor as? VCRealTimeRenderVideoCompositing)?.cancelAllPendingVideoCompositionRequests()
     }
     
     /// 重新构建一个新的player item并替换掉当前的item
@@ -67,16 +63,17 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
             
             let oldRequestCallbackHandler = videoClap.requestCallbackHandler
             oldRequestCallbackHandler.renderTarget = nil
-            
+
             let newRequestCallbackHandler = VCRequestCallbackHandler()
             newRequestCallbackHandler.videoDescription = self.videoDescription
-            newRequestCallbackHandler.renderTarget = self
+            newRequestCallbackHandler.renderTarget = realTimeRenderTarget
             videoClap.requestCallbackHandler = newRequestCallbackHandler
             
-            let newPlayerItem = try self.videoClap.playerItemForPlay()
+            let newPlayerItem = try self.videoClap.makePlayerItem(customVideoCompositorClass: realTimeRenderTarget?.compositorClass)
             var seekTime = time ?? oldRequestCallbackHandler.compositionTime
             seekTime = CMTimeClampToRange(seekTime, range: CMTimeRange(start: .zero, duration: newPlayerItem.duration))
-            newPlayerItem.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero) { (finished) in
+            newPlayerItem.seek(to: seekTime.isValid ? seekTime : .zero, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] (finished) in
+                guard let self = self else { return }
                 self.replaceCurrentItem(with: newPlayerItem)
                 if finished {
                     closure?(seekTime)
@@ -123,62 +120,23 @@ public class VCPlayer: SSPlayer, VCRenderTarget {
         super.observePlayingTime(forInterval: interval, queue: queue, block: block)
     }
     
-    public func enableManualRenderingMode() throws {
-        if currentItem == nil {
-            throw NSError(domain: "", code: 1, userInfo: [NSLocalizedFailureReasonErrorKey : ""])
-        } else {
-            videoClap.requestCallbackHandler.renderTarget = offlineRenderTarget
-            manualRenderingMode = .offline
-            self.removePlayingTimeObserver()
-            super.pause()
-        }
-    }
-    
-    public func disableManualRenderingMode() {
-        guard manualRenderingMode == .offline else {
-            return
-        }
-        videoClap.requestCallbackHandler.renderTarget = self
-        manualRenderingMode = .realtime
-        if let block = self.playingBlock {
-            self.observePlayingTime(forInterval: self.interval, queue: self.observeQueue, block: block)
-        }
-    }
-    
     public func export(size: CGSize? = nil, fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
-        guard manualRenderingMode == .offline else {
-            completionHandler(nil, NSError(domain: "", code: 2, userInfo: [NSLocalizedFailureReasonErrorKey:""]))
-            return nil
-        }
-        let renderSize = self.videoClap.videoDescription.renderSize
-        let renderScale = self.videoClap.videoDescription.renderScale
+        let renderSize = videoClap.videoDescription.renderSize
+        let renderScale = videoClap.videoDescription.renderScale
         let exportRenderSize = size ?? renderSize.scaling(renderScale)
-        let time = self.videoClap.requestCallbackHandler.compositionTime
-        
-        let playItem = self.currentItem.unsafelyUnwrapped
-        
-        playItem.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
-        let cache = playItem.videoComposition
-        let videoComposition = playItem.videoComposition?.mutableCopy() as? AVMutableVideoComposition
+
+        let asset = (currentItem?.asset as! AVMutableComposition).mutableCopy() as! AVAsset
+        let audioMix = currentItem?.audioMix?.mutableCopy() as? AVAudioMix
+        let videoComposition = currentItem?.videoComposition?.mutableCopy() as? AVMutableVideoComposition
         videoComposition?.renderSize = exportRenderSize
         videoComposition?.renderScale = 1.0
-        self.videoClap.videoDescription.renderSize = exportRenderSize
-        self.videoClap.videoDescription.renderScale = 1.0
-        
-        playItem.videoComposition = videoComposition
-        
-        return videoClap.export(playerItem: playItem, fileName: fileName, progressHandler: progressHandler) { (url, error) in
-            self.videoClap.videoDescription.renderSize = renderSize
-            self.videoClap.videoDescription.renderScale = renderScale
-            playItem.videoComposition = cache
-            playItem.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { (_) in
-                completionHandler(url, error)
-            }
-        }
+        videoComposition?.customVideoCompositorClass = VCVideoCompositing.self
+
+        return videoClap.export(asset: asset, audioMix: audioMix, videoComposition: videoComposition, progressHandler: progressHandler, completionHandler: completionHandler)
     }
     
     public func estimateVideoDuration() -> CMTime {
-        return (try? videoClap.playerItemForPlay().asset.duration) ?? .zero
+        return (try? videoClap.makePlayerItem().asset.duration) ?? .zero
     }
     
 }

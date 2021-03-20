@@ -24,20 +24,17 @@ class ViewController: UIViewController {
         return player.videoDescription
     }
     
-    var player: VCPlayer {
-        return vcplayer
-    }
-    
     var trackBundle: VCTrackBundle {
         return videoDescription.trackBundle
     }
     
-    public lazy var containerView: VCPlayerContainerView = {
-        let view = VCPlayerContainerView(player: vcplayer)
+    public lazy var containerView: UIView & VCRealTimeRenderTarget = {
+        let view = VCMetalPlayerContainerView(player: player)
+//        let view = VCPlayerContainerView(player: player)
         return view
     }()
     
-    lazy var vcplayer: VCPlayer = {
+    lazy var player: VCPlayer = {
         let player = VCPlayer()
         return player
     }()
@@ -326,7 +323,7 @@ class ViewController: UIViewController {
     @objc func transitionChange(_ sender: Notification) {
         let type = sender.userInfo?["transitionType"] as! TransitionType
         videoDescription.transitions.first.unsafelyUnwrapped.transition = getTransition(type: type)
-        vcplayer.reloadFrame()
+        player.reloadFrame()
     }
     
     func addTransition(_ trasition: VCTransition) {
@@ -337,7 +334,7 @@ class ViewController: UIViewController {
     }
     
     func initPlay() {
-        vcplayer.reload()
+        player.reload()
         playButton.isSelected = true
         
         player.observePlayingTime { [weak self] (time: CMTime) in
@@ -490,35 +487,37 @@ class ViewController: UIViewController {
     }
     
     @objc func exportButtonDidTap(_ sender: UIBarButtonItem) {
-        do {
-            try self.vcplayer.enableManualRenderingMode()
-            _ = self.vcplayer.export(size: KResolution720x1280) { (progress) in
-                LLog(progress.fractionCompleted)
-            } completionHandler: { [weak self] (url, error) in
-                guard let self = self else { return }
-                self.vcplayer.disableManualRenderingMode()
-                if let url = url {
-                    PHPhotoLibrary.shared().performChanges {
-                        PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
-                    } completionHandler: { _, _ in
-                        LLog("finish ")
-                    }
-                } else if let error = error {
-                    LLog(error)
+        player.pause()
+        _ = player.export(size: KResolution720x1280) { (progress) in
+            LLog(progress.fractionCompleted)
+        } completionHandler: { (url, error) in
+            if let url = url {
+                PHPhotoLibrary.shared().performChanges {
+                    PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+                } completionHandler: { _, _ in
+                    LLog("finish ")
                 }
+            } else if let error = error {
+                LLog(error)
             }
-            playButton.isSelected = false
-        } catch let error {
-            LLog(error)
         }
+        playButton.isSelected = false
     }
     
     @objc func addButtonDidTap(_ sender: UIBarButtonItem) {
-        let picker = UIImagePickerController()
-        picker.sourceType = .photoLibrary
-        picker.mediaTypes = UIImagePickerController.availableMediaTypes(for: .photoLibrary) ?? []
-        picker.delegate = self
-        present(picker, animated: true, completion: nil)
+        player.pause()
+        PHPhotoLibrary.requestAuthorization { (status) in
+            guard status == .authorized else {
+                return
+            }
+            DispatchQueue.main.async {
+                let picker = UIImagePickerController()
+                picker.sourceType = .photoLibrary
+                picker.mediaTypes = UIImagePickerController.availableMediaTypes(for: .photoLibrary) ?? []
+                picker.delegate = self
+                self.present(picker, animated: true, completion: nil)
+            }
+        }
     }
     
 }
@@ -581,7 +580,7 @@ extension ViewController: (UIImagePickerControllerDelegate & UINavigationControl
                     videoTrack.mediaURL = url
                     self.trackBundle.videoTracks.append(videoTrack)
                     
-                    self.vcplayer.reload(time: .zero, closure: nil)
+                    self.player.reload(time: .zero, closure: nil)
                 }
                 
             case kUTTypeImage:
@@ -597,7 +596,7 @@ extension ViewController: (UIImagePickerControllerDelegate & UINavigationControl
                     track.mediaURL = url
                     self.trackBundle.imageTracks.append(track)
                     
-                    self.vcplayer.reload(time: .zero, closure: nil)
+                    self.player.reload(time: .zero, closure: nil)
                 }
                 
             default:

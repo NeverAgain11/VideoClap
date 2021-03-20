@@ -8,7 +8,11 @@
 import SSPlayer
 import AVFoundation
 
-open class VCPlayerContainerView: UIView, VCRenderTarget {
+open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget {
+    
+    public var compositorClass: VCVideoCompositing.Type? {
+        return VCVideoCompositing.self
+    }
     
     public weak var player: VCPlayer? {
         didSet {
@@ -76,7 +80,15 @@ open class VCPlayerContainerView: UIView, VCRenderTarget {
     
 }
 
-open class VCOpenglPlayerContainerView: VCPlayerContainerView {
+open class VCCustomRenderView: VCPlayerContainerView {
+    
+    public override var compositorClass: VCVideoCompositing.Type? {
+        return VCRealTimeRenderVideoCompositing.self
+    }
+    
+}
+
+open class VCOpenglPlayerContainerView: VCCustomRenderView {
     
     lazy var glkView: GLImageView = {
         let view = GLImageView(frame: .zero)
@@ -107,7 +119,7 @@ open class VCOpenglPlayerContainerView: VCPlayerContainerView {
     
 }
 
-open class VCMetalPlayerContainerView: VCPlayerContainerView {
+open class VCMetalPlayerContainerView: VCCustomRenderView {
     
     internal lazy var renderView: MetalImageView = {
         let view = MetalImageView()
@@ -139,7 +151,7 @@ open class VCMetalPlayerContainerView: VCPlayerContainerView {
     
 }
 
-open class VCSampleBufferDisplayPlayerContainerView: VCPlayerContainerView {
+open class VCSampleBufferDisplayPlayerContainerView: VCCustomRenderView {
     
     lazy var sampleBufferDisplayLayer: AVSampleBufferDisplayLayer = {
         let layer = AVSampleBufferDisplayLayer()

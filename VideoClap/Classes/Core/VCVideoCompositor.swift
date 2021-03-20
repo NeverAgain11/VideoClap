@@ -40,7 +40,7 @@ internal class VCVideoCompositor: NSObject {
         self.requestCallbackHandler = requestCallbackHandler
     }
     
-    internal func playerItemForPlay() throws -> AVPlayerItem {
+    internal func makePlayerItem(customVideoCompositorClass: AVVideoCompositing.Type? = VCVideoCompositing.self) throws -> AVPlayerItem {
         let composition = AVMutableComposition(urlAssetInitializationOptions: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
         
         let videoDuration = estimateOtherTracksDuration()
@@ -88,7 +88,7 @@ internal class VCVideoCompositor: NSObject {
             instructions.append(emptyInstruction)
         }
         
-        let videoComposition = buildVideoComposition(videoDescription: videoDescription, instructions: instructions)
+        let videoComposition = buildVideoComposition(videoDescription: videoDescription, instructions: instructions, customVideoCompositorClass: customVideoCompositorClass)
         
         let newPlayerItem = AVPlayerItem(asset: composition)
         newPlayerItem.audioMix = audioMix
@@ -337,7 +337,7 @@ internal class VCVideoCompositor: NSObject {
         return instructions
     }
     
-    private func buildVideoComposition(videoDescription: VCVideoDescription, instructions: [VCVideoInstruction]) -> AVMutableVideoComposition {
+    private func buildVideoComposition(videoDescription: VCVideoDescription, instructions: [VCVideoInstruction], customVideoCompositorClass: AVVideoCompositing.Type? = VCVideoCompositing.self) -> AVMutableVideoComposition {
         let videoComposition = AVMutableVideoComposition()
         #if !targetEnvironment(simulator)
         if #available(iOS 10.0, *) {
@@ -349,7 +349,7 @@ internal class VCVideoCompositor: NSObject {
         
         videoComposition.frameDuration = CMTime(seconds: 1 / videoDescription.fps, preferredTimescale: 600)
         videoComposition.instructions = instructions
-        videoComposition.customVideoCompositorClass = VCVideoCompositing.self
+        videoComposition.customVideoCompositorClass = customVideoCompositorClass
         videoComposition.renderSize = videoDescription.renderSize
         videoComposition.renderScale = Float(videoDescription.renderScale)
         return videoComposition

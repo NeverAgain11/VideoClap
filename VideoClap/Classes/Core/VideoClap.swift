@@ -72,19 +72,19 @@ open class VideoClap: NSObject, VCMediaServicesObserver {
         VCImageCache.share.clearMemory()
     }
     
-    public func playerItemForPlay() throws -> AVPlayerItem {
+    public func makePlayerItem(customVideoCompositorClass: AVVideoCompositing.Type? = VCVideoCompositing.self) throws -> AVPlayerItem {
         let trackBundle = videoDescription.trackBundle
         trackBundle.audioTracks.forEach({ $0.prepare(description: videoDescription) })
         trackBundle.videoTracks.forEach({ $0.prepare(description: videoDescription) })
         trackBundle.imageTracks.forEach({ $0.prepare(description: videoDescription) })
-        let playerItem = try videoCompositor.playerItemForPlay()
+        let playerItem = try videoCompositor.makePlayerItem(customVideoCompositorClass: customVideoCompositorClass)
         return playerItem
     }
     
     @discardableResult
     public func export(fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
         do {
-            let item = try playerItemForPlay()
+            let item = try makePlayerItem()
             return export(playerItem: item, fileName: fileName, progressHandler: progressHandler, completionHandler: completionHandler)
         } catch let error {
             completionHandler(nil, error)
@@ -94,6 +94,11 @@ open class VideoClap: NSObject, VCMediaServicesObserver {
     
     @discardableResult
     public func export(playerItem: AVPlayerItem, fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
+        return self.export(asset: playerItem.asset, audioMix: playerItem.audioMix, videoComposition: playerItem.videoComposition, progressHandler: progressHandler, completionHandler: completionHandler)
+    }
+    
+    @discardableResult
+    public func export(asset: AVAsset, audioMix: AVAudioMix?, videoComposition: AVVideoComposition?, fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
         do {
             let audioSession = AVAudioSession.sharedInstance()
             try audioSession.setCategory(.audioProcessing, options: [.mixWithOthers])
@@ -102,12 +107,12 @@ open class VideoClap: NSObject, VCMediaServicesObserver {
             log.error(error)
         }
         
-        if playerItem.asset.tracks(withMediaType: .audio).isEmpty && playerItem.asset.tracks(withMediaType: .video).isEmpty {
+        if asset.tracks(withMediaType: .audio).isEmpty && asset.tracks(withMediaType: .video).isEmpty {
             completionHandler(nil, VideoClapError.exportFailed)
             return nil
         }
         
-        guard let session = AVAssetExportSession(asset: playerItem.asset, presetName: AVAssetExportPresetHighestQuality) else {
+        guard let session = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHighestQuality) else {
             completionHandler(nil, VideoClapError.exportFailed)
             return nil
         }
@@ -143,10 +148,10 @@ open class VideoClap: NSObject, VCMediaServicesObserver {
         }
         
         session.outputURL = exportVideoURL
-        session.audioMix = playerItem.audioMix
+        session.audioMix = audioMix
         session.outputFileType = .mov
         session.shouldOptimizeForNetworkUse = true
-        session.videoComposition = playerItem.videoComposition
+        session.videoComposition = videoComposition
         session.directoryForTemporaryFiles = VideoClap.ExportFolder
         session.canPerformMultiplePassesOverSourceMediaData = false
         session.audioTimePitchAlgorithm = .spectral
@@ -196,9 +201,9 @@ open class VideoClap: NSObject, VCMediaServicesObserver {
         }
     }
     
-    func imageGenerator() -> AVAssetImageGenerator {
+    func imageGenerator() -> AVAssetImageGenerator? {
         do {
-            let playerItem = try playerItemForPlay()
+            let playerItem = try makePlayerItem()
             let generator = AVAssetImageGenerator(asset: playerItem.asset)
             generator.appliesPreferredTrackTransform = true
             generator.requestedTimeToleranceAfter = .zero
@@ -207,12 +212,12 @@ open class VideoClap: NSObject, VCMediaServicesObserver {
             generator.videoComposition = playerItem.videoComposition
             return generator
         } catch let error {
-            return AVAssetImageGenerator(asset: AVAsset())
+            return nil 
         }
     }
     
     public func estimateVideoDuration() -> CMTime {
-        return (try? playerItemForPlay().asset.duration) ?? .zero
+        return (try? makePlayerItem().asset.duration) ?? .zero
     }
     
     public static func cleanExportFolder() {
