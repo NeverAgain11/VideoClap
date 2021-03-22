@@ -53,8 +53,8 @@ public class VCGIFSource: NSObject, NSCopying, NSMutableCopying {
                 if let frameProperty = properties[kCGImagePropertyGIFDictionary] as? [CFString:Any] {
                     frameProperties.append(frameProperty)
                     
-                    if let duration = frameProperty[kCGImagePropertyGIFUnclampedDelayTime] as? TimeInterval {
-                        self.duration = CMTimeAdd(self.duration, CMTime(seconds: duration, preferredTimescale: 600))
+                    if let duration = (frameProperty[kCGImagePropertyGIFUnclampedDelayTime] ?? frameProperty[kCGImagePropertyGIFDelayTime]) as? TimeInterval {
+                        self.duration = self.duration + CMTime(seconds: duration, preferredTimescale: 600)
                     }
                 }
             }
@@ -79,11 +79,17 @@ public class VCGIFSource: NSObject, NSCopying, NSMutableCopying {
         }
         var index = Int(TimeInterval(frameCount) * per)
         index.clamping(to: 0..<frameCount)
-        if let cgImage = CGImageSourceCreateImageAtIndex(imageSource, index, nil) {
-            return CIImage(cgImage: cgImage)
+        let key = self.url.path + "_GIF_" + String(index)
+        if let cacheImage = VCImageCache.share.ciImage(forKey: key) {
+            return cacheImage
         } else {
-            return nil
+            if let cgImage = CGImageSourceCreateImageAtIndex(imageSource, index, nil) {
+                let ciImage = CIImage(cgImage: cgImage)
+                VCImageCache.share.storeImage(toMemory: ciImage, forKey: key)
+                return ciImage
+            }
         }
+        return nil
     }
     
     public func copy(with zone: NSZone? = nil) -> Any {

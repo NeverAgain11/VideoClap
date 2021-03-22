@@ -11,7 +11,7 @@ private let _log: SwiftyBeaver.Type = {
 //    #if DEBUG
     let console = ConsoleDestination()
     console.asynchronously = false
-    console.format = "$C$L$c $n[$l] > $F: \(Thread.current) $T\n$M"
+    console.format = "$C$L$c <$DHH:mm:ss.SSS> $n[$l] > $F: \(Thread.current) $T\n$M"
     SwiftyBeaver.addDestination(console)
 //    #endif
     return SwiftyBeaver.self
