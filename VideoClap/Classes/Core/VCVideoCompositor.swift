@@ -25,19 +25,18 @@ internal class VCVideoCompositor: NSObject {
     
     internal static let MediaTrackIDHeader = CMPersistentTrackID(3000)
     
-    private var videoDescription: VCVideoDescription {
-        return requestCallbackHandler.videoDescription
-    }
+    internal var videoDescription: VCVideoDescription
     
     private lazy var blackVideoAsset: AVURLAsset = {
         let url = VCHelper.bundle().url(forResource: "black30s_60fps.mov", withExtension: nil) ?? URL(fileURLWithPath: "")
         return AVURLAsset(url: url)
     }()
     
-    private var requestCallbackHandler: VCRequestCallbackHandlerProtocol
+    internal var requestCallbackHandler: VCRequestCallbackHandlerProtocol
     
-    init(requestCallbackHandler: VCRequestCallbackHandlerProtocol) {
+    init(requestCallbackHandler: VCRequestCallbackHandlerProtocol, videoDescription: VCVideoDescription) {
         self.requestCallbackHandler = requestCallbackHandler
+        self.videoDescription = videoDescription
     }
     
     internal func makePlayerItem(customVideoCompositorClass: AVVideoCompositing.Type? = VCVideoCompositing.self) throws -> AVPlayerItem {
@@ -95,10 +94,6 @@ internal class VCVideoCompositor: NSObject {
         newPlayerItem.videoComposition = videoComposition
         newPlayerItem.audioTimePitchAlgorithm = .spectral
         return newPlayerItem
-    }
-    
-    internal func setRequestCallbackHandler(_ handler: VCRequestCallbackHandlerProtocol) {
-        requestCallbackHandler = handler
     }
     
     internal func estimateOtherTracksDuration() -> CMTime {

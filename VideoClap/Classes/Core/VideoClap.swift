@@ -24,22 +24,18 @@ open class VideoClap: NSObject, VCMediaServicesObserver {
     
     public var requestCallbackHandler: VCRequestCallbackHandler = VCRequestCallbackHandler() {
         didSet {
-            let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler)
-            self.videoCompositor = videoCompositor
+            self.videoCompositor.requestCallbackHandler = requestCallbackHandler
         }
     }
     
-    public var videoDescription: VCVideoDescription {
-        get {
-            return requestCallbackHandler.videoDescription
-        }
-        set {
-            requestCallbackHandler.videoDescription = newValue
+    public var videoDescription: VCVideoDescription = VCVideoDescription() {
+        didSet {
+            self.videoCompositor.videoDescription = videoDescription
         }
     }
     
     private lazy var videoCompositor: VCVideoCompositor = {
-        let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler)
+        let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler, videoDescription: videoDescription)
         return videoCompositor
     }()
     
@@ -208,7 +204,7 @@ open class VideoClap: NSObject, VCMediaServicesObserver {
             generator.appliesPreferredTrackTransform = true
             generator.requestedTimeToleranceAfter = .zero
             generator.requestedTimeToleranceBefore = .zero
-            generator.maximumSize = requestCallbackHandler.videoDescription.renderSize
+            generator.maximumSize = videoDescription.renderSize
             generator.videoComposition = playerItem.videoComposition
             return generator
         } catch let error {

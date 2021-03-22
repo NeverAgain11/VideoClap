@@ -38,7 +38,7 @@ private class VCReverseVideoRequestCallbackHandler: VCRequestCallbackHandler {
     
     var lastTimeRange: CMTimeRange?
     
-    override func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void) {
+    override func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, renderContext: AVVideoCompositionRenderContext, finish: (CIImage?) -> Void) {
 
         if samples.isEmpty {
             

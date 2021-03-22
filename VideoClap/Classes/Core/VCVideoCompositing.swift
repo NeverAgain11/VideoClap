@@ -65,7 +65,8 @@ public class VCVideoCompositing: NSObject, AVVideoCompositing {
             }
             videoProcessProtocol.handle(item: item,
                                         compositionTime: videoCompositionRequest.compositionTime,
-                                        blackImage: blackImage) { (optionalImage: CIImage?) in
+                                        blackImage: blackImage,
+                                        renderContext: renderContext) { (optionalImage: CIImage?) in
                 if let image = optionalImage {
                     if let buffer = self.generateFinalBuffer(ciImage: image) {
                         videoCompositionRequest.finish(withComposedVideoFrame: buffer)

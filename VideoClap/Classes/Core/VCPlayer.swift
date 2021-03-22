@@ -16,10 +16,9 @@ public class VCPlayer: SSPlayer {
         return videoClap
     }()
     
-    public lazy var videoDescription: VCVideoDescription = {
-        let des = VCVideoDescription()
-        return des
-    }()
+    public var videoDescription: VCVideoDescription {
+        return videoClap.videoDescription
+    }
     
     private var playingBlock: ((_ time: CMTime) -> Void)?
     
@@ -27,17 +26,14 @@ public class VCPlayer: SSPlayer {
     
     private var observeQueue: DispatchQueue = .main
     
+    public var offlineRenderTarget: VCRenderTarget = VCOfflineRenderTarget()
+    
     public weak var realTimeRenderTarget: VCRealTimeRenderTarget? {
         didSet {
             videoClap.requestCallbackHandler.renderTarget = realTimeRenderTarget
         }
     }
 
-    public override init() {
-        super.init()
-        videoClap.videoDescription = self.videoDescription
-    }
-    
     public override func play() {
         super.play()
         let frameDuration = 1.0 / videoDescription.fps
@@ -65,12 +61,11 @@ public class VCPlayer: SSPlayer {
             oldRequestCallbackHandler.renderTarget = nil
 
             let newRequestCallbackHandler = VCRequestCallbackHandler()
-            newRequestCallbackHandler.videoDescription = self.videoDescription
             newRequestCallbackHandler.renderTarget = realTimeRenderTarget
             videoClap.requestCallbackHandler = newRequestCallbackHandler
             
             let newPlayerItem = try self.videoClap.makePlayerItem(customVideoCompositorClass: realTimeRenderTarget?.compositorClass)
-            var seekTime = time ?? oldRequestCallbackHandler.compositionTime
+            var seekTime = time ?? self.currentTime()
             seekTime = CMTimeClampToRange(seekTime, range: CMTimeRange(start: .zero, duration: newPlayerItem.duration))
             newPlayerItem.seek(to: seekTime.isValid ? seekTime : .zero, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] (finished) in
                 guard let self = self else { return }
@@ -132,7 +127,11 @@ public class VCPlayer: SSPlayer {
         videoComposition?.renderScale = 1.0
         videoComposition?.customVideoCompositorClass = VCVideoCompositing.self
 
-        return videoClap.export(asset: asset, audioMix: audioMix, videoComposition: videoComposition, progressHandler: progressHandler, completionHandler: completionHandler)
+        videoClap.requestCallbackHandler.renderTarget = offlineRenderTarget
+        return videoClap.export(asset: asset, audioMix: audioMix, videoComposition: videoComposition, progressHandler: progressHandler) { [weak self] url, error in
+            self?.videoClap.requestCallbackHandler.renderTarget = self?.realTimeRenderTarget
+            completionHandler(url, error)
+        }
     }
     
     public func estimateVideoDuration() -> CMTime {
