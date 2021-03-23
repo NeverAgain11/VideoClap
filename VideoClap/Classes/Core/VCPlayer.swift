@@ -33,18 +33,6 @@ public class VCPlayer: SSPlayer {
             videoClap.requestCallbackHandler.renderTarget = realTimeRenderTarget
         }
     }
-
-    public override func play() {
-        super.play()
-        let frameDuration = 1.0 / videoDescription.fps
-        (currentItem?.customVideoCompositor as? VCRealTimeRenderVideoCompositing)?.tryStartTimer(frameDuration: frameDuration)
-    }
-    
-    public override func pause() {
-        super.pause()
-        (currentItem?.customVideoCompositor as? VCRealTimeRenderVideoCompositing)?.stopTimer()
-        (currentItem?.customVideoCompositor as? VCRealTimeRenderVideoCompositing)?.cancelAllPendingVideoCompositionRequests()
-    }
     
     /// 重新构建一个新的player item并替换掉当前的item
     /// - Parameters:
@@ -67,9 +55,8 @@ public class VCPlayer: SSPlayer {
             let newPlayerItem = try self.videoClap.makePlayerItem(customVideoCompositorClass: realTimeRenderTarget?.compositorClass)
             var seekTime = time ?? self.currentTime()
             seekTime = CMTimeClampToRange(seekTime, range: CMTimeRange(start: .zero, duration: newPlayerItem.duration))
-            newPlayerItem.seek(to: seekTime.isValid ? seekTime : .zero, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] (finished) in
-                guard let self = self else { return }
-                self.replaceCurrentItem(with: newPlayerItem)
+            self.replaceCurrentItem(with: newPlayerItem)
+            newPlayerItem.seek(to: seekTime.isValid ? seekTime : .zero, toleranceBefore: .zero, toleranceAfter: .zero) { (finished) in
                 if finished {
                     closure?(seekTime)
                 } else {

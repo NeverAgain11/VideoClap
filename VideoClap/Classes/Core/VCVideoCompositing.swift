@@ -28,13 +28,13 @@ public class VCVideoCompositing: NSObject, AVVideoCompositing {
     
     private let colorSpace = CGColorSpaceCreateDeviceRGB()
     
-    private var renderContext: AVVideoCompositionRenderContext = .init()
+    private(set) var renderContext: AVVideoCompositionRenderContext = .init()
     
-    private var actualRenderSize: CGSize = .zero
+    private(set) var actualRenderSize: CGSize = .zero
     
     private var ciContext: CIContext = CIContext.share
     
-    private var blackImage: CIImage {
+    internal var blackImage: CIImage {
         return VCHelper.image(color: .black, size: actualRenderSize)
     }
     
@@ -105,104 +105,25 @@ public class VCVideoCompositing: NSObject, AVVideoCompositing {
 
 public class VCRealTimeRenderVideoCompositing: VCVideoCompositing {
     
-    private var pendingVideoCompositionRequests: [AVAsynchronousVideoCompositionRequest] = []
-    
-    private var timer: Timer?
-    
-    private var locker: NSLock = .init()
-    
-    private var queueLocker: DispatchSemaphore = .init(value: 1)
-    
-    private var timerQueue: DispatchQueue = .init(label: "timer", qos: .default, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
-    
-    deinit {
-        timer?.invalidate()
-        timer = nil
-        cancelAllPendingVideoCompositionRequests()
-    }
-    
-    public override func renderContextChanged(_ newRenderContext: AVVideoCompositionRenderContext) {
-        super.renderContextChanged(newRenderContext)
-        cancelAllPendingVideoCompositionRequests()
-        stopTimer()
-        tryStartTimer(frameDuration: newRenderContext.videoComposition.frameDuration.seconds)
-    }
+//    private var lastRequestTime: TimeInterval?
     
     public override func startRequest(_ videoCompositionRequest: AVAsynchronousVideoCompositionRequest) {
-        if timer == nil {
-            processRequest(videoCompositionRequest)
+        let start = CFAbsoluteTimeGetCurrent()
+//        var timeCorrection: TimeInterval = 0
+//        if let _lastRequestTime = lastRequestTime {
+//            timeCorrection = start - _lastRequestTime
+//        }
+        processRequest(videoCompositionRequest)
+        let end = CFAbsoluteTimeGetCurrent()
+        let processTime = end - start
+        if processTime >= renderContext.videoComposition.frameDuration.seconds {
+
         } else {
-            enqueue(request: videoCompositionRequest)
+//            let sleepTime = renderContext.videoComposition.frameDuration.seconds - processTime - timeCorrection
+            let sleepTime = renderContext.videoComposition.frameDuration.seconds - processTime
+            Thread.sleep(forTimeInterval: sleepTime)
         }
-    }
-    
-    @objc internal func timerTick(_ timer: Timer) {
-        if let request = dequeue() {
-            processRequest(request)
-        }
-    }
-    
-    internal func startTimer(frameDuration: TimeInterval) {
-        timerQueue.async { [unowned self] in
-            self.timer = Timer.every(frameDuration) { [weak self] (timer) in
-                guard let self = self else { return }
-                self.timerTick(timer)
-            }
-            self.timer?.start(runLoop: .current, modes: .tracking, .default, .common)
-            RunLoop.current.run()
-        }
-    }
-    
-    internal func stopTimer() {
-        timerQueue.async { [unowned self] in
-            self.timer?.invalidate()
-            self.timer = nil
-        }
-    }
-    
-    internal func tryStartTimer(frameDuration: TimeInterval) {
-        timerQueue.async { [unowned self] in
-            guard self.timer == nil else {
-                return
-            }
-            self.timer = Timer.every(frameDuration) { [weak self] (timer) in
-                guard let self = self else { return }
-                self.timerTick(timer)
-            }
-            self.timer?.start(runLoop: .current, modes: .tracking, .default, .common)
-            RunLoop.current.run()
-        }
-    }
-    
-    private func enqueue(request: AVAsynchronousVideoCompositionRequest) {
-        queueLocker.wait()
-        defer {
-            queueLocker.signal()
-        }
-        pendingVideoCompositionRequests.append(request)
-    }
-    
-    private func dequeue() -> AVAsynchronousVideoCompositionRequest? {
-        queueLocker.wait()
-        defer {
-            queueLocker.signal()
-        }
-        guard pendingVideoCompositionRequests.isEmpty == false else {
-            return nil
-        }
-        let first = pendingVideoCompositionRequests.removeFirst()
-        return first
-    }
-    
-    internal func cancelAllPendingVideoCompositionRequests() {
-        locker.lock()
-        defer {
-            locker.unlock()
-        }
-        for videoCompositionRequest in pendingVideoCompositionRequests {
-            videoCompositionRequest.finishCancelledRequest()
-        }
-        self.pendingVideoCompositionRequests = []
+//        lastRequestTime = CFAbsoluteTimeGetCurrent()
     }
     
 }
