@@ -29,8 +29,8 @@ class ViewController: UIViewController {
     }
     
     public lazy var containerView: UIView & VCRealTimeRenderTarget = {
-        let view = VCMetalPlayerContainerView(player: player)
-//        let view = VCPlayerContainerView(player: player)
+//        let view = VCMetalPlayerContainerView(player: player)
+        let view = VCPlayerContainerView(player: player)
         return view
     }()
     

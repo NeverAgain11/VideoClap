@@ -8,7 +8,7 @@
 import SSPlayer
 import AVFoundation
 
-open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget {
+open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget, AVPlayerItemOutputPullDelegate {
     
     public var compositorClass: VCVideoCompositing.Type? {
         return VCVideoCompositing.self
@@ -17,12 +17,24 @@ open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget {
     public weak var player: VCPlayer? {
         didSet {
             playerView.player = player
+            addObservation()
         }
     }
+    
+    private var displayLinkProxy: CADisplayLinkProxy?
+    
+    private var valueObservation: Any? = nil
+    
+    private var playerItemVideoOutput: AVPlayerItemVideoOutput?
     
     private lazy var playerView: SSPlayerView = {
         let playerView = SSPlayerView(player: player)
         return playerView
+    }()
+    
+    private lazy var renderView: GLImageView = {
+        let view = GLImageView(frame: .zero)
+        return view
     }()
     
     public convenience init(player: VCPlayer? = nil) {
@@ -32,7 +44,9 @@ open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget {
     public init(frame: CGRect, player: VCPlayer? = nil) {
         self.player = player
         super.init(frame: frame)
-        addSubview(playerView)
+        _ = playerView
+        addSubview(renderView)
+        addObservation()
     }
     
     public required init?(coder: NSCoder) {
@@ -41,11 +55,59 @@ open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget {
     
     deinit {
         playerView.player = nil
+        stopTimer()
     }
     
     public override func layoutSubviews() {
         super.layoutSubviews()
         playerView.frame = fitRect()
+        renderView.frame = playerView.frame
+    }
+    
+    func addObservation() {
+        guard compositorClass == VCVideoCompositing.self else {
+            return
+        }
+        if let _player = playerView.player {
+            valueObservation = _player.observe(\VCPlayer.currentItem, options: [.new]) { [weak self] (player, change) in
+                guard let self = self else { return }
+                self.stopTimer()
+                self.startTimer(playerItem: player.currentItem.unsafelyUnwrapped)
+            }
+        }
+    }
+    
+    func stopTimer() {
+        displayLinkProxy?.isPaused = true
+        displayLinkProxy?.invalidate()
+        displayLinkProxy = nil
+    }
+    
+    func startTimer(playerItem: AVPlayerItem) {
+        let proxy = CADisplayLinkProxy { [weak self] link in
+            guard let self = self else { return }
+            self.displayLinkTick(link)
+        }
+        proxy.isPaused = true
+        let output = AVPlayerItemVideoOutput(pixelBufferAttributes: [kCVPixelBufferPixelFormatTypeKey as String:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange])
+        output.setDelegate(self, queue: DispatchQueue.main)
+        output.requestNotificationOfMediaDataChange(withAdvanceInterval: 0.1)
+        playerItem.add(output)
+        displayLinkProxy = proxy
+        playerItemVideoOutput = output
+    }
+    
+    @objc func displayLinkTick(_ link: CADisplayLink) {
+        guard let videoOutput = playerItemVideoOutput else { return }
+        let hostTime = link.timestamp + link.duration
+        let itemTime = videoOutput.itemTime(forHostTime: hostTime)
+        if videoOutput.hasNewPixelBuffer(forItemTime: itemTime), let pixelBuffer = videoOutput.copyPixelBuffer(forItemTime: itemTime, itemTimeForDisplay: nil) {
+            renderView.image = CIImage(cvPixelBuffer: pixelBuffer)
+        }
+    }
+    
+    public func outputMediaDataWillChange(_ sender: AVPlayerItemOutput) {
+        displayLinkProxy?.isPaused = false
     }
     
     public func fitRect() -> CGRect {
