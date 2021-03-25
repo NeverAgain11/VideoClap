@@ -2,7 +2,7 @@
 //  VCMediaServicesObserver.swift
 //  VideoClap
 //
-//  Created by laimincong on 2021/1/17.
+//  Created by lai001 on 2021/1/17.
 //
 
 import Foundation

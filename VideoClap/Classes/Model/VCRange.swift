@@ -8,9 +8,9 @@
 import Foundation
 
 public struct VCRange {
-    /// 归一化
+    /// [0,1]
     public var left: Float
-    /// 归一化
+    /// [0,1]
     public var right: Float
     public init(left: Float, right: Float) {
         self.left = left

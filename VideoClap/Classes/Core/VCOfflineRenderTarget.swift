@@ -17,7 +17,7 @@ public class VCOfflineRenderTarget: NSObject, VCRenderTarget {
         }.reduce(finalFrame) { (result, args: (key: String, value: CIImage)) -> CIImage? in
             return result?.composited(over: args.value) ?? args.value
         }
-        finalFrame = finalFrame?.composited(over: blackImage) ?? blackImage // 让背景变为黑色，防止出现图像重叠
+        finalFrame = finalFrame?.composited(over: blackImage) ?? blackImage // Make the background black to prevent overlapping images
         
         return finalFrame
     }

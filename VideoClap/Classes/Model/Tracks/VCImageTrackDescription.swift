@@ -30,10 +30,10 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
     
     public var lutImageURL: URL?
     
-    /// 顺时针，弧度制，1.57顺时针旋转90度，3.14顺时针旋转180度
+    /// Clockwise
     public var rotateRadian: CGFloat = 0.0
     
-    /// 归一化下裁剪区域，范围（0~1）
+    /// [0,1]
     public var cropedRect: CGRect?
     
     public var trajectory: VCTrajectoryProtocol?
@@ -112,7 +112,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
                 let no = cropRect.origin
 
                 if nw >= 1.0 && nh >= 1.0 && no == CGPoint(x: 0, y: 0) {
-                    // 裁剪区域为原图大小区域，不做处理
+                    // use original image
                 } else {
                     let width = frame.extent.width
                     let height = frame.extent.height
@@ -166,8 +166,8 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
                 
             case .rect(let rect):
                 let extent = frame.extent
-                let width = actualRenderSize.width * rect.width // 宽度，基于像素
-                let height = actualRenderSize.height * rect.height // 高度，基于像素
+                let width = actualRenderSize.width * rect.width // pixel- based
+                let height = actualRenderSize.height * rect.height // pixel- based
                 let scaleX = width / extent.size.width
                 let scaleY = height / extent.size.height
                 let scale = CGAffineTransform(scaleX: scaleX, y: scaleY)
@@ -175,7 +175,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
             }
              
             if rotateRadian.isZero == false {
-                let angle = -rotateRadian // 转为负数，变成顺时针旋转
+                let angle = -rotateRadian // Turn it into a negative number, clockwise rotation
                 let rotationTransform = CGAffineTransform(rotationAngle: angle)
                 transform = transform.concatenating(rotationTransform)
             }
@@ -195,7 +195,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         if let lutImageURL = lutImageURL,
            let filterLutImage = self.image(url: lutImageURL, size: nil),
            filterIntensity.floatValue > 0.0
-        {  // 查找表，添加滤镜
+        {  // lookup table filter
             let lutFilter = VCLutFilter.share
             lutFilter.inputIntensity = filterIntensity
             lutFilter.inputImage = frame
@@ -280,10 +280,10 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         return image
     }
     
-    /// 获取指定路径图片
+    /// Get the image of the specified path
     /// - Parameters:
     ///   - url: <#url description#>
-    ///   - size: 图片的大小，不应该过大，否则可能会导致内存溢出。当size为nil，会将全尺寸的图片存在内存当中，当size不为nil，会根据size的大小，图片按比例缩放后存在内存当中
+    ///   - size: The size of the picture should not be too large, otherwise it may cause memory overflow. When the size is nil, the full-size image will be stored in the memory. When the size is not nil, the image will be stored in the memory after being scaled proportionally according to the size.
     /// - Returns: <#description#>
     func image(url: URL, size: CGSize?) -> CIImage? {
         let sizeIdentifier: String

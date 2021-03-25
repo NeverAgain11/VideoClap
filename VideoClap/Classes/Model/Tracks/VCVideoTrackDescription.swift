@@ -85,7 +85,7 @@ public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescr
     public override func compositionImage(sourceFrame: CIImage, compositionTime: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage? {
         let actualRenderSize = renderSize.scaling(renderScale)
         var frame: CIImage = sourceFrame
-        // 对视频帧降采样
+        // Downsampling
         if max(actualRenderSize.width, actualRenderSize.height) > max(sourceFrame.extent.width, sourceFrame.extent.height) {
             
         } else {

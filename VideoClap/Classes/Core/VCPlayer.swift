@@ -34,10 +34,25 @@ public class VCPlayer: SSPlayer {
         }
     }
     
-    /// 重新构建一个新的player item并替换掉当前的item
+    public override func replaceCurrentItem(with item: AVPlayerItem?) {
+        super.replaceCurrentItem(with: item)
+        realTimeRenderTarget?.didReplacePlayerItem(item)
+    }
+    
+    public override func play() {
+        super.play()
+        realTimeRenderTarget?.onPlay()
+    }
+    
+    public override func pause() {
+        super.pause()
+        realTimeRenderTarget?.onPause()
+    }
+    
+    /// Rebuild a new player item and replace the current item
     /// - Parameters:
-    ///   - time: 要索引的时间，如果该参数nil，则会自动将新的player item索引到原来player item的时间，如果不为nil，新的player item会索引到该时间（范围在0到player item的时长）
-    ///   - closure: 构建失败或者替换掉当前的item失败，返回nil，否则返回player item的索引时间
+    ///   - time: If the parameter is nil, the new player item will automatically seek to the time of the original player item, If it is not nil, the new player item will seek to the time (range zero to the duration of the player item)
+    ///   - closure: return nil If the construction fails, otherwise the seek time of the player item is returned
     public func reload(time: CMTime? = nil, closure: ((CMTime?) -> Void)? = nil) {
         do {
             super.pause()
@@ -72,8 +87,8 @@ public class VCPlayer: SSPlayer {
         }
     }
     
-    /// 刷新当前帧，调用此方法会暂停视频的播放
-    /// - Returns: 当暂停播放失败或者currentItem为nil的时候返回false，刷新当前帧失败
+    /// Refresh the current frame, calling this method will pause the video playback
+    /// - Returns: When pause playback fails or currentItem is nil, it returns false, refreshing the current frame fails
     @discardableResult public func reloadFrame() -> Bool {
         super.pause()
         if isPlaying {

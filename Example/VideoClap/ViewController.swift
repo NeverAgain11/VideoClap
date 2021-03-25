@@ -31,6 +31,7 @@ class ViewController: UIViewController {
     public lazy var containerView: UIView & VCRealTimeRenderTarget = {
 //        let view = VCMetalPlayerContainerView(player: player)
         let view = VCPlayerContainerView(player: player)
+//        view.compositorClass = VCVideoCacheCompositing.self // optional, enable cache
         return view
     }()
     
@@ -233,7 +234,7 @@ class ViewController: UIViewController {
             let rect = VCRect(x: 0.5, y: 0.5, width: .random(in: 0..<1.0), height: .random(in: 0..<1.0))
             gifTrack.imageLayout = .rect(rect)
             gifTrack.id = "gifTrack"
-            gifTrack.timeRange = CMTimeRange(start: 0.0, end: 30.0)
+            gifTrack.timeRange = CMTimeRange(start: 0.0, end: 10.0)
             gifTrack.mediaURL = resourceURL(filename: "d6943138af1.gif")
             trackBundle.imageTracks.append(gifTrack)
         }

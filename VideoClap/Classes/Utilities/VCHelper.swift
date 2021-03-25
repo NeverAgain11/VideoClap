@@ -8,6 +8,7 @@
 import Foundation
 import Metal
 import AVFoundation
+import VideoToolbox
 
 public class VCHelper: NSObject {
     
@@ -220,6 +221,81 @@ public class VCHelper: NSObject {
             return nil
         default:
             return NSError(domain: "", code: -1, userInfo: [NSLocalizedFailureReasonErrorKey:"kAudioUnitErr_Unknow"])
+        }
+    }
+    
+    static func vtErrorCode(_ code: OSStatus) -> String {
+        switch code {
+        case kVTPropertyNotSupportedErr:
+            return "kVTPropertyNotSupportedErr"
+        case kVTPropertyReadOnlyErr:
+            return "kVTPropertyReadOnlyErr"
+        case kVTParameterErr:
+            return "kVTParameterErr"
+        case kVTInvalidSessionErr:
+            return "kVTInvalidSessionErr"
+        case kVTAllocationFailedErr:
+            return "kVTAllocationFailedErr"
+        case kVTPixelTransferNotSupportedErr:
+            return "kVTPixelTransferNotSupportedErr"
+        case kVTCouldNotFindVideoDecoderErr:
+            return "kVTCouldNotFindVideoDecoderErr"
+        case kVTCouldNotCreateInstanceErr:
+            return "kVTCouldNotCreateInstanceErr"
+        case kVTCouldNotFindVideoEncoderErr:
+            return "kVTCouldNotFindVideoEncoderErr"
+        case kVTVideoDecoderBadDataErr:
+            return "kVTVideoDecoderBadDataErr"
+        case kVTVideoDecoderUnsupportedDataFormatErr:
+            return "kVTVideoDecoderUnsupportedDataFormatErr"
+        case kVTVideoDecoderMalfunctionErr:
+            return "kVTVideoDecoderMalfunctionErr"
+        case kVTVideoEncoderMalfunctionErr:
+            return "kVTVideoEncoderMalfunctionErr"
+        case kVTVideoDecoderNotAvailableNowErr:
+            return "kVTVideoDecoderNotAvailableNowErr"
+        case kVTImageRotationNotSupportedErr:
+            return "kVTImageRotationNotSupportedErr"
+        case kVTVideoEncoderNotAvailableNowErr:
+            return "kVTVideoEncoderNotAvailableNowErr"
+        case kVTFormatDescriptionChangeNotSupportedErr:
+            return "kVTFormatDescriptionChangeNotSupportedErr"
+        case kVTInsufficientSourceColorDataErr:
+            return "kVTInsufficientSourceColorDataErr"
+        case kVTCouldNotCreateColorCorrectionDataErr:
+            return "kVTCouldNotCreateColorCorrectionDataErr"
+        case kVTColorSyncTransformConvertFailedErr:
+            return "kVTColorSyncTransformConvertFailedErr"
+        case kVTVideoDecoderAuthorizationErr:
+            return "kVTVideoDecoderAuthorizationErr"
+        case kVTVideoEncoderAuthorizationErr:
+            return "kVTVideoEncoderAuthorizationErr"
+        case kVTColorCorrectionPixelTransferFailedErr:
+            return "kVTColorCorrectionPixelTransferFailedErr"
+        case kVTMultiPassStorageIdentifierMismatchErr:
+            return "kVTMultiPassStorageIdentifierMismatchErr"
+        case kVTMultiPassStorageInvalidErr:
+            return "kVTMultiPassStorageInvalidErr"
+        case kVTFrameSiloInvalidTimeStampErr:
+            return "kVTFrameSiloInvalidTimeStampErr"
+        case kVTFrameSiloInvalidTimeRangeErr:
+            return "kVTFrameSiloInvalidTimeRangeErr"
+        case kVTCouldNotFindTemporalFilterErr:
+            return "kVTCouldNotFindTemporalFilterErr"
+        case kVTPixelTransferNotPermittedErr:
+            return "kVTPixelTransferNotPermittedErr"
+        case kVTColorCorrectionImageRotationFailedErr:
+            return "kVTColorCorrectionImageRotationFailedErr"
+        case kVTVideoDecoderRemovedErr:
+            return "kVTVideoDecoderRemovedErr"
+        case kVTSessionMalfunctionErr:
+            return "kVTSessionMalfunctionErr"
+        case kVTVideoDecoderNeedsRosettaErr:
+            return "kVTVideoDecoderNeedsRosettaErr"
+        case kVTVideoEncoderNeedsRosettaErr:
+            return "kVTVideoEncoderNeedsRosettaErr"
+        default:
+            return "unknow"
         }
     }
     

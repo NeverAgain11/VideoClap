@@ -12,5 +12,8 @@ public protocol VCRenderTarget: NSObject {
 }
 
 public protocol VCRealTimeRenderTarget: VCRenderTarget {
-    var compositorClass: VCVideoCompositing.Type? { get }
+    var compositorClass: VCVideoCompositing.Type? { get set }
+    func didReplacePlayerItem(_ playerItem: AVPlayerItem?)
+    func onPause()
+    func onPlay()
 }

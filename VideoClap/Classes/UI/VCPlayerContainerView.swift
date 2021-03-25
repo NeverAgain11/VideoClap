@@ -10,20 +10,15 @@ import AVFoundation
 
 open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget, AVPlayerItemOutputPullDelegate {
     
-    public var compositorClass: VCVideoCompositing.Type? {
-        return VCVideoCompositing.self
-    }
+    open var compositorClass: VCVideoCompositing.Type? = VCVideoCompositing.self
     
     public weak var player: VCPlayer? {
         didSet {
             playerView.player = player
-            addObservation()
         }
     }
     
     private var displayLinkProxy: CADisplayLinkProxy?
-    
-    private var valueObservation: Any? = nil
     
     private var playerItemVideoOutput: AVPlayerItemVideoOutput?
     
@@ -46,7 +41,6 @@ open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget, AVPlayerItemOu
         super.init(frame: frame)
         _ = playerView
         addSubview(renderView)
-        addObservation()
     }
     
     public required init?(coder: NSCoder) {
@@ -64,19 +58,6 @@ open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget, AVPlayerItemOu
         renderView.frame = playerView.frame
     }
     
-    func addObservation() {
-        guard compositorClass == VCVideoCompositing.self else {
-            return
-        }
-        if let _player = playerView.player {
-            valueObservation = _player.observe(\VCPlayer.currentItem, options: [.new]) { [weak self] (player, change) in
-                guard let self = self else { return }
-                self.stopTimer()
-                self.startTimer(playerItem: player.currentItem.unsafelyUnwrapped)
-            }
-        }
-    }
-    
     func stopTimer() {
         displayLinkProxy?.isPaused = true
         displayLinkProxy?.invalidate()
@@ -89,9 +70,9 @@ open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget, AVPlayerItemOu
             self.displayLinkTick(link)
         }
         proxy.isPaused = true
-        let output = AVPlayerItemVideoOutput(pixelBufferAttributes: [kCVPixelBufferPixelFormatTypeKey as String:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange])
+        let output = AVPlayerItemVideoOutput(pixelBufferAttributes: VCVideoCompositing.defaultRequiredPixelBufferAttributesForRenderContext)
         output.setDelegate(self, queue: DispatchQueue.main)
-        output.requestNotificationOfMediaDataChange(withAdvanceInterval: 0.1)
+        output.requestNotificationOfMediaDataChange(withAdvanceInterval: 1.0 / (self.player?.videoDescription.fps ?? 24.0))
         playerItem.add(output)
         displayLinkProxy = proxy
         playerItemVideoOutput = output
@@ -107,6 +88,30 @@ open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget, AVPlayerItemOu
     }
     
     public func outputMediaDataWillChange(_ sender: AVPlayerItemOutput) {
+        displayLinkProxy?.isPaused = false
+    }
+    
+    public func outputSequenceWasFlushed(_ output: AVPlayerItemOutput) {
+        if let link = displayLinkProxy?.displaylink {
+            displayLinkTick(link)
+        }
+    }
+    
+    public func didReplacePlayerItem(_ playerItem: AVPlayerItem?) {
+        guard playerView.player != nil else {
+            return
+        }
+        stopTimer()
+        if let _playerItem = playerItem {
+            startTimer(playerItem: _playerItem)
+        }
+    }
+    
+    public func onPause() {
+        displayLinkProxy?.isPaused = true
+    }
+    
+    public func onPlay() {
         displayLinkProxy?.isPaused = false
     }
     
@@ -144,8 +149,25 @@ open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget, AVPlayerItemOu
 
 open class VCCustomRenderView: VCPlayerContainerView {
     
-    public override var compositorClass: VCVideoCompositing.Type? {
-        return VCRealTimeRenderVideoCompositing.self
+    public override init(frame: CGRect, player: VCPlayer? = nil) {
+        super.init(frame: frame, player: player)
+        compositorClass = VCRealTimeRenderVideoCompositing.self
+    }
+    
+    public required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public override func didReplacePlayerItem(_ playerItem: AVPlayerItem?) {
+        
+    }
+    
+    public override func onPlay() {
+        
+    }
+    
+    public override func onPause() {
+        
     }
     
 }
