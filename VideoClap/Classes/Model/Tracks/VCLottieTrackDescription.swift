@@ -36,7 +36,7 @@ public class VCLottieTrackDescription: VCImageTrackDescription {
     
     public override func prepare(description: VCVideoDescription) {
         super.prepare(description: description)
-        if let path = mediaURL?.path, let animation = Animation.filepath(path) {
+        if let path = mediaURL?.path, let animation = Animation.filepath(path), animation.duration > .zero {
             self.animationView = AnimationView()
             self.animationView?.contentMode = self.contentMode
             self.animationView?.animation = animation
@@ -51,7 +51,8 @@ public class VCLottieTrackDescription: VCImageTrackDescription {
                 handler(nil)
                 return
             }
-            let progress = CGFloat(animationPlayTime.seconds.truncatingRemainder(dividingBy: animation.duration)).map(from: 0...CGFloat(animation.duration), to: 0...1)
+            let remainder = animationPlayTime.seconds.truncatingRemainder(dividingBy: animation.duration)
+            let progress = CGFloat(remainder / animation.duration)
             if progress.isNaN || progress.isInfinite {
                 handler(nil)
                 return
@@ -59,13 +60,15 @@ public class VCLottieTrackDescription: VCImageTrackDescription {
             animationView.currentProgress = progress
             let bounds = animationView.layer.bounds
             let snapshotLayer = animationView.layer
-            DispatchQueue.global().async {
-                let renderer = VCGraphicsRenderer()
-                renderer.rendererRect = bounds
-                let image = renderer.ciImage { (cgcontext) in
-                    snapshotLayer.render(in: cgcontext)
+            DispatchQueue.main.async {
+                DispatchQueue.global().async {
+                    let renderer = VCGraphicsRenderer()
+                    renderer.rendererRect = bounds
+                    let image = renderer.ciImage { (cgcontext) in
+                        snapshotLayer.render(in: cgcontext)
+                    }
+                    handler(image)
                 }
-                handler(image)
             }
         }
     }
