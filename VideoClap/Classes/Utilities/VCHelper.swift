@@ -109,7 +109,7 @@ public class VCHelper: NSObject {
         }
     }
     
-    static func image(color: UIColor, size: CGSize) -> CIImage {
+    public static func image(color: UIColor, size: CGSize) -> CIImage {
         let key = "__custom_color_image" + size.debugDescription + color.debugDescription
         if let cacheImage = VCImageCache.share.ciImage(forKey: key) {
             return cacheImage
@@ -123,6 +123,36 @@ public class VCHelper: NSObject {
             VCImageCache.share.storeImage(toMemory: image, forKey: key)
             return image ?? CIImage()
         }
+    }
+    
+    public static func chromaKeyFilter(fromHue: CGFloat, toHue: CGFloat) -> CIFilter? {
+        let size = 64
+        var cubeRGB = [Float]()
+        for z in 0 ..< size {
+            let blue = CGFloat(z) / CGFloat(size-1)
+            for y in 0 ..< size {
+                let green = CGFloat(y) / CGFloat(size-1)
+                for x in 0 ..< size {
+                    let red = CGFloat(x) / CGFloat(size-1)
+                    let hue = getHue(red: red, green: green, blue: blue)
+                    let alpha: CGFloat = (hue >= fromHue && hue <= toHue) ? 0: 1
+                    cubeRGB.append(Float(red * alpha))
+                    cubeRGB.append(Float(green * alpha))
+                    cubeRGB.append(Float(blue * alpha))
+                    cubeRGB.append(Float(alpha))
+                }
+            }
+        }
+        let data = Data(buffer: UnsafeBufferPointer(start: &cubeRGB, count: cubeRGB.count))
+        let colorCubeFilter = CIFilter(name: "CIColorCube", parameters: ["inputCubeDimension": size, "inputCubeData": data])
+        return colorCubeFilter
+    }
+    
+    public static func getHue(red: CGFloat, green: CGFloat, blue: CGFloat) -> CGFloat {
+        let color = UIColor(red: red, green: green, blue: blue, alpha: 1)
+        var hue: CGFloat = 0
+        color.getHue(&hue, saturation: nil, brightness: nil, alpha: nil)
+        return hue
     }
     
     public static func listPropertiesNames(type: AnyClass) -> [String] {
@@ -224,7 +254,7 @@ public class VCHelper: NSObject {
         }
     }
     
-    static func vtErrorCode(_ code: OSStatus) -> String {
+    public static func vtErrorCode(_ code: OSStatus) -> String {
         switch code {
         case kVTPropertyNotSupportedErr:
             return "kVTPropertyNotSupportedErr"
@@ -315,7 +345,7 @@ public class VCHelper: NSObject {
 
 extension VCHelper {
     
-    static func cropBusinessCardForPoints(image: CIImage, topLeft: CGPoint, topRight: CGPoint, bottomLeft: CGPoint, bottomRight: CGPoint) -> CIImage {
+    public static func cropBusinessCardForPoints(image: CIImage, topLeft: CGPoint, topRight: CGPoint, bottomLeft: CGPoint, bottomRight: CGPoint) -> CIImage {
         
         var businessCard: CIImage
         businessCard = image.applyingFilter("CIPerspectiveTransformWithExtent",
@@ -331,14 +361,14 @@ extension VCHelper {
         return businessCard
     }
     
-    static func sourceOverCompositing(inputImage: CIImage, inputBackgroundImage: CIImage) -> CIImage? {
+    public static func sourceOverCompositing(inputImage: CIImage, inputBackgroundImage: CIImage) -> CIImage? {
         let filter = CIFilter(name: "CISourceOverCompositing")!
         filter.setValue(inputImage, forKey: "inputImage")
         filter.setValue(inputBackgroundImage, forKey: "inputBackgroundImage")
         return filter.outputImage
     }
     
-    static func twirlDistortionCompositing(radius: CGFloat, inputImage: CIImage) -> CIImage? {
+    public static func twirlDistortionCompositing(radius: CGFloat, inputImage: CIImage) -> CIImage? {
         let twirlFilter = CIFilter(name: "CITwirlDistortion")!
         twirlFilter.setValue(inputImage, forKey: kCIInputImageKey)
         twirlFilter.setValue(radius, forKey: kCIInputRadiusKey)
@@ -348,35 +378,35 @@ extension VCHelper {
         return twirlFilter.outputImage
     }
     
-    static func maximumCompositing(inputImage: CIImage, inputBackgroundImage: CIImage) -> CIImage? {
+    public static func maximumCompositing(inputImage: CIImage, inputBackgroundImage: CIImage) -> CIImage? {
         let combineFilter = CIFilter(name: "CIMaximumCompositing")!
         combineFilter.setValue(inputImage, forKey: kCIInputImageKey)
         combineFilter.setValue(inputBackgroundImage, forKey: kCIInputBackgroundImageKey)
         return combineFilter.outputImage
     }
     
-    static func sourceAtopCompositing(inputImage: CIImage, inputBackgroundImage: CIImage) -> CIImage? {
+    public static func sourceAtopCompositing(inputImage: CIImage, inputBackgroundImage: CIImage) -> CIImage? {
         let combineFilter = CIFilter(name: "CISourceAtopCompositing")!
         combineFilter.setValue(inputImage, forKey: kCIInputImageKey)
         combineFilter.setValue(inputBackgroundImage, forKey: kCIInputBackgroundImageKey)
         return combineFilter.outputImage
     }
     
-    static func minimumCompositing(inputImage: CIImage, inputBackgroundImage: CIImage) -> CIImage? {
+    public static func minimumCompositing(inputImage: CIImage, inputBackgroundImage: CIImage) -> CIImage? {
         let combineFilter = CIFilter(name: "CIMinimumCompositing")!
         combineFilter.setValue(inputImage, forKey: kCIInputImageKey)
         combineFilter.setValue(inputBackgroundImage, forKey: kCIInputBackgroundImageKey)
         return combineFilter.outputImage
     }
     
-    static func affineTransformCompositing(inputImage: CIImage, cgAffineTransform: CGAffineTransform) -> CIImage? {
+    public static func affineTransformCompositing(inputImage: CIImage, cgAffineTransform: CGAffineTransform) -> CIImage? {
         let filter = CIFilter(name: "CIAffineTransform")!
         filter.setValue(inputImage, forKey: kCIInputImageKey)
         filter.setValue(NSValue(cgAffineTransform: cgAffineTransform), forKey: kCIInputTransformKey)
         return filter.outputImage
     }
     
-    static func lanczosScaleTransformCompositing(inputImage: CIImage, scale: Float, aspectRatio: Float) -> CIImage? {
+    public static func lanczosScaleTransformCompositing(inputImage: CIImage, scale: Float, aspectRatio: Float) -> CIImage? {
         let filter = CIFilter(name: "CILanczosScaleTransform")!
         filter.setValue(inputImage, forKey: kCIInputImageKey)
         filter.setValue(scale, forKey: kCIInputScaleKey)
@@ -384,7 +414,7 @@ extension VCHelper {
         return filter.outputImage
     }
     
-    static func alphaCompositing(alphaValue: CGFloat, inputImage: CIImage) -> CIImage? {
+    public static func alphaCompositing(alphaValue: CGFloat, inputImage: CIImage) -> CIImage? {
         guard let overlayFilter: CIFilter = CIFilter(name: "CIColorMatrix") else { return nil }
         let overlayRgba: [CGFloat] = [0, 0, 0, alphaValue]
         let alphaVector: CIVector = CIVector(values: overlayRgba, count: 4)
@@ -393,7 +423,7 @@ extension VCHelper {
         return overlayFilter.outputImage
     }
     
-    static func blurCompositing(value: CGFloat = 10.0, inputImage: CIImage) -> CIImage? {
+    public static func blurCompositing(value: CGFloat = 10.0, inputImage: CIImage) -> CIImage? {
         guard let filter: CIFilter = CIFilter(name: "CIBoxBlur") else { return nil }
         filter.setValue(inputImage, forKey: kCIInputImageKey)
         filter.setValue(NSNumber(value: Float(value)), forKey: kCIInputRadiusKey)
