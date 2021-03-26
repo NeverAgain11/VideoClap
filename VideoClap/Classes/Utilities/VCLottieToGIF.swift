@@ -7,7 +7,6 @@
 
 import Foundation
 import Lottie
-import Accelerate
 import MobileCoreServices
 
 public class VCLottieToGIF: NSObject {
@@ -18,30 +17,19 @@ public class VCLottieToGIF: NSObject {
                           sizeClosure: ((CGSize) -> CGSize)? = nil,
                           fpsClosure: ((Double) -> Double)? = nil,
                           progessCallback: @escaping (Double) -> Void,
-                          closure: @escaping (_ error: Error?) -> Void) -> (() -> Void) {
-        if FileManager.default.fileExists(atPath: jsonURL.path) == false {
-            closure(NSError(domain: "", code: 0, userInfo: [:]))
-            return { }
-        }
-        if FileManager.default.fileExists(atPath: url.path) {
-            if autoRemove {
-                do {
-                    try FileManager.default.removeItem(at: url)
-                } catch let error {
-                    closure(error)
-                }
-            } else {
-                closure(NSError(domain: "", code: 1, userInfo: [:]))
-                return { }
-            }
-        }
-        guard let animation = Animation.filepath(jsonURL.path) else {
-            closure(NSError(domain: "", code: 2, userInfo: [:]))
-            return { }
+                          closure: @escaping (_ error: Error?) -> Void) -> (() -> Void)? {
+        guard let animation = Animation.filepath(jsonURL.path), animation.duration > 0 else {
+            closure(NSError(domain: "VCLottieToGIF", code: 1, userInfo: [NSLocalizedFailureReasonErrorKey:"Animation not available"]))
+            return nil
         }
         
         let size = sizeClosure?(animation.size) ?? animation.size
         let fps = fpsClosure?(animation.framerate) ?? animation.framerate
+        
+        if fps <= 0 || size.width <= 0 || size.height <= 0 {
+            closure(NSError(domain: "VCLottieToGIF", code: 2, userInfo: [NSLocalizedFailureReasonErrorKey:"Property not available"]))
+            return nil
+        }
         
         let animationView = AnimationView()
         animationView.contentMode = .scaleAspectFit
@@ -49,48 +37,32 @@ public class VCLottieToGIF: NSObject {
         animationView.frame = CGRect(x: 0, y: 0, width: size.width, height: size.height)
         animationView.setNeedsDisplay()
         
-        if fps <= 0 || animationView.frame.width <= 0 || animationView.frame.height <= 0 {
-            closure(NSError(domain: "", code: 3, userInfo: [:]))
-            return { }
-        }
-        
-        if animation.duration <= 0 {
-            closure(NSError(domain: "", code: 4, userInfo: [:]))
-            return { }
-        }
+        let maker = VCGIFMaker()
+        maker.autoRemove = autoRemove
+        maker.fileProperties = [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]]
+        maker.url = url
+        maker.count = Int(animation.duration * fps)
         
         var isCancel: Bool = false
-        
         DispatchQueue.global().async {
-            let inter: TimeInterval = 1.0 / fps
             let group = DispatchGroup()
-            let count = Int(animation.duration / inter)
-            guard let destination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypeGIF, count, nil) else {
-                closure(NSError(domain: "", code: 5, userInfo: [:]))
-                return
-            }
-            let fileProperties = [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]]
-            let gifProperties = [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFDelayTime: inter]]
-            CGImageDestinationSetProperties(destination, fileProperties as CFDictionary)
-            for index in 0..<count {
-                if isCancel {
-                    CGImageDestinationFinalize(destination)
-                    closure(NSError(domain: "", code: 6, userInfo: [:]))
-                    return
-                }
-                let time = TimeInterval(index) * inter
+            let inter = 1.0 / fps
+            let imageProperties: [CFString : Any] = [kCGImagePropertyGIFDelayTime: inter,
+                                                     kCGImagePropertyGIFUnclampedDelayTime: inter]
+            maker.start { (index: Int) -> VCGIFFeedInfo in
                 group.enter()
+                var cgImage: CGImage?
+                let time = TimeInterval(index) * inter
                 self.animationFrame(animationView: animationView, animationPlayTime: time) { (image) in
-                    if let _image = image {
-                        CGImageDestinationAddImage(destination, _image, gifProperties as CFDictionary?)
-                    }
-                    progessCallback(Double(index + 1) / Double(count))
+                    cgImage = image
                     group.leave()
                 }
                 group.wait()
+                progessCallback(Double(index + 1) / Double(maker.count))
+                return VCGIFFeedInfo(cgImage: cgImage, imageProperties: imageProperties, isCancel: isCancel)
+            } closure: { (error: Error?) in
+                closure(error)
             }
-            CGImageDestinationFinalize(destination)
-            closure(nil)
         }
         return {
             isCancel = true

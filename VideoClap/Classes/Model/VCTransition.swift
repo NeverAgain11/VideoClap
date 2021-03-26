@@ -15,7 +15,7 @@ public class VCTransition: NSObject, NSCopying, NSMutableCopying {
     
     public var range: VCRange = VCRange(left: 0.5, right: 0.5)
     
-    internal var timeRange: CMTimeRange = CMTimeRange.zero
+    public internal(set) var timeRange: CMTimeRange = CMTimeRange.zero
     
     public var transition: VCTransitionProtocol = VCAlphaTransition()
     

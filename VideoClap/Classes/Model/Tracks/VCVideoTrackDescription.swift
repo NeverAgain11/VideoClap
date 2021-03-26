@@ -7,7 +7,7 @@
 
 import AVFoundation
 
-public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescriptionProtocol {
+open class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescriptionProtocol {
     
     public var sourceTimeRange: CMTimeRange = .zero
     
@@ -27,7 +27,7 @@ public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescr
         return nil
     }
     
-    public override func mutableCopy(with zone: NSZone? = nil) -> Any {
+    open override func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCVideoTrackDescription()
         copyObj.mediaURL         = mediaURL
         copyObj.id               = id
@@ -46,11 +46,11 @@ public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescr
         return copyObj
     }
     
-    public override func originImage(time: CMTime, compensateTimeRange: CMTimeRange?) -> CIImage? {
+    open override func originImage(time: CMTime, compensateTimeRange: CMTimeRange?) -> CIImage? {
         return self.originImage(time: time, renderSize: .zero, renderScale: 1.0, compensateTimeRange: compensateTimeRange)
     }
     
-    public override func originImage(time: CMTime, renderSize: CGSize = .zero, renderScale: CGFloat = 1.0, compensateTimeRange: CMTimeRange?) -> CIImage? {
+    open override func originImage(time: CMTime, renderSize: CGSize = .zero, renderScale: CGFloat = 1.0, compensateTimeRange: CMTimeRange?) -> CIImage? {
         locker.object(forKey: #function).lock()
         defer {
             locker.object(forKey: #function).unlock()
@@ -82,7 +82,7 @@ public class VCVideoTrackDescription: VCImageTrackDescription, VCMediaTrackDescr
         return nil
     }
     
-    public override func compositionImage(sourceFrame: CIImage, compositionTime: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage? {
+    open override func compositionImage(sourceFrame: CIImage, compositionTime: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage? {
         let actualRenderSize = renderSize.scaling(renderScale)
         var frame: CIImage = sourceFrame
         // Downsampling

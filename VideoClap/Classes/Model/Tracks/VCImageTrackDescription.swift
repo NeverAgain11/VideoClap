@@ -14,7 +14,7 @@ public enum VCImageLayout: Equatable {
     case rect(VCRect)
 }
 
-public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
+open class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
     
     public var mediaURL: URL? = nil
     
@@ -52,11 +52,11 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         super.init()
     }
     
-    public func copy(with zone: NSZone? = nil) -> Any {
+    open func copy(with zone: NSZone? = nil) -> Any {
         return self
     }
     
-    public func mutableCopy(with zone: NSZone? = nil) -> Any {
+    open func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCImageTrackDescription()
         copyObj.mediaURL         = mediaURL
         copyObj.id               = id
@@ -73,11 +73,11 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         return copyObj
     }
     
-    public func prepare(description: VCVideoDescription) {
+    open func prepare(description: VCVideoDescription) {
         
     }
     
-    public func originImage(time: CMTime, compensateTimeRange: CMTimeRange?) -> CIImage? {
+    open func originImage(time: CMTime, compensateTimeRange: CMTimeRange?) -> CIImage? {
         locker.object(forKey: #function).lock()
         defer {
             locker.object(forKey: #function).unlock()
@@ -86,7 +86,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         return image(url: url, size: nil)
     }
     
-    public func originImage(time: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage? {
+    open func originImage(time: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage? {
         locker.object(forKey: #function).lock()
         defer {
             locker.object(forKey: #function).unlock()
@@ -95,7 +95,7 @@ public class VCImageTrackDescription: NSObject, VCTrackDescriptionProtocol {
         return downsampleImage(url: url, renderSize: renderSize, renderScale: renderScale)
     }
     
-    public func compositionImage(sourceFrame: CIImage, compositionTime: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage? {
+    open func compositionImage(sourceFrame: CIImage, compositionTime: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage? {
         return process(image: sourceFrame, compositionTime: compositionTime, renderSize: renderSize, renderScale: renderScale, compensateTimeRange: compensateTimeRange)
     }
     

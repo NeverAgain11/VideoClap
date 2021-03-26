@@ -130,7 +130,7 @@ open class VCPlayerContainerView: UIView, VCRealTimeRenderTarget, AVPlayerItemOu
         return .zero
     }
     
-    public func draw(compositionTime: CMTime, images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
+    open func draw(compositionTime: CMTime, images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
         var finalFrame: CIImage?
         finalFrame = images.sorted { (lhs, rhs) -> Bool in
             return lhs.value.indexPath > rhs.value.indexPath
@@ -158,15 +158,15 @@ open class VCCustomRenderView: VCPlayerContainerView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public override func didReplacePlayerItem(_ playerItem: AVPlayerItem?) {
+    open override func didReplacePlayerItem(_ playerItem: AVPlayerItem?) {
         
     }
     
-    public override func onPlay() {
+    open override func onPlay() {
         
     }
     
-    public override func onPause() {
+    open override func onPause() {
         
     }
     
@@ -188,12 +188,12 @@ open class VCOpenglPlayerContainerView: VCCustomRenderView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public override func layoutSubviews() {
+    open override func layoutSubviews() {
         super.layoutSubviews()
         glkView.frame = fitRect()
     }
     
-    public override func draw(compositionTime: CMTime, images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
+    open override func draw(compositionTime: CMTime, images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
         guard let ciImage = super.draw(compositionTime: compositionTime, images: images, blackImage: blackImage, renderSize: renderSize, renderScale: renderScale) else {
             return nil
         }
@@ -219,12 +219,12 @@ open class VCMetalPlayerContainerView: VCCustomRenderView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public override func layoutSubviews() {
+    open override func layoutSubviews() {
         super.layoutSubviews()
         renderView.frame = fitRect()
     }
     
-    public override func draw(compositionTime: CMTime, images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
+    open override func draw(compositionTime: CMTime, images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
         guard let ciImage = super.draw(compositionTime: compositionTime, images: images, blackImage: blackImage, renderSize: renderSize, renderScale: renderScale) else {
             return nil
         }
@@ -267,7 +267,7 @@ open class VCSampleBufferDisplayPlayerContainerView: VCCustomRenderView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public override func layoutSubviews() {
+    open override func layoutSubviews() {
         super.layoutSubviews()
         sampleBufferDisplayLayer.frame = fitRect()
         if let _player = self.player {
@@ -279,7 +279,7 @@ open class VCSampleBufferDisplayPlayerContainerView: VCCustomRenderView {
         }
     }
     
-    public override func draw(compositionTime: CMTime, images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
+    open override func draw(compositionTime: CMTime, images: [String : CIImage], blackImage: CIImage, renderSize: CGSize, renderScale: CGFloat) -> CIImage? {
         guard let ciImage = super.draw(compositionTime: compositionTime, images: images, blackImage: blackImage, renderSize: renderSize, renderScale: renderScale) else {
             return nil
         }

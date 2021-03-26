@@ -11,7 +11,11 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
     
     public weak var renderTarget: VCRenderTarget?
     
-    public func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, renderContext: AVVideoCompositionRenderContext, finish: (CIImage?) -> Void) {
+    public required override init() {
+        super.init()
+    }
+    
+    open func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, renderContext: AVVideoCompositionRenderContext, finish: (CIImage?) -> Void) {
         guard let renderTarget = self.renderTarget else {
             finish(nil)
             return
@@ -95,7 +99,7 @@ open class VCRequestCallbackHandler: NSObject, VCRequestCallbackHandlerProtocol 
         finish(finalFrame)
     }
     
-    public func handle(audioTrack: VCAudioTrackDescription,
+    open func handle(audioTrack: VCAudioTrackDescription,
                        timeRange: CMTimeRange,
                        inCount: CMItemCount,
                        inFlag: MTAudioProcessingTapFlags,

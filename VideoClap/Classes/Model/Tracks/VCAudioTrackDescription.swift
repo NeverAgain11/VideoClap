@@ -7,7 +7,7 @@
 
 import AVFoundation
 
-public class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol {
+open class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol {
     
     public var sourceTimeRange: CMTimeRange = .zero
     
@@ -35,11 +35,11 @@ public class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol 
         super.init()
     }
     
-    public func copy(with zone: NSZone? = nil) -> Any {
+    open func copy(with zone: NSZone? = nil) -> Any {
         return self
     }
     
-    public func mutableCopy(with zone: NSZone? = nil) -> Any {
+    open func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCAudioTrackDescription()
         copyObj.mediaURL                    = mediaURL
         copyObj.id                          = id
@@ -52,7 +52,7 @@ public class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol 
         return copyObj
     }
     
-    public func prepare(description: VCVideoDescription) {
+    open func prepare(description: VCVideoDescription) {
 
     }
     

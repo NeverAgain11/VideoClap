@@ -34,6 +34,17 @@ public class VCPlayer: SSPlayer {
         }
     }
     
+    public var customRequestCallbackHandlerClass: VCRequestCallbackHandler.Type = VCRequestCallbackHandler.self {
+        didSet {
+            let oldRequestCallbackHandler = videoClap.requestCallbackHandler
+            oldRequestCallbackHandler.renderTarget = nil
+            
+            let newRequestCallbackHandler = customRequestCallbackHandlerClass.init()
+            newRequestCallbackHandler.renderTarget = realTimeRenderTarget
+            videoClap.requestCallbackHandler = newRequestCallbackHandler
+        }
+    }
+    
     public override func replaceCurrentItem(with item: AVPlayerItem?) {
         super.replaceCurrentItem(with: item)
         realTimeRenderTarget?.didReplacePlayerItem(item)
@@ -62,8 +73,8 @@ public class VCPlayer: SSPlayer {
             
             let oldRequestCallbackHandler = videoClap.requestCallbackHandler
             oldRequestCallbackHandler.renderTarget = nil
-
-            let newRequestCallbackHandler = VCRequestCallbackHandler()
+            
+            let newRequestCallbackHandler = customRequestCallbackHandlerClass.init()
             newRequestCallbackHandler.renderTarget = realTimeRenderTarget
             videoClap.requestCallbackHandler = newRequestCallbackHandler
             
