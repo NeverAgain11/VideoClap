@@ -103,6 +103,10 @@ TODO: Add long description of the pod here.
       ss.source_files = 'VideoClap/Classes/Metal/**/*'
   end
   
+  s.subspec 'ParticleSystem' do |ss|
+      ss.source_files = 'VideoClap/Classes/ParticleSystem/**/*'
+  end
+  
 #  s.pod_target_xcconfig = {
 #    'MTL_COMPILER_FLAGS' => '-fcikernel',
 #    'MTLLINKER_FLAGS' => '-cikernel',

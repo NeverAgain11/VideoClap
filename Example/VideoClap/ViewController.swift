@@ -71,12 +71,12 @@ class ViewController: UIViewController {
     }()
     
     lazy var exportButton: UIBarButtonItem = {
-        let item = UIBarButtonItem(title: "导出", style: .plain, target: self, action: #selector(exportButtonDidTap))
+        let item = UIBarButtonItem(title: "Export", style: .plain, target: self, action: #selector(exportButtonDidTap))
         return item
     }()
     
     lazy var addButton: UIBarButtonItem = {
-        let item = UIBarButtonItem(title: "添加", style: .plain, target: self, action: #selector(addButtonDidTap))
+        let item = UIBarButtonItem(title: "Add", style: .plain, target: self, action: #selector(addButtonDidTap))
         return item
     }()
     
@@ -103,7 +103,8 @@ class ViewController: UIViewController {
         setupUI()
         videoDescription.fps = 24.0
         videoDescription.renderScale = UIScreen.main.scale
-        videoDescription.renderSize = CGSize(width: view.bounds.width * ratio, height: view.bounds.width)
+        let length: CGFloat = min(view.bounds.width, view.bounds.height)
+        videoDescription.renderSize = CGSize(width: length * ratio, height: length)
 
         do {
             let track = VCImageTrackDescription()
@@ -130,6 +131,30 @@ class ViewController: UIViewController {
             track.timeMapping = CMTimeMapping(source: source, target: target)
             track.mediaURL = resourceURL(filename: "video0.mp4")
             track.lutImageURL = resourceURL(filename: "lut_filter_27.jpg")
+            trackBundle.videoTracks.append(track)
+        }
+        
+        do {
+            let track = VCChromaKeyVideoTrackDescription()
+            track.indexPath = IndexPath(item: 3, section: 900)
+            track.id = "chromaKeyVideoTrack"
+            track.imageLayout = .fill
+            let source = CMTimeRange(start: 0.0, duration: 5.0)
+            let target = CMTimeRange(start: 0.0, duration: 5.0)
+            track.timeMapping = CMTimeMapping(source: source, target: target)
+            track.mediaURL = resourceURL(filename: "AMS__Big_Explosion.mov")
+            trackBundle.videoTracks.append(track)
+        }
+        
+        do {
+            let track = VCChromaKeyVideoTrackDescription()
+            track.keyType = .brightness(VCRange(left: 0.0, right: 0.0))
+            track.indexPath = IndexPath(item: 3, section: 900)
+            track.id = "chromaKeyVideoTrack1"
+            let source = CMTimeRange(start: 0.0, duration: 5.0)
+            let target = CMTimeRange(start: 5.0, duration: 5.0)
+            track.timeMapping = CMTimeMapping(source: source, target: target)
+            track.mediaURL = resourceURL(filename: "moving_flares.mov")
             trackBundle.videoTracks.append(track)
         }
         
@@ -219,9 +244,13 @@ class ViewController: UIViewController {
             textTrack.id = "textTrack"
             textTrack.imageLayout = .center(CGPoint(x: 0.5, y: 0.5))
             textTrack.timeRange = CMTimeRange(start: 0.0, end: 10.0)
-            textTrack.textEffectProvider = VCRotationTextEffect(rotationType: .rotate(25.0))
+//            textTrack.textEffectProvider = VCRotationTextEffect(rotationType: .rotate(25.0))
+            textTrack.textEffectProvider = VCTypewriterEffect()
 //            textTrack.rotateRadian = .pi * 0.15
-            textTrack.text = AttributedStringBuilder(text: "按键或把手把字和符号打印在纸上的机械，有手打和电打两种。\n在大多数办公室，电脑已经取代了打字机。\n她拿起一张纸，把它哗哗啦啦地塞到打字机中。")
+            textTrack.text = AttributedStringBuilder(text: """
+                                                            A typewriter is a mechanical or electromechanical machine for typing
+                                                            characters similar to those produced by a printer's movable type.
+                                                            """)
 //                .addAttributes(value: [.foregroundColor : UIColor.clear, .font : UIFont.systemFont(ofSize: 90, weight: .bold), .strokeWidth: -3.0, .strokeColor: UIColor.blue])
                 .addAttributes(value: [.foregroundColor : UIColor.red, .font : UIFont.systemFont(ofSize: 40, weight: .bold)])
                 .build()
@@ -231,7 +260,7 @@ class ViewController: UIViewController {
         do {
             let gifTrack = VCGIFTrackDescription()
             gifTrack.indexPath = IndexPath(item: 0, section: 1001)
-            let rect = VCRect(x: 0.5, y: 0.5, width: .random(in: 0..<1.0), height: .random(in: 0..<1.0))
+            let rect = VCRect(x: 0.5, y: 0.5, width: 0.2, height: 0.2)
             gifTrack.imageLayout = .rect(rect)
             gifTrack.id = "gifTrack"
             gifTrack.timeRange = CMTimeRange(start: 0.0, end: 10.0)
@@ -330,7 +359,7 @@ class ViewController: UIViewController {
     func addTransition(_ trasition: VCTransition) {
         trasition.fromTrack = videoDescription.trackBundle.imageTracks.first(where: { $0.id == "imageTrack" })
         trasition.toTrack = videoDescription.trackBundle.videoTracks.first(where: { $0.id == "videoTrack" })
-        trasition.range = VCRange(left: 0.5, right: 0.5)
+        trasition.rangeType = .overlapOrRange(VCRange(left: 0.5, right: 0.5))
         videoDescription.transitions = [trasition]
     }
     
@@ -539,7 +568,9 @@ extension ViewController {
         view.addSubview(timelabel)
         containerView.snp.makeConstraints { (make) in
             make.top.equalToSuperview().offset(2)
-            make.left.right.equalToSuperview()
+            let length = min(view.bounds.width, view.bounds.height)
+            make.centerX.equalToSuperview()
+            make.width.equalTo(length)
             make.height.equalTo(containerView.snp.width)
         }
         slider.snp.makeConstraints { (make) in

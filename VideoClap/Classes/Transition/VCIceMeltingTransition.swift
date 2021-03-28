@@ -19,7 +19,7 @@ open class VCIceMeltingTransition: NSObject, VCTransitionProtocol {
     public func transition(renderSize: CGSize, progress: Float, fromImage: CIImage, toImage: CIImage) -> CIImage? {
         var finalImage: CIImage?
         
-        let filter = VCIceMeltingFilter()
+        let filter = VCIcebreakerFilter()
         filter.inputImage = fromImage
         filter.inputTargetImage = toImage
         filter.inputTime = NSNumber(value: progress)

@@ -39,7 +39,7 @@
 		8A138D5F2554D55B0088ECA8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		8A138D622554D55B0088ECA8 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		8A138D642554D55B0088ECA8 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		8A138D832554D7010088ECA8 /* Mat */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Mat; path = ../../../../Mat; sourceTree = "<group>"; };
+		8A138D832554D7010088ECA8 /* Mat */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Mat; path = ../../../Mat; sourceTree = "<group>"; };
 		8A31C81925F77FB400467376 /* MetalImageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalImageViewController.swift; sourceTree = "<group>"; };
 		8A8CE53A255176E0002E935C /* Util.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Util.swift; sourceTree = "<group>"; };
 		8A8D9FCB25E338040015113A /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };

@@ -21,8 +21,8 @@ public class VCGIFMaker: NSObject {
     public var fileProperties: [CFString : Any]? = nil
     public var count: Int = 0
     
-    func start(feedClosure: (Int) -> VCGIFFeedInfo,
-               closure: @escaping (_ error: Error?) -> Void) {
+    public func start(feedClosure: (Int) -> VCGIFFeedInfo,
+                      closure: @escaping (_ error: Error?) -> Void) {
         guard let url = self.url else { return }
         if autoRemove, FileManager.default.fileExists(atPath: url.path) {
             do {

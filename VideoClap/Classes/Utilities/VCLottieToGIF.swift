@@ -78,13 +78,16 @@ public class VCLottieToGIF: NSObject {
             animationView.currentTime = animationPlayTime
             let bounds = animationView.layer.bounds
             let snapshotLayer = animationView.layer
-            DispatchQueue.global().async {
-                let renderer = VCGraphicsRenderer()
-                renderer.rendererRect = bounds
-                let image = renderer.cgImage { (cgcontext) in
-                    snapshotLayer.render(in: cgcontext)
+            snapshotLayer.setNeedsDisplay()
+            DispatchQueue.main.async {
+                DispatchQueue.global().async {
+                    let renderer = VCGraphicsRenderer()
+                    renderer.rendererRect = bounds
+                    let image = renderer.cgImage { (cgcontext) in
+                        snapshotLayer.render(in: cgcontext)
+                    }
+                    handler(image)
                 }
-                handler(image)
             }
         }
     }

@@ -24,6 +24,7 @@ PODS:
     - VideoClap/Metal (= 0.1.0)
     - VideoClap/MetalLibs (= 0.1.0)
     - VideoClap/Model (= 0.1.0)
+    - VideoClap/ParticleSystem (= 0.1.0)
     - VideoClap/Protocol (= 0.1.0)
     - VideoClap/TextEffect (= 0.1.0)
     - VideoClap/Trajectory (= 0.1.0)
@@ -95,6 +96,13 @@ PODS:
     - SwiftyTimer (~> 2.1.0)
     - VideoClap/Model/Tracks (= 0.1.0)
   - VideoClap/Model/Tracks (0.1.0):
+    - lottie-ios (~> 3.1.9)
+    - SDWebImage (~> 5.10.0)
+    - SnapKit (~> 4.2.0)
+    - SSPlayer (~> 0.1.0)
+    - SwiftyBeaver (~> 1.9.3)
+    - SwiftyTimer (~> 2.1.0)
+  - VideoClap/ParticleSystem (0.1.0):
     - lottie-ios (~> 3.1.9)
     - SDWebImage (~> 5.10.0)
     - SnapKit (~> 4.2.0)
@@ -179,7 +187,7 @@ SPEC CHECKSUMS:
   SSPlayer: 6299c67bde2d7a5f64292dccac0e6ddd45bfdd91
   SwiftyBeaver: 2e8acd6fc90c6d0a27055867a290794926d57c02
   SwiftyTimer: 02dd6cf10cbc71cbf67cec494f6e5eb782102543
-  VideoClap: f39d731962ee52e543aea626de352dc644e354b3
+  VideoClap: dd5aa3f55d217c2269e27668b7b93c4e21ed8b9c
 
 PODFILE CHECKSUM: ffb2f90b3cdb048a859997b098a964cd0c598efb
 

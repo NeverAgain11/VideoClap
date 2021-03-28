@@ -8,33 +8,33 @@
 import Foundation
 import CoreText
 
-class SCTRun: NSObject {
+open class SCTRun: NSObject {
     
-    let run: CTRun
-    let line: SCTLine
-    let frame: SCTFrame
+    public let run: CTRun
+    public let line: SCTLine
+    public let frame: SCTFrame
     
-    override var description: String {
+    open override var description: String {
         return "\(run)"
     }
     
-    override var debugDescription: String {
+    open override var debugDescription: String {
         return "\(run)"
     }
     
-    var glyphCount: CFIndex {
+    public var glyphCount: CFIndex {
         return CTRunGetGlyphCount(run)
     }
     
-    var attributes: NSDictionary {
+    public var attributes: NSDictionary {
         return CTRunGetAttributes(run)
     }
     
-    var status: CTRunStatus {
+    public var status: CTRunStatus {
         return CTRunGetStatus(run)
     }
     
-    var glyphsGroup: [CGGlyph] {
+    public var glyphsGroup: [CGGlyph] {
         return [CGGlyph](unsafeUninitializedCapacity: glyphCount) { (bufferPointer, count) in
             if let address = bufferPointer.baseAddress {
                 CTRunGetGlyphs(run, CFRange(), address)
@@ -43,23 +43,23 @@ class SCTRun: NSObject {
         }
     }
     
-    var glyphsPtr: UnsafePointer<CGGlyph>? {
+    public var glyphsPtr: UnsafePointer<CGGlyph>? {
         CTRunGetGlyphsPtr(run)
     }
     
-    var stringRange: CFRange {
+    public var stringRange: CFRange {
         return CTRunGetStringRange(run)
     }
     
-    var font: UIFont? {
+    public var font: UIFont? {
         return attributes[kCTFontAttributeName] as? UIFont
     }
     
-    var foregroundColor: UIFont? {
+    public var foregroundColor: UIFont? {
         return attributes[kCTForegroundColorAttributeName] as? UIFont
     }
     
-    var glyphPositions: [CGPoint] {
+    public var glyphPositions: [CGPoint] {
         return [CGPoint](unsafeUninitializedCapacity: glyphCount) { (bufferPointer, count) in
             if let address = bufferPointer.baseAddress {
                 CTRunGetPositions(run, CFRange(), address)
@@ -68,14 +68,14 @@ class SCTRun: NSObject {
         }
     }
     
-    init(frame: SCTFrame, line: SCTLine, run: CTRun) {
+    public init(frame: SCTFrame, line: SCTLine, run: CTRun) {
         self.frame = frame
         self.line = line
         self.run = run
         super.init()
     }
     
-    func getGlyphs(range: CFRange) -> [CGGlyph] {
+    public func getGlyphs(range: CFRange) -> [CGGlyph] {
         var group: [CGGlyph] = .init(repeating: CGGlyph(), count: range.length)
         CTRunGetGlyphs(run, range, &group)
         return group

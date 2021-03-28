@@ -11,7 +11,8 @@ import CoreImage
 open class VCHeartFilter: CIFilter {
     
     private static let sourceCode = """
-
+    // Author: gre
+    // License: MIT
     float inHeart (vec2 p, vec2 center, float size, float2 renderSize) {
         if (size==0.0) return 0.0;
         float ratio = renderSize.x / renderSize.y;

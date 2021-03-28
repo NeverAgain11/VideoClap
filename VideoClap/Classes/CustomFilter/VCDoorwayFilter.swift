@@ -11,6 +11,8 @@ import CoreImage
 open class VCDoorwayFilter: CIFilter {
     
     private static let sourceCode = """
+    // author: gre
+    // License: MIT
     #define black vec4(0.0, 0.0, 0.0, 1.0)
     #define boundMin vec2(0.0, 0.0)
     #define boundMax vec2(1.0, 1.0)

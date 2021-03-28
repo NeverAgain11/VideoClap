@@ -5,9 +5,23 @@
 [![License](https://img.shields.io/cocoapods/l/VideoClap.svg?style=flat)](https://cocoapods.org/pods/VideoClap)
 [![Platform](https://img.shields.io/cocoapods/p/VideoClap.svg?style=flat)](https://cocoapods.org/pods/VideoClap)
 
+VideoClap is a library for video composition.
+
 ## Example
 
-To run the example project, clone the repo, and run `pod install` from the Example directory first.
+To run the example project, clone the repo, and run `pod install` from the Example directory first. Use download script or copy your resources file to `Mat` folder, you may need to create a `Mat` folder and rename your resources file by yourself. 
+
+## Features
+
+* Add watermark
+* Add effect to image or video
+* Change the speed of the video or audio
+* Add dynamic sticker or still sticker
+* Add text
+* Transition between two image or video
+* Audio effect
+* Text effect
+* Convert lottie animation to gif
 
 ## Requirements
 

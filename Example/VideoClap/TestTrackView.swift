@@ -40,8 +40,8 @@ class TestTrackView: UIViewController {
         do {
             for index in 0..<30 {
                 let videoTrack = VCVideoTrackDescription()
-                let source = CMTimeRange(start: 0, end: 50)
-                let target = CMTimeRange(start: TimeInterval(index) * 50.0, duration: 50)
+                let source = CMTimeRange(start: 0, end: 15)
+                let target = CMTimeRange(start: TimeInterval(index) * 15.0, duration: 15)
                 videoTrack.timeMapping = CMTimeMapping(source: source, target: target)
                 videoTrack.mediaURL = resourceURL(filename: "video0.mp4")
                 let model = VCImageTrackViewModel()
@@ -135,7 +135,12 @@ class TestTrackView: UIViewController {
     }
     
     public func visibleRect() -> CGRect {
-        let rect = CGRect(x: max(0, scrollView.contentOffset.x), y: 0, width: scrollView.bounds.width, height: scrollView.bounds.height)
+        var rect = scrollView.convert(mainTrackView.frame, to: scrollView.superview.unsafelyUnwrapped)
+        let width = scrollView.superview.unsafelyUnwrapped.bounds.intersection(rect).width
+        rect.origin.x = max(0, scrollView.contentOffset.x)
+        rect.origin.y = 0
+        rect.size.width = width
+        rect.size.height = mainTrackView.bounds.height
         return rect
     }
     

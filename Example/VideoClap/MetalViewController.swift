@@ -254,6 +254,7 @@ extension MetalViewController: MTKViewDelegate {
             renderEncoder.endEncoding()
             commandBuffer.present(drawable)
             commandBuffer.commit()
+            view.draw()
         }
         
         do {

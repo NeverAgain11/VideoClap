@@ -8,11 +8,11 @@
 import Foundation
 import simd
 
-public class VCTypewriterEffect: NSObject, VCTextEffectProviderProtocol {
+open class VCTypewriterEffect: NSObject, VCTextEffectProviderProtocol {
     
     public var isFadeIn: Bool = false
     
-    public func effectImage(context: VCTextEffectRenderContext) -> CIImage? {
+    open func effectImage(context: VCTextEffectRenderContext) -> CIImage? {
         let length = CGFloat(context.text.length) * context.progress
         let textRange = NSRange(location: 0, length: Int(length))
         if textRange.length == .zero {

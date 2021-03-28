@@ -9,7 +9,13 @@ import UIKit
 import SnapKit
 import AVFoundation
 
+public protocol VCTimeScaleViewDelegate: NSObject {
+    func cellModel(model: VCTimeScaleCellModel, index: Int)
+}
+
 public class VCTimeScaleView: UIView {
+    
+    public weak var delegate: VCTimeScaleViewDelegate?
     
     public let timeControl: VCTimeControl
     
@@ -62,6 +68,7 @@ public class VCTimeScaleView: UIView {
             cell.keyTimeLabel.sizeToFit()
             cell.dotLabel.center = attribute.frame.center
             cell.keyTimeLabel.center = CGPoint(x: attribute.frame.minX, y: attribute.frame.midY)
+            delegate?.cellModel(model: cell, index: attribute.indexPath.item)
             return cell
         }
         cellModels = newCells

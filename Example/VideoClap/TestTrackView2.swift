@@ -188,7 +188,12 @@ class TestTrackView2: UIViewController {
     }
     
     public func visibleRect() -> CGRect {
-        let rect = CGRect(x: max(0, scrollView.contentOffset.x), y: 0, width: scrollView.bounds.width, height: scrollView.bounds.height)
+        var rect = scrollView.convert(mainTrackView.frame, to: scrollView.superview.unsafelyUnwrapped)
+        let width = scrollView.superview.unsafelyUnwrapped.bounds.intersection(rect).width
+        rect.origin.x = max(0, scrollView.contentOffset.x)
+        rect.origin.y = 0
+        rect.size.width = width
+        rect.size.height = mainTrackView.bounds.height
         return rect
     }
     

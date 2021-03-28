@@ -12,7 +12,8 @@ import CoreImage
 open class VCSpreadTransitionFilter: CIFilter {
     
     private static let sourceCode = """
-
+    // https://www.shadertoy.com/view/lsf3RH
+    // Created by Trisomie21 
     float snoise(vec3 uv, float res) {
         const vec3 s = vec3(1e0, 1e2, 1e3);
         

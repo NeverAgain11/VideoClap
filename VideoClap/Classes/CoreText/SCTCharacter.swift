@@ -7,20 +7,20 @@
 
 import Foundation
 
-class SCTCharacter: NSObject {
+open class SCTCharacter: NSObject {
     
-    override var debugDescription: String {
+    open override var debugDescription: String {
         return "character: \(character), frame: \(frame)"
     }
     
-    override var description: String {
+    open override var description: String {
         return "character: \(character), frame: \(frame)"
     }
     
-    let character: NSAttributedString
-    var frame: CGRect
+    public let character: NSAttributedString
+    public var frame: CGRect
     
-    init(character: NSAttributedString, frame: CGRect) {
+    public init(character: NSAttributedString, frame: CGRect) {
         self.character = character
         self.frame = frame
         super.init()

@@ -12,7 +12,8 @@ import CoreImage
 open class VCCubeFilter: CIFilter {
     
     private static let sourceCode = """
-
+    // Author: gre
+    // License: MIT
     vec4 getColor(sampler image, vec2 coord) {
         return sample(image, coord);
     }

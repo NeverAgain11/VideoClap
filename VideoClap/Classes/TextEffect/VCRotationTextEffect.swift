@@ -13,7 +13,7 @@ public enum RotationType {
     case rotate(CGFloat)
 }
 
-public class VCRotationTextEffect: NSObject, VCTextEffectProviderProtocol {
+open class VCRotationTextEffect: NSObject, VCTextEffectProviderProtocol {
     
     private struct Items {
         var image: CIImage
@@ -27,7 +27,7 @@ public class VCRotationTextEffect: NSObject, VCTextEffectProviderProtocol {
         self.rotationType = rotationType
     }
     
-    public func effectImage(context: VCTextEffectRenderContext) -> CIImage? {
+    open func effectImage(context: VCTextEffectRenderContext) -> CIImage? {
         var _angle: CGFloat = .zero
         switch rotationType {
         case .custom(let angle):

@@ -10,6 +10,12 @@ import UIKit
 
 public class VCTimeScaleScrollView: UIScrollView, PinchGRHandler {
     
+    public weak var scaleViewDelegate: VCTimeScaleViewDelegate? {
+        didSet {
+            contentView.delegate = scaleViewDelegate
+        }
+    }
+    
     public lazy var timeControl: VCTimeControl = {
         let timeControl: VCTimeControl = .init()
         return timeControl

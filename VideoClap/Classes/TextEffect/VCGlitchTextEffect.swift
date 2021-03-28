@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class VCGlitchTextEffect: NSObject, VCTextEffectProviderProtocol {
+open class VCGlitchTextEffect: NSObject, VCTextEffectProviderProtocol {
     
     public var blendMode: CGBlendMode = .lighten
     
@@ -17,7 +17,7 @@ public class VCGlitchTextEffect: NSObject, VCTextEffectProviderProtocol {
     
     public var maxOffsetX: CGFloat = 15.0
     
-    public func effectImage(context: VCTextEffectRenderContext) -> CIImage? {
+    open func effectImage(context: VCTextEffectRenderContext) -> CIImage? {
         if let textImage = textImage(context: context, rect: CGRect(origin: .zero, size: context.textSize)) {
             let image = compositionImage(originImage: textImage, random(), x2: random(), x3: random(), bounds: textImage.extent)
             

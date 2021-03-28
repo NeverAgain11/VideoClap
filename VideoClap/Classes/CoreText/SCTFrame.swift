@@ -8,17 +8,17 @@
 import Foundation
 import CoreText
 
-class SCTFrame: NSObject {
+open class SCTFrame: NSObject {
     
-    let attrString: NSAttributedString
-    let ctFrame: CTFrame
-    let framesetter: SCTFramesetter
+    public let attrString: NSAttributedString
+    public let ctFrame: CTFrame
+    public let framesetter: SCTFramesetter
     
-    override var description: String {
+    open override var description: String {
         return "\(ctFrame)"
     }
     
-    override var debugDescription: String {
+    open override var debugDescription: String {
         return "\(ctFrame)"
     }
     
