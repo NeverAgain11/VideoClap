@@ -12,7 +12,8 @@ import CoreImage
 open class VCCubeFilter: CIFilter {
     
     private static let sourceCode = """
-
+    // Author: gre
+    // License: MIT
     vec4 getColor(sampler image, vec2 coord) {
         return sample(image, coord);
     }
@@ -78,7 +79,7 @@ open class VCCubeFilter: CIFilter {
         else if (inBounds(toP)) {
             return getColor(inputTargetImage, toP);
         }
-        return vec4(0.0, 0.0, 0.0, 1.0); // FIXME: 返回黑色，暂时修复显示图像异常
+        return vec4(0.0, 0.0, 0.0, 1.0); // FIXME: Return black, avoid displaying strange image
         return bgColor(op, fromP, toP, inputImage, inputTargetImage, reflection, floating);
     }
 

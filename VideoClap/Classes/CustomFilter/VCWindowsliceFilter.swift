@@ -11,7 +11,8 @@ import CoreImage
 open class VCWindowsliceFilter: CIFilter {
     
     private static let sourceCode = """
-
+    // Author: gre
+    // License: MIT
     kernel vec4 transition(sampler inputImage, sampler inputTargetImage, float iTime, float count, float smoothness) {
         vec2 p = samplerCoord(inputImage);
         

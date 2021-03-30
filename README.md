@@ -5,19 +5,76 @@
 [![License](https://img.shields.io/cocoapods/l/VideoClap.svg?style=flat)](https://cocoapods.org/pods/VideoClap)
 [![Platform](https://img.shields.io/cocoapods/p/VideoClap.svg?style=flat)](https://cocoapods.org/pods/VideoClap)
 
+VideoClap is a library for video composition.
+
 ## Example
 
-To run the example project, clone the repo, and run `pod install` from the Example directory first.
+To run the example project, clone the repo, and run `pod install` from the Example directory first. Use download script or copy your resources file to `Mat` folder, you may need to create a `Mat` folder and rename your resources file by yourself. 
+
+## Features
+
+* Add watermark
+* Add effect to image or video
+* Change the speed of the video or audio
+* Add dynamic sticker or still sticker
+* Add text
+* Transition between two image or video
+* Audio effect
+* Text effect
+* Convert lottie animation to gif
 
 ## Requirements
 
+* iOS 9.0 or later
+* Swift 5
+
 ## Installation
 
-VideoClap is available through [CocoaPods](https://cocoapods.org). To install
-it, simply add the following line to your Podfile:
+To install it, simply add the following line to your Podfile:
 
 ```ruby
-pod 'VideoClap', :git => 'https://github.com/lai001/VideoClap.git', :commit => 'db12328faed93fbaa71bf5d449b2da3e7a68565f'
+pod 'VideoClap', :git => 'https://github.com/lai001/VideoClap.git', :commit => 'f141572a0be05f3d41fa5f721da50bc4c5b3d075'
+
+def config_rule(new_rule, file_patterns, output_files, script)
+  new_rule.name = "Files '#{file_patterns}' using Script"
+  new_rule.compiler_spec = 'com.apple.compilers.proxy.script'
+  new_rule.file_patterns = file_patterns
+  new_rule.file_type = 'pattern.proxy'
+  new_rule.is_editable = '1'
+  new_rule.output_files = output_files
+  new_rule.input_files = []
+  new_rule.output_files_compiler_flags = []
+  new_rule.script = script
+  new_rule.run_once_per_architecture = '0'
+end
+
+def add_build_rule(target_name, project)
+  project.targets.each do |target|
+    if target.name == target_name
+      puts "Updating #{target.name} rules"
+      new_rule0 = project.new(Xcodeproj::Project::Object::PBXBuildRule)
+      config_rule(new_rule0,
+                  '*.ci.metal',
+                  ["$(DERIVED_FILE_DIR)/${INPUT_FILE_BASE}.air"],
+                  "xcrun metal -c -fcikernel \"${INPUT_FILE_PATH}\" -o \"${SCRIPT_OUTPUT_FILE_0}\"\n")
+      new_rule1 = project.new(Xcodeproj::Project::Object::PBXBuildRule)
+      config_rule(new_rule1,
+                  '*.ci.air',
+                  ["$(METAL_LIBRARY_OUTPUT_DIR)/$(INPUT_FILE_BASE).metallib"],
+                  "xcrun metallib -cikernel \"${INPUT_FILE_PATH}\" -o \"${SCRIPT_OUTPUT_FILE_0}\"\n")
+                  
+      target.build_rules.append(new_rule0)
+      target.build_rules.append(new_rule1)
+      project.objects_by_uuid[new_rule0.uuid] = new_rule0
+      project.objects_by_uuid[new_rule1.uuid] = new_rule1
+      project.save()
+    end
+  end
+end
+
+post_install do |installer|
+    add_build_rule("VideoClap", installer.pods_project)
+end
 ```
 
 ## Author

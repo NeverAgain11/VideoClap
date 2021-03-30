@@ -12,8 +12,6 @@ open class VCScaleUpTrajectory: NSObject, VCTrajectoryProtocol {
     
     public var range: VCRange = .init(left: 0.0, right: 1.0)
     
-    public var timeRange: CMTimeRange = .zero
-    
     public var scale: CGFloat = -0.5
     
     public func transition(renderSize: CGSize, progress: CGFloat, image: CIImage) -> CIImage? {

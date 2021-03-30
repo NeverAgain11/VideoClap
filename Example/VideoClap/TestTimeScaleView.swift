@@ -10,11 +10,12 @@ import UIKit
 import VideoClap
 import AVFoundation
 
-class TestTimeScaleView: UIViewController {
+class TestTimeScaleView: UIViewController, VCTimeScaleViewDelegate {
     
     lazy var timeScaleView: VCTimeScaleScrollView = {
         let view = VCTimeScaleScrollView()
         view.backgroundColor = UIColor.lightGray
+        view.scaleViewDelegate = self
         return view
     }()
     
@@ -39,7 +40,7 @@ class TestTimeScaleView: UIViewController {
         timeScaleView.contentInset.left = timeScaleView.bounds.width / 2.0
         timeScaleView.contentInset.right = timeScaleView.contentInset.left
         
-        timeScaleView.setTime(currentTime: .zero, duration: CMTime(seconds: 100, preferredTimescale: 600))
+        timeScaleView.setTime(currentTime: .zero, duration: CMTime(seconds: TimeInterval(Int.max), preferredTimescale: 600))
         timeScaleView.setScale(60)
         
         view.addGestureRecognizer(pinchGR)
@@ -55,6 +56,11 @@ class TestTimeScaleView: UIViewController {
         if sender.state == .changed {
             sender.scale = 1.0
         }
+    }
+    
+    func cellModel(model: VCTimeScaleCellModel, index: Int) {
+        model.keyTimeLabel.textColor = .white
+        model.dotLabel.textColor = .white
     }
     
 }

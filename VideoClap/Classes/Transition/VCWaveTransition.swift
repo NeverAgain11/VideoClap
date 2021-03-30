@@ -22,7 +22,7 @@ open class VCWaveTransition: NSObject, VCTransitionProtocol {
         filter.inputImage = fromImage
         filter.inputTargetImage = toImage
         filter.inputTime = NSNumber(value: progress)
-        
+        filter.renderSize = CIVector(x: renderSize.width, y: renderSize.height)
         finalImage = filter.outputImage
         
         return finalImage

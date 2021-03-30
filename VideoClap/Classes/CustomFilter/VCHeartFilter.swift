@@ -11,34 +11,39 @@ import CoreImage
 open class VCHeartFilter: CIFilter {
     
     private static let sourceCode = """
-
+    // Author: gre
+    // License: MIT
     float inHeart (vec2 p, vec2 center, float size, float2 renderSize) {
         if (size==0.0) return 0.0;
         float ratio = renderSize.x / renderSize.y;
-            
+
         vec2 o = (p-center)/(1.6*size);
         o.x *= ratio;
+        
         float a = o.x*o.x+o.y*o.y - 0.3;
         return step(a*a*a, o.x*o.x*o.y*o.y*o.y);
     }
 
     kernel vec4 transition (sampler inputImage, sampler inputTargetImage, float progress, float2 renderSize) {
-        vec2 uv0 = samplerCoord(inputImage);
-        vec2 uv1 = samplerCoord(inputTargetImage);
+        vec2 dc = destCoord();
+        vec2 uv0 = samplerTransform(inputImage, dc);
+        vec2 uv1 = samplerTransform(inputTargetImage, dc);
 
         vec4 texture0Color = sample(inputImage, uv0);
         vec4 texture1Color = sample(inputTargetImage, uv1);
-
+        
         return mix(
             texture0Color,
             texture1Color,
-            inHeart(uv0, vec2(0.5, 0.4), progress, renderSize)
+            inHeart(dc / renderSize, vec2(0.5, 0.4), progress, renderSize)
         );
     }
 
     """
     
     private static let kernel: CIKernel? = {
+        let ker = CIKernel(source: sourceCode)
+        
         return CIKernel(source: sourceCode)
     }()
     

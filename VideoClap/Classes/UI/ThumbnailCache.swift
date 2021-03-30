@@ -8,16 +8,26 @@
 import Foundation
 import SDWebImage
 
-class ThumbnailCache: SDImageCache {
+public class ThumbnailCache: NSObject {
     
-    private static let _shared: SDImageCache = {
-        let cache = SDImageCache()
-        cache.config.maxMemoryCost = UInt(Float(ProcessInfo().physicalMemory) * 0.1)
+    public static let shared = ThumbnailCache()
+    
+    private lazy var cache: SDImageCache = {
+        let cache = SDImageCache(namespace: "ThumbnailCache", diskCacheDirectory: nil, config: SDImageCacheConfig())
+        cache.config.maxMemoryCost = 50
         return cache
     }()
     
-    override class var shared: SDImageCache {
-        return _shared
+    public func image(forKey key: String?) -> UIImage? {
+        return cache.imageFromCache(forKey: key)
+    }
+    
+    public func storeImage(toMemory image: UIImage?, forKey key: String?) {
+        cache.storeImage(toMemory: image, forKey: key)
+    }
+    
+    public func clearCache() {
+        cache.clear(with: .all, completion: nil)
     }
     
 }

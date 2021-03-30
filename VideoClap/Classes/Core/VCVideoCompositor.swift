@@ -25,25 +25,31 @@ internal class VCVideoCompositor: NSObject {
     
     internal static let MediaTrackIDHeader = CMPersistentTrackID(3000)
     
-    private var videoDescription: VCVideoDescription {
-        return requestCallbackHandler.videoDescription
-    }
+    internal var videoDescription: VCVideoDescription
     
     private lazy var blackVideoAsset: AVURLAsset = {
-        let url = VCHelper.bundle().url(forResource: "black30s.mov", withExtension: nil) ?? URL(fileURLWithPath: "")
+        let url = VCHelper.bundle().url(forResource: "black30s_60fps.mov", withExtension: nil) ?? URL(fileURLWithPath: "")
         return AVURLAsset(url: url)
     }()
     
-    private var requestCallbackHandler: VCRequestCallbackHandlerProtocol
+    internal var requestCallbackHandler: VCRequestCallbackHandlerProtocol
     
-    init(requestCallbackHandler: VCRequestCallbackHandlerProtocol) {
+    init(requestCallbackHandler: VCRequestCallbackHandlerProtocol, videoDescription: VCVideoDescription) {
         self.requestCallbackHandler = requestCallbackHandler
+        self.videoDescription = videoDescription
     }
     
-    internal func playerItemForPlay() throws -> AVPlayerItem {
+    internal func makePlayerItem(customVideoCompositorClass: AVVideoCompositing.Type? = VCVideoCompositing.self) throws -> AVPlayerItem {
         let composition = AVMutableComposition(urlAssetInitializationOptions: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
-        
-        let videoDuration = estimateOtherTracksDuration()
+        let transitionDuration = videoDescription.transitions.reduce(CMTime.zero) { (result, transition) -> CMTime in
+            switch transition.rangeType {
+            case .overlapOrRange(_):
+                return result
+            case .timeRange(let timeRange):
+                return result + timeRange.duration
+            }
+        }
+        let videoDuration = estimateOtherTracksDuration() + transitionDuration
         guard let compositionTrack = self.compositionTrack(at: composition, withMediaType: .video, trackID: VCVideoCompositor.EmptyVideoTrackID) else {
             throw VCVideoCompositorError.internalError
         }
@@ -63,13 +69,9 @@ internal class VCVideoCompositor: NSObject {
         try addEmptyTrack(timeRange: CMTimeRange(start: .zero, duration: max(composition.duration, videoDuration)), onCompositionTrack: compositionTrack)
         
         var audioMixInputParametersGroup: [AVMutableAudioMixInputParameters] = []
-        
         for (_, trackInfos) in existAudioTrackDic {
             for audioTrack in trackInfos {
-                if let compositionTrack = audioTrack.compositionTrack,
-                    let inputParameters = addAudioMix(audioTrack: compositionTrack,
-                                                     audioTrackID: audioTrack.persistentTrackID,
-                                                     track: audioTrack) {
+                if let inputParameters = addAudioMix(track: audioTrack) {
                     audioMixInputParametersGroup.append(inputParameters)
                 }
             }
@@ -92,17 +94,13 @@ internal class VCVideoCompositor: NSObject {
             instructions.append(emptyInstruction)
         }
         
-        let videoComposition = buildVideoComposition(videoDescription: videoDescription, instructions: instructions)
+        let videoComposition = buildVideoComposition(videoDescription: videoDescription, instructions: instructions, customVideoCompositorClass: customVideoCompositorClass)
         
         let newPlayerItem = AVPlayerItem(asset: composition)
         newPlayerItem.audioMix = audioMix
         newPlayerItem.videoComposition = videoComposition
         newPlayerItem.audioTimePitchAlgorithm = .spectral
         return newPlayerItem
-    }
-    
-    internal func setRequestCallbackHandler(_ handler: VCRequestCallbackHandlerProtocol) {
-        requestCallbackHandler = handler
     }
     
     internal func estimateOtherTracksDuration() -> CMTime {
@@ -155,64 +153,50 @@ internal class VCVideoCompositor: NSObject {
                                 composition: AVMutableComposition) -> [CMPersistentTrackID : [VCMediaTrackDescriptionProtocol]] {
         
         var persistentTrackID = persistentTrackHeaderID
-        
         var existTrackInfoDic: [CMPersistentTrackID : [VCMediaTrackDescriptionProtocol]] = [:]
-        
-        for mediaTrack in mediaTracks {
+        let sortedMediaTracks = mediaTracks.sorted { (lhs, rhs) -> Bool in
+            return lhs.timeRange.start < rhs.timeRange.start
+        }
+        for mediaTrack in sortedMediaTracks {
             if let mediaURL = mediaTrack.mediaURL {
                 let asset = AVURLAsset(url: mediaURL, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
-                let group = DispatchGroup()
-                
-                group.enter()
-                
-                asset.loadValuesAsynchronously(forKeys: ["duration", "playable", "preferredRate", "preferredVolume", "hasProtectedContent", "providesPreciseDurationAndTiming", "metadata"]) {
-                    if let bestVideoTrack = asset.tracks(withMediaType: mediaType).first, let assetDuration = bestVideoTrack.asset?.duration {
-                        
-                        if let compositionTrack = composition.track(withTrackID: persistentTrackID) {
-//                            let existTimeRanges = compositionTrack.segments.filter({ $0.isEmpty == false }).map({ $0.timeMapping.target })
-                            let existTimeRanges = compositionTrack.segments.filter({ $0.isEmpty == false }).map({ $0.timeMapping.source })
-                            if self.canInsertTimeRange(mediaTrack.timeRange, atExistingTimeRanges: existTimeRanges) {
-                                
-                            } else {
-                                persistentTrackID += 1
-                            }
+                if let bestVideoTrack = asset.tracks(withMediaType: mediaType).first, let assetDuration = bestVideoTrack.asset?.duration {
+                    if let compositionTrack = composition.track(withTrackID: persistentTrackID) {
+                        let existTimeRanges = compositionTrack.segments.filter({ $0.isEmpty == false }).map({ $0.timeMapping.target })
+                        if self.canInsertTimeRange(mediaTrack.timeRange, atExistingTimeRanges: existTimeRanges) {
+                            
+                        } else {
+                            persistentTrackID += 1
                         }
-                        
-                        if let compositionTrack = self.compositionTrack(at: composition, withMediaType: mediaType, trackID: persistentTrackID) {
-                            do {
-                                var fixStart: CMTime = .zero
-                                var fixEnd: CMTime = .zero
-                                fixStart = min(max(CMTime.zero, mediaTrack.timeMapping.source.start), assetDuration)
-                                fixEnd = min(max(fixStart, mediaTrack.timeMapping.source.end), assetDuration)
-                                
-                                mediaTrack.timeMapping.source = CMTimeRange(start: fixStart, end: fixEnd)
-                                
-                                try compositionTrack.insertTimeRange(mediaTrack.timeMapping.source, of: bestVideoTrack, at: mediaTrack.timeMapping.target.start)
-                                let scaledTimeRange: CMTimeRange = CMTimeRange(start: mediaTrack.timeMapping.target.start, duration: mediaTrack.timeMapping.source.duration)
-                                compositionTrack.scaleTimeRange(scaledTimeRange, toDuration: mediaTrack.timeMapping.target.duration)
-                                mediaTrack.persistentTrackID = persistentTrackID
-                                mediaTrack.compositionTrack = compositionTrack
-                                if var trackInfos = existTrackInfoDic[persistentTrackID] {
-                                    trackInfos.append(mediaTrack)
-                                    existTrackInfoDic[persistentTrackID] = trackInfos
-                                } else {
-                                    existTrackInfoDic[persistentTrackID] = [mediaTrack]
-                                }
-                            } catch let error {
-                                log.error(error)
-                            }
-                        }
-                        
                     }
                     
-                    group.leave()
+                    if let compositionTrack = self.compositionTrack(at: composition, withMediaType: mediaType, trackID: persistentTrackID) {
+                        do {
+                            var fixStart: CMTime = .zero
+                            var fixEnd: CMTime = .zero
+                            fixStart = min(max(CMTime.zero, mediaTrack.timeMapping.source.start), assetDuration)
+                            fixEnd = min(max(fixStart, mediaTrack.timeMapping.source.end), assetDuration)
+                            
+                            mediaTrack.timeMapping.source = CMTimeRange(start: fixStart, end: fixEnd)
+                            
+                            try compositionTrack.insertTimeRange(mediaTrack.timeMapping.source, of: bestVideoTrack, at: mediaTrack.timeMapping.target.start)
+                            let scaledTimeRange: CMTimeRange = CMTimeRange(start: mediaTrack.timeMapping.target.start, duration: mediaTrack.timeMapping.source.duration)
+                            compositionTrack.scaleTimeRange(scaledTimeRange, toDuration: mediaTrack.timeMapping.target.duration)
+                            mediaTrack.persistentTrackID = persistentTrackID
+                            mediaTrack.compositionTrack = compositionTrack
+                            if var trackInfos = existTrackInfoDic[persistentTrackID] {
+                                trackInfos.append(mediaTrack)
+                                existTrackInfoDic[persistentTrackID] = trackInfos
+                            } else {
+                                existTrackInfoDic[persistentTrackID] = [mediaTrack]
+                            }
+                        } catch let error {
+                            log.error(error)
+                        }
+                    }
                 }
-                
-                group.wait()
-                
             }
         }
-        
         return existTrackInfoDic
     }
     
@@ -228,64 +212,38 @@ internal class VCVideoCompositor: NSObject {
         let locker = VCLocker()
         let trackBundle = videoDescription.trackBundle
         let imageTracks = trackBundle.imageTracks
-        let lottieTracks = trackBundle.lottieTracks
-        let laminationTracks = trackBundle.laminationTracks
-        let textTracks = trackBundle.textTracks
-        
-        let trackDescriptions: [VCImageTrackDescription] = imageTracks + videoTracks
-        let enumor = trackDescriptions.dic()
         
         var transitions: [VCTransition] = []
         
-        for track in trackDescriptions {
-            if let trajectory = track.trajectory {
-                let start =  track.timeRange.start.seconds + TimeInterval(trajectory.range.left) * track.timeRange.duration.seconds
-                let end =  track.timeRange.start.seconds + TimeInterval(trajectory.range.right) * track.timeRange.duration.seconds
-                trajectory.timeRange = CMTimeRange(start: start, end: end)
-            }
-        }
-        
         (videoDescription.transitions as NSArray).enumerateObjects(options: .concurrent) { (obj, index, outStop) in
-            guard let transition = obj as? VCTransitionProtocol else { return }
-            guard enumor[transition.fromId] != nil || enumor[transition.toId] != nil else { return }
-            guard let fromTrack = enumor[transition.fromId], let toTrack = enumor[transition.toId], fromTrack.timeRange.end >= toTrack.timeRange.start else { return }
-
-            if fromTrack.timeRange.end == toTrack.timeRange.start {
-                // 两个轨道没有重叠，但是需要过渡动画，根据 'range' 计算出过渡时间
-                let start: CMTime = CMTime(seconds: fromTrack.timeRange.end.seconds - fromTrack.timeRange.duration.seconds * Double(transition.range.left))
-                let end: CMTime = CMTime(seconds: toTrack.timeRange.start.seconds + toTrack.timeRange.duration.seconds * Double(transition.range.right))
-                
-                let t: VCTransition = VCTransition(timeRange: CMTimeRange(start: start, end: end), transition: transition)
-                
-                t.fromTrackClipTimeRange = (fromTrack as? VCVideoTrackDescription)?.sourceTimeRange
-                t.toTrackClipTimeRange = (toTrack as? VCVideoTrackDescription)?.sourceTimeRange
-                
-                if let trajectory = fromTrack.trajectory {
-                    let duration = (end - fromTrack.timeRange.start).seconds
-                    let start =  fromTrack.timeRange.start.seconds + TimeInterval(trajectory.range.left) * duration
-                    let end =  fromTrack.timeRange.start.seconds + TimeInterval(trajectory.range.right) * duration
-                    trajectory.timeRange = CMTimeRange(start: start, end: end)
+            guard let transition = obj as? VCTransition else { return }
+            transition.timeRange = nil
+            guard let fromTrack = transition.fromTrack, let toTrack = transition.toTrack/*, fromTrack.timeRange.end >= toTrack.timeRange.start*/ else { return }
+            switch transition.rangeType {
+            case .overlapOrRange(let range):
+                if fromTrack.timeRange.end == toTrack.timeRange.start {
+                    let start: CMTime = CMTime(seconds: fromTrack.timeRange.end.seconds - fromTrack.timeRange.duration.seconds * Double(range.left))
+                    let end: CMTime = CMTime(seconds: toTrack.timeRange.start.seconds + toTrack.timeRange.duration.seconds * Double(range.right))
+                    transition.timeRange = CMTimeRange(start: start, end: end)
+                    transition.setupCompensateTimeRange()
+                    locker.object(forKey: "transitions").lock()
+                    transitions.append(transition)
+                    locker.object(forKey: "transitions").unlock()
+                } else if fromTrack.timeRange.end > toTrack.timeRange.start {
+                    transition.timeRange = CMTimeRange(start: toTrack.timeRange.start, end: fromTrack.timeRange.end)
+                    transition.setupCompensateTimeRange()
+                    locker.object(forKey: "transitions").lock()
+                    transitions.append(transition)
+                    locker.object(forKey: "transitions").unlock()
                 }
                 
-                if let trajectory = toTrack.trajectory {
-                    let duration = (toTrack.timeRange.end - start).seconds
-                    let trajectoryStart = start.seconds + TimeInterval(trajectory.range.left) * duration
-                    let trajectoryEnd = start.seconds + TimeInterval(trajectory.range.right) * duration
-                    trajectory.timeRange = CMTimeRange(start: trajectoryStart,
-                                                       end: trajectoryEnd)
-                }
-                
+            case .timeRange(let timeRange):
+                transition.timeRange = timeRange
+                transition.setupCompensateTimeRange()
                 locker.object(forKey: "transitions").lock()
-                transitions.append(t)
-                locker.object(forKey: "transitions").unlock()
-            } else if fromTrack.timeRange.end > toTrack.timeRange.start {
-                // 两个轨道有重叠
-                let t: VCTransition = VCTransition(timeRange: CMTimeRange(start: toTrack.timeRange.start, end: fromTrack.timeRange.end), transition: transition)
-                locker.object(forKey: "transitions").lock()
-                transitions.append(t)
+                transitions.append(transition)
                 locker.object(forKey: "transitions").unlock()
             }
-            
         }
         
         var instructions: [VCVideoInstruction] = []
@@ -295,11 +253,8 @@ internal class VCVideoCompositor: NSObject {
         
         keyTimes.append(contentsOf: imageTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
         keyTimes.append(contentsOf: videoTracks.flatMap({ [$0.timeMapping.target.start, $0.timeMapping.target.end] }))
-        keyTimes.append(contentsOf: lottieTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
-        keyTimes.append(contentsOf: laminationTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
         keyTimes.append(contentsOf: audioTracks.flatMap({ [$0.timeMapping.target.start, $0.timeMapping.target.end] }))
-        keyTimes.append(contentsOf: transitions.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
-        keyTimes.append(contentsOf: textTracks.flatMap({ [$0.timeRange.start, $0.timeRange.end] }))
+        keyTimes.append(contentsOf: transitions.flatMap({ [$0.timeRange.unsafelyUnwrapped.start, $0.timeRange.unsafelyUnwrapped.end] }))
         
         func removeDuplicates(times: [CMTime]) -> [CMTime] {
             var fastEnum: [String:CMTime] = [:]
@@ -329,10 +284,7 @@ internal class VCVideoCompositor: NSObject {
             
             trackBundle.imageTracks = imageTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
             trackBundle.videoTracks = videoTracks.filter({ $0.timeMapping.target.intersection(timeRange).isEmpty == false })
-            trackBundle.lottieTracks = lottieTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
-            trackBundle.laminationTracks = laminationTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
             trackBundle.audioTracks = audioTracks.filter({ $0.timeMapping.target.intersection(timeRange).isEmpty == false })
-            trackBundle.textTracks = textTracks.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
             
             if trackBundle.videoTracks.isEmpty {
                 instruction.requiredSourceTrackIDs = [VCVideoCompositor.EmptyVideoTrackID as NSValue]
@@ -344,45 +296,14 @@ internal class VCVideoCompositor: NSObject {
                 }
                 instruction.requiredSourceTrackIDs = instruction.requiredSourceTrackIDsDic.map({ $0.key as NSValue })
             }
-
-            instruction.transitions = transitions.filter({ $0.timeRange.intersection(timeRange).isEmpty == false })
             
-            for transition in instruction.transitions {
-                
-                let fromTrack = enumor[transition.transition.fromId]
-                let toTrack = enumor[transition.transition.toId]
-                
-                switch fromTrack {
-                case let track as VCVideoTrackDescription:
-                    if trackBundle.videoTracks.contains(where: { track.id == $0.id }) == false {
-                        trackBundle.videoTracks.append(track)
-                    }
-                    
-                case let track as VCImageTrackDescription:
-                    if trackBundle.imageTracks.contains(where: { track.id == $0.id }) == false {
-                        trackBundle.imageTracks.append(track)
-                    }
-                    
-                default:
-                    break
-                }
-                
-                switch toTrack {
-                case let track as VCVideoTrackDescription:
-                    if trackBundle.videoTracks.contains(where: { track.id == $0.id }) == false {
-                        trackBundle.videoTracks.append(track)
-                    }
-                    
-                case let track as VCImageTrackDescription:
-                    if trackBundle.imageTracks.contains(where: { track.id == $0.id }) == false {
-                        trackBundle.imageTracks.append(track)
-                    }
-                    
-                default:
-                    break
+            instruction.transitions = transitions.filter { (transition) -> Bool in
+                if let _timeRange = transition.timeRange {
+                    return _timeRange.intersection(timeRange).isEmpty == false
+                } else {
+                    return false
                 }
             }
-            
             instruction.timeRange = timeRange
             instruction.videoProcessProtocol = self.requestCallbackHandler
             
@@ -395,52 +316,34 @@ internal class VCVideoCompositor: NSObject {
             return lhs.timeRange.start < rhs.timeRange.start
         }
         
-//        for instruction in instructions {
-//            print("---------------- **** --------------------")
-//
-//            print(instruction.timeRange.debugDescription, "\n")
-//
-//            print("videoTracks info: ", instruction.trackBundle.videoTracks, instruction.trackBundle.videoTracks.map({ $0.id }), "\n")
-//
-//            print("imageTracks info: ", instruction.trackBundle.imageTracks, instruction.trackBundle.imageTracks.map({ $0.id }), "\n")
-//
-//            print("requiredSourceTrackIDs: ", instruction.requiredSourceTrackIDs)
-//
-//            print(instruction.requiredSourceTrackIDsDic.map({ ($0.key, $0.value.id) }))
-//
-//            print("transitions info: ", instruction.transitions.map({ ($0.transition.fromId, $0.transition.toId) }))
-//
-//            print("trajectories info: ", instruction.trajectories, instruction.trajectories.map({ ($0.timeRange, $0.id) }))
-//
-//            print("---------------- **** --------------------\n")
-//        }
-        
         return instructions
     }
     
-    private func buildVideoComposition(videoDescription: VCVideoDescription, instructions: [VCVideoInstruction]) -> AVMutableVideoComposition {
+    private func buildVideoComposition(videoDescription: VCVideoDescription, instructions: [VCVideoInstruction], customVideoCompositorClass: AVVideoCompositing.Type? = VCVideoCompositing.self) -> AVMutableVideoComposition {
         let videoComposition = AVMutableVideoComposition()
+        #if !targetEnvironment(simulator)
         if #available(iOS 10.0, *) {
-            videoComposition.colorPrimaries = AVVideoColorPrimaries_SMPTE_C
-            videoComposition.colorTransferFunction = AVVideoTransferFunction_ITU_R_709_2
-            videoComposition.colorYCbCrMatrix = AVVideoYCbCrMatrix_ITU_R_601_4
+        videoComposition.colorPrimaries = videoDescription.colorPrimaries
+        videoComposition.colorTransferFunction = videoDescription.colorTransferFunction
+        videoComposition.colorYCbCrMatrix = videoDescription.colorYCbCrMatrix
         }
+        #endif
         
         videoComposition.frameDuration = CMTime(seconds: 1 / videoDescription.fps, preferredTimescale: 600)
         videoComposition.instructions = instructions
-        videoComposition.customVideoCompositorClass = VCVideoCompositing.self
+        videoComposition.customVideoCompositorClass = customVideoCompositorClass
         videoComposition.renderSize = videoDescription.renderSize
-        videoComposition.renderScale = videoDescription.renderScale
+        videoComposition.renderScale = Float(videoDescription.renderScale)
         return videoComposition
     }
     
-    private func addAudioMix(audioTrack: AVMutableCompositionTrack, audioTrackID: CMPersistentTrackID, track: VCAudioTrackDescription) -> AVMutableAudioMixInputParameters? {
-        if track.audioVolumeRampDescriptions.isEmpty {
+    private func addAudioMix(track: VCAudioTrackDescription) -> AVMutableAudioMixInputParameters? {
+        if track.audioVolumeRampDescriptions.isEmpty && track.audioEffectProvider == nil {
             return nil
         }
-        
-        let inputParams = AVMutableAudioMixInputParameters(track: audioTrack)
-        inputParams.trackID = audioTrackID
+        guard let compositionTrack = track.compositionTrack else { return nil }
+        let inputParams = AVMutableAudioMixInputParameters(track: compositionTrack)
+        inputParams.trackID = track.persistentTrackID
         var existTimeRanges: [CMTimeRange] = []
         for audioVolumeRampDescription in track.audioVolumeRampDescriptions {
             guard audioVolumeRampDescription.timeRange.isValid else {
@@ -460,8 +363,8 @@ internal class VCVideoCompositor: NSObject {
         }
         
         do {
-            let cookie = VCTapToken(trackID: track.id, processCallback: requestCallbackHandler)
-            try inputParams.setAudioProcessingTap(cookie: cookie)
+            let token = VCTapToken(processCallback: requestCallbackHandler, audioTrack: track)
+            try inputParams.setAudioProcessingTap(token: token)
         } catch let error {
             log.error(error)
         }
@@ -481,7 +384,9 @@ internal class VCVideoCompositor: NSObject {
         
         var timeRangeDurationValue = CMTime(seconds: timeRange.duration.seconds).value
         let blackVideoDurationValue = CMTime(seconds: blackVideoAsset.duration.seconds).value
-        
+        if blackVideoDurationValue <= .zero {
+            throw VCVideoCompositorError.internalError
+        }
         var append: Bool = false
         while timeRangeDurationValue - blackVideoDurationValue > 0 {
             let duraionValue: CMTimeValue = blackVideoDurationValue
@@ -513,6 +418,19 @@ internal class VCVideoCompositor: NSObject {
             let time = CMTime(value: insertDescription.insertTimeValue, timescale: 600)
             try compositionTrack.insertTimeRange(range, of: blackVideoTrack, at: time)
         }
+    }
+    
+}
+
+extension VCVideoCompositor: VCMediaServicesObserver {
+    
+    func mediaServicesWereResetNotification(_ sender: Notification) {
+        let url = VCHelper.bundle().url(forResource: "black30s.mov", withExtension: nil) ?? URL(fileURLWithPath: "")
+        blackVideoAsset = AVURLAsset(url: url)
+    }
+    
+    func mediaServicesWereLostNotification(_ sender: Notification) {
+        
     }
     
 }

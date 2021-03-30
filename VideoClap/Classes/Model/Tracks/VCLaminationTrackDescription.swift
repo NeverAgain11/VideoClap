@@ -7,28 +7,32 @@
 
 import AVFoundation
 
-public class VCLaminationTrackDescription: NSObject, VCTrackDescriptionProtocol {
+public class VCLaminationTrackDescription: VCImageTrackDescription {
     
-    public var id: String = ""
-    
-    public var timeRange: CMTimeRange = .zero
-    
-    public var mediaURL: URL?
-    
-    public override init() {
-        super.init()
-    }
-    
-    public func copy(with zone: NSZone? = nil) -> Any {
-        return self
-    }
-    
-    public func mutableCopy(with zone: NSZone? = nil) -> Any {
+    public override func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCLaminationTrackDescription()
-        copyObj.id        = self.id
-        copyObj.timeRange = self.timeRange
-        copyObj.mediaURL  = self.mediaURL
+        copyObj.mediaURL         = mediaURL
+        copyObj.id               = id
+        copyObj.timeRange        = timeRange
+        copyObj.isFlipHorizontal = isFlipHorizontal
+        copyObj.filterIntensity  = filterIntensity
+        copyObj.lutImageURL      = lutImageURL
+        copyObj.rotateRadian     = rotateRadian
+        copyObj.cropedRect       = cropedRect
+        copyObj.trajectory       = trajectory
+        copyObj.canvasStyle      = canvasStyle
+        copyObj.imageLayout      = imageLayout
+        copyObj.indexPath        = indexPath
         return copyObj
+    }
+    
+    public override func compositionImage(sourceFrame: CIImage, compositionTime: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage? {
+        let actualRenderSize = renderSize.scaling(renderScale)
+        var laminationImage: CIImage = sourceFrame
+        let scaleX = actualRenderSize.width / laminationImage.extent.width
+        let scaleY = actualRenderSize.height / laminationImage.extent.height
+        laminationImage = laminationImage.transformed(by: .init(scaleX: scaleX, y: scaleY))
+        return laminationImage
     }
     
 }

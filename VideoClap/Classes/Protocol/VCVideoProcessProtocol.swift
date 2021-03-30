@@ -9,6 +9,6 @@ import AVFoundation
 
 public protocol VCVideoProcessProtocol: NSObject {
     
-    func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, finish: (CIImage?) -> Void)
+    func handle(item: VCRequestItem, compositionTime: CMTime, blackImage: CIImage, renderContext: AVVideoCompositionRenderContext, finish: (CIImage?) -> Void)
     
 }

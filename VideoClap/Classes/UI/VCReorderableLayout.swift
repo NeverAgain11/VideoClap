@@ -1,8 +1,31 @@
+//The MIT License (MIT)
 //
-//  VCReorderableLayout.swift
-//  VideoClap
+//Copyright (c) 2014 ra1028
 //
-//  Created by lai001 on 2020/12/25.
+//Permission is hereby granted, free of charge, to any person obtaining a copy
+//of this software and associated documentation files (the "Software"), to deal
+//in the Software without restriction, including without limitation the rights
+//to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//copies of the Software, and to permit persons to whom the Software is
+//furnished to do so, subject to the following conditions:
+//
+//The above copyright notice and this permission notice shall be included in all
+//copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//SOFTWARE.
+
+//
+//  RAReorderableLayout.swift
+//  RAReorderableLayout
+//
+//  Created by Ryo Aoyama on 10/12/14.
+//  Copyright (c) 2014 Ryo Aoyama. All rights reserved.
 //
 
 import UIKit
@@ -50,17 +73,21 @@ open class VCReorderableLayout: UICollectionViewFlowLayout {
     
     fileprivate var cancelDragToIndexPath: IndexPath?
     
-    fileprivate var _scrollDirection: CGFloat = 1
+    fileprivate var scrollDirction: CGFloat = 1
     
     override open func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
         guard let attributesArray = super.layoutAttributesForElements(in: rect) else { return nil }
+        
         attributesArray.filter {
             $0.representedElementCategory == .cell
         }.filter {
             $0.indexPath == (cellFakeView?.indexPath)
         }.forEach {
+            // reordering cell alpha
+            
             $0.alpha = 0
         }
+        
         return attributesArray
     }
     
@@ -76,17 +103,19 @@ open class VCReorderableLayout: UICollectionViewFlowLayout {
         displayLink = nil
     }
     
+    // begein scroll
     fileprivate func beginScrollIfNeeded() {
         guard let cellFakeView = self.cellFakeView else { return }
         let midXAtScreen = UIScreen.main.bounds.midX
         let cellFakeViewGlobalRect = cellFakeView.convert(cellFakeView.bounds, to: nil)
         let offset = cellFakeViewGlobalRect.midX - midXAtScreen
         let distance = abs(cellFakeViewGlobalRect.midX.distance(to: midXAtScreen))
+        
         if distance > (UIScreen.main.bounds.width / 2.0) - 20 {
             if offset < 0 {
-                _scrollDirection = -1
+                scrollDirction = -1
             } else {
-                _scrollDirection = 1
+                scrollDirction = 1
             }
             setUpDisplayLink()
         } else {
@@ -94,6 +123,7 @@ open class VCReorderableLayout: UICollectionViewFlowLayout {
         }
     }
     
+    // move item
     fileprivate func moveItemIfNeeded() {
         guard let collectionView = self.collectionView else { return }
         guard let fakeCell = cellFakeView,
@@ -104,31 +134,47 @@ open class VCReorderableLayout: UICollectionViewFlowLayout {
         
         guard atIndexPath != toIndexPath else { return }
         
+        // can move item
         if let canMove = delegate?.collectionView(collectionView, at: atIndexPath, canMoveTo: toIndexPath), !canMove {
             return
         }
         cancelDragToIndexPath = toIndexPath
+        // will move item
         delegate?.collectionView(collectionView, at: atIndexPath, willMoveTo: toIndexPath)
         
+        guard let attribute = self.layoutAttributesForItem(at: toIndexPath) else {
+            return
+        }
         collectionView.performBatchUpdates({
             fakeCell.indexPath = toIndexPath
+//            fakeCell.cellFrame = attribute.frame
+            fakeCell.changeBoundsIfNeeded(attribute.bounds)
+            
             collectionView.deleteItems(at: [atIndexPath])
             collectionView.insertItems(at: [toIndexPath])
+            
+            // did move item
             self.delegate?.collectionView(collectionView, at: atIndexPath, didMoveTo: toIndexPath)
-        }, completion:nil)
+        }, completion: nil)
     }
     
     @objc internal func continuousScroll() {
         guard let collectionView = self.collectionView else { return }
         let midXAtScreen = UIScreen.main.bounds.midX
+        
         var collectionViewGlobalRect = collectionView.convert(collectionView.bounds, to: nil)
+        
         guard collectionViewGlobalRect.minX <= midXAtScreen && collectionViewGlobalRect.maxX >= midXAtScreen else {
             return
         }
-        let scrollRate = _scrollDirection * self.scrollSpeedValue
+        
+        let scrollRate = scrollDirction * self.scrollSpeedValue
+        
         var newRect = collectionView.frame
         newRect.origin.x -= scrollRate
+        
         let oldX = collectionView.frame.origin.x
+        
         collectionView.frame.origin.x -= scrollRate
         collectionViewGlobalRect = collectionView.convert(collectionView.bounds, to: nil)
         if collectionViewGlobalRect.minX <= midXAtScreen && collectionViewGlobalRect.maxX >= midXAtScreen {
@@ -142,20 +188,29 @@ open class VCReorderableLayout: UICollectionViewFlowLayout {
     private func cancelDrag() {
         guard let cellFakeView = self.cellFakeView else { return }
         guard let collectionView = self.collectionView else { return }
+        
+        // will end drag item
         if let toIndexPath = cancelDragToIndexPath {
             self.delegate?.collectionView(self.collectionView!, collectionView: self, willEndDraggingItemTo: toIndexPath)
         }
+        
         collectionView.scrollsToTop = true
+        
         invalidateDisplayLink()
+        
+        //        cellFakeView!.pushBackView {
         cellFakeView.removeFromSuperview()
         self.cellFakeView = nil
         self.invalidateLayout()
+        
+        // did end drag item
         if let toIndexPath = self.cancelDragToIndexPath {
             self.delegate?.collectionView(collectionView, collectionView: self, didEndDraggingItemTo: toIndexPath)
         }
     }
     
     // MARK: - Support for reordering
+    
     /// // returns NO if reordering was prevented from beginning - otherwise YES
     @discardableResult
     public func beginInteractiveMovementForItem(at indexPath: IndexPath) -> Bool {
@@ -163,16 +218,25 @@ open class VCReorderableLayout: UICollectionViewFlowLayout {
         if delegate?.collectionView(self.collectionView!, allowMoveAt: indexPath) == false {
             return false
         }
+        
+        // will begin drag item
         delegate?.collectionView(collectionView, collectionView: self, willBeginDraggingItemAt: indexPath)
         collectionView.scrollsToTop = false
+        
         guard let currentCell = collectionView.cellForItem(at: indexPath) else {
             return false
         }
+        
         let cellFakeView = VCCellFakeView(cell: currentCell)
         cellFakeView.indexPath = indexPath
+//        cellFakeView.originalCenter = currentCell.center
+//        cellFakeView.cellFrame = layoutAttributesForItem(at: indexPath)?.frame
         self.cellFakeView = cellFakeView
         collectionView.addSubview(cellFakeView)
+        
         invalidateLayout()
+        
+        // did begin drag item
         delegate?.collectionView(collectionView, collectionView: self, didBeginDraggingItemAt: indexPath)
         return true
     }
@@ -197,9 +261,12 @@ open class VCReorderableLayout: UICollectionViewFlowLayout {
 
 private class VCCellFakeView: UIView {
     
-    weak var cell: UICollectionViewCell?
-    
-    var cellFakeImageView: UIImageView?
+    lazy var cellFakeImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.autoresizingMask = [.flexibleWidth , .flexibleHeight]
+        return imageView
+    }()
     
     fileprivate var indexPath: IndexPath?
     
@@ -209,23 +276,30 @@ private class VCCellFakeView: UIView {
     
     init(cell: UICollectionViewCell) {
         super.init(frame: cell.frame)
-        
-        self.cell = cell
-        
-        cellFakeImageView = UIImageView(frame: self.bounds)
-        cellFakeImageView?.contentMode = UIView.ContentMode.scaleAspectFill
-        cellFakeImageView?.autoresizingMask = [.flexibleWidth , .flexibleHeight]
-        cellFakeImageView?.image = getCellImage()
-        
-        addSubview(cellFakeImageView!)
+        cellFakeImageView.image = getCellImage(cell: cell)
+        cellFakeImageView.frame = self.bounds
+        addSubview(cellFakeImageView)
     }
     
-    fileprivate func getCellImage() -> UIImage {
-        UIGraphicsBeginImageContextWithOptions(cell!.bounds.size, false, UIScreen.main.scale)
-        defer { UIGraphicsEndImageContext() }
-        cell!.drawHierarchy(in: cell!.bounds, afterScreenUpdates: true)
+    func changeBoundsIfNeeded(_ bounds: CGRect) {
+        if self.bounds.equalTo(bounds) { return }
         
-        return UIGraphicsGetImageFromCurrentImageContext()!
+        UIView.animate(
+            withDuration: 0.3,
+            delay: 0,
+            options: [.curveEaseInOut, .beginFromCurrentState],
+            animations: {
+                self.bounds = bounds
+            },
+            completion: nil
+        )
+    }
+    
+    fileprivate func getCellImage(cell: UICollectionViewCell) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(cell.bounds.size, false, UIScreen.main.scale)
+        defer { UIGraphicsEndImageContext() }
+        cell.drawHierarchy(in: cell.bounds, afterScreenUpdates: true)
+        return UIGraphicsGetImageFromCurrentImageContext() ?? UIImage()
     }
     
 }

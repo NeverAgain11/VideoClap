@@ -26,19 +26,19 @@ TODO: Add long description of the pod here.
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'lai001' => '1104698042@qq.com' }
   s.source           = { :git => 'https://github.com/lai001/VideoClap.git', :tag => s.version.to_s }
+  s.platform         = :ios, "9.0"
+  s.swift_version    = '5.0'
+  s.ios.deployment_target = '9.0'
   
-  s.dependency 'SwiftyBeaver'
-  s.dependency 'lottie-ios'
-  s.dependency 'SwiftyTimer'
-  s.dependency 'SDWebImage'
-  s.dependency 'SSPlayer'
-  s.dependency 'SnapKit'
+  s.dependency 'SwiftyBeaver', '~> 1.9.3'
+  s.dependency 'lottie-ios', '~> 3.1.9'
+  s.dependency 'SwiftyTimer', '~> 2.1.0'
+  s.dependency 'SDWebImage', '~> 5.10.0'
+  s.dependency 'SSPlayer', '~> 0.1.0'
+  s.dependency 'SnapKit', '~> 4.2.0'
   
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '9.0'
-  s.swift_version = '5.0'
-  
   s.subspec 'Extension' do |ss|
     ss.source_files = 'VideoClap/Classes/Extension/**/*'
   end
@@ -75,7 +75,8 @@ TODO: Add long description of the pod here.
   end
   
   s.subspec 'MetalLibs' do |ss|
-    ss.source_files = 'VideoClap/Classes/MetalLibs/**/*.metal'
+    ss.source_files = 'VideoClap/Classes/MetalLibs/**/*.{h,metal}'
+    ss.public_header_files = 'VideoClap/Classes/Metal/**/*.h'
   end
   
   s.subspec 'AudioEffects' do |ss|
@@ -86,18 +87,36 @@ TODO: Add long description of the pod here.
       ss.source_files = 'VideoClap/Classes/UI/**/*'
   end
   
-  s.pod_target_xcconfig = {
-    'MTL_COMPILER_FLAGS' => '-fcikernel',
-    'MTLLINKER_FLAGS' => '-cikernel',
-  }
+  s.subspec 'TextEffect' do |ss|
+      ss.source_files = 'VideoClap/Classes/TextEffect/**/*'
+  end
   
-#  s.source_files = 'VideoClap/Classes/**/*'
+  s.subspec 'CoreText' do |ss|
+      ss.source_files = 'VideoClap/Classes/CoreText/**/*'
+  end
   
+  s.subspec 'AudioEngine' do |ss|
+      ss.source_files = 'VideoClap/Classes/AudioEngine/**/*'
+  end
+  
+  s.subspec 'Metal' do |ss|
+      ss.source_files = 'VideoClap/Classes/Metal/**/*'
+  end
+  
+  s.subspec 'ParticleSystem' do |ss|
+      ss.source_files = 'VideoClap/Classes/ParticleSystem/**/*'
+  end
+  
+#  s.pod_target_xcconfig = {
+#    'MTL_COMPILER_FLAGS' => '-fcikernel',
+#    'MTLLINKER_FLAGS' => '-cikernel',
+#  }
+
    s.resource_bundles = {
      'VideoClap' => ['VideoClap/Assets/*.mov']
    }
-
-  # s.public_header_files = 'Pod/Classes/**/*.h'
-  # s.frameworks = 'UIKit', 'MapKit'
-  # s.dependency 'AFNetworking', '~> 2.3'
+   
+   s.ios.pod_target_xcconfig = { 'METAL_LIBRARY_OUTPUT_DIR' => '${TARGET_BUILD_DIR}/VideoClap.bundle' }
+   
+#   s.framework = 'Metal'
 end

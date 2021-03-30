@@ -12,7 +12,8 @@ import CoreImage
 open class VCSquareswireFilter: CIFilter {
     
     private static let sourceCode = """
-
+    // Author: gre
+    // License: MIT
     kernel vec4 transition(sampler inputImage, sampler inputTargetImage, float progress, vec2 squares, vec2 direction, float smoothness) {
         vec2 center = vec2(0.5, 0.5);
         vec2 p = samplerCoord(inputImage);
@@ -32,6 +33,9 @@ open class VCSquareswireFilter: CIFilter {
     """
     
     private static let kernel: CIKernel? = {
+        if #available(iOS 11.0, *), let kernel = VCHelper.kernel(functionName: "Squareswire") {
+            return kernel
+        }
         return CIKernel(source: sourceCode)
     }()
     

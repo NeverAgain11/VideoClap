@@ -7,25 +7,32 @@
 
 import UIKit
 
-public class VCMainTrackViewLayout: UICollectionViewLayout {
+public protocol VCImageTrackViewLayoutDelegate: NSObject {
+    var displayRect: CGRect? { get set }
+    var cellSize: CGSize { get set }
+    var datasourceCount: Int { get set }
+    func frame() -> CGRect
+}
+
+public class VCImageTrackViewLayout: UICollectionViewLayout {
     
-    public var displayRect: CGRect?
+    public weak var delegate: VCImageTrackViewLayoutDelegate?
     
     public override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
-        guard let collectionView = self.collectionView as? MainTrackView else { return nil }
-        guard var displayRect = displayRect else { return nil }
+        guard let delegate = self.delegate else { return nil }
+        guard var displayRect = delegate.displayRect else { return nil }
         
-        displayRect.origin.x -= collectionView.frame.minX
+        displayRect.origin.x -= delegate.frame().minX
         
         var attrs: [UICollectionViewLayoutAttributes] = []
         
-        let cellSize: CGSize = collectionView.cellSize
+        let cellSize: CGSize = delegate.cellSize
         let cellWidth: CGFloat = cellSize.width
-        let datasourceCount: Int = collectionView.datasourceCount
+        let datasourceCount: Int = delegate.datasourceCount
         
         let upper = max(0, Int(floor(displayRect.minX / cellWidth)) )
         let low = min(datasourceCount, Int(ceil(displayRect.maxX / cellWidth)) )
-        
+
         if low <= upper {
             return nil
         }
@@ -37,7 +44,6 @@ public class VCMainTrackViewLayout: UICollectionViewLayout {
             attr.frame = CGRect(origin: CGPoint(x: x, y: y), size: cellSize)
             attrs.append(attr)
         }
-        
         return attrs
     }
     

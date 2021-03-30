@@ -8,16 +8,16 @@
 import AVFoundation
 import Accelerate
 
-class VCWaveform: NSObject {
+public class VCWaveform: NSObject {
     
-    let audioFileURL: URL
+    public let audioFileURL: URL
     
-    init(url: URL) {
+    public init(url: URL) {
         audioFileURL = url
         super.init()
     }
     
-    func points() throws -> [CGFloat] {
+    public func points() throws -> [CGFloat] {
         let file = try AVAudioFile(forReading: audioFileURL)
         if let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: UInt32(file.length)) {
             if file.processingFormat.channelCount == .zero {
@@ -53,7 +53,7 @@ class VCWaveform: NSObject {
         }
     }
     
-    func waveformImage(height: CGFloat = 80.0, color: UIColor = .orange, offset: CGFloat = 2.5) throws -> UIImage? {
+    public func waveformImage(height: CGFloat = 80.0, color: UIColor = .orange, offset: CGFloat = 2.5) throws -> UIImage? {
         let drawPoints = try points()
         let renderer = VCGraphicsRenderer()
         renderer.scale = UIScreen.main.scale

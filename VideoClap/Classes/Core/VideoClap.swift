@@ -7,19 +7,8 @@
 
 import Foundation
 import AVFoundation
-import SwiftyBeaver
 import Lottie
 import SwiftyTimer
-
-internal let log: SwiftyBeaver.Type = {
-//    #if DEBUG
-    let console = ConsoleDestination()
-    console.asynchronously = true
-    console.format = "$C$L$c $n[$l] > $F: \(Thread.current) $T\n$M"
-    SwiftyBeaver.addDestination(console)
-//    #endif
-    return SwiftyBeaver.self
-}()
 
 public typealias ProgressHandler = (_ progress: Progress) -> Void
 public typealias CancelClosure = () -> Void
@@ -29,20 +18,26 @@ public enum VideoClapError: Error {
     case exportFailed
 }
 
-open class VideoClap: NSObject {
+open class VideoClap: NSObject, VCMediaServicesObserver {
     
     static let ExportFolder = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("VideoClapExportVideos")
     
-    public var requestCallbackHandler: VCRequestCallbackHandler = VCRequestCallbackHandler()
-    
-    public var videoDescription: VCVideoDescription {
-        get {
-            return requestCallbackHandler.videoDescription
-        }
-        set {
-            requestCallbackHandler.videoDescription = newValue
+    public var requestCallbackHandler: VCRequestCallbackHandler = VCRequestCallbackHandler() {
+        didSet {
+            self.videoCompositor.requestCallbackHandler = requestCallbackHandler
         }
     }
+    
+    public var videoDescription: VCVideoDescription = VCVideoDescription() {
+        didSet {
+            self.videoCompositor.videoDescription = videoDescription
+        }
+    }
+    
+    private lazy var videoCompositor: VCVideoCompositor = {
+        let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler, videoDescription: videoDescription)
+        return videoCompositor
+    }()
     
     deinit {
         NotificationCenter.default.removeObserver(self, name: UIApplication.didReceiveMemoryWarningNotification, object: UIApplication.shared)
@@ -57,12 +52,12 @@ open class VideoClap: NSObject {
         NotificationCenter.default.addObserver(self, selector: #selector(mediaServicesWereLostNotification(_:)), name: AVAudioSession.mediaServicesWereLostNotification, object: nil)
     }
     
-    @objc private func mediaServicesWereResetNotification(_ sender: Notification) {
-        log.warning(sender)
+    @objc public func mediaServicesWereResetNotification(_ sender: Notification) {
+        videoCompositor.mediaServicesWereResetNotification(sender)
     }
     
-    @objc func mediaServicesWereLostNotification(_ sender: Notification) {
-        log.warning(sender)
+    @objc public func mediaServicesWereLostNotification(_ sender: Notification) {
+        videoCompositor.mediaServicesWereLostNotification(sender)
     }
     
     @objc private func receiveMemoryWarning(_ sender: Notification) {
@@ -73,22 +68,33 @@ open class VideoClap: NSObject {
         VCImageCache.share.clearMemory()
     }
     
-    public func playerItemForPlay() -> AVPlayerItem {
-        let videoCompositor = VCVideoCompositor(requestCallbackHandler: requestCallbackHandler)
-        requestCallbackHandler.contextChanged()
-        videoCompositor.setRequestCallbackHandler(requestCallbackHandler)
-        let playerItem: AVPlayerItem
-        do {
-             playerItem = try videoCompositor.playerItemForPlay()
-        } catch let error {
-            log.error(error)
-            playerItem = AVPlayerItem(asset: AVAsset())
-        }
+    public func makePlayerItem(customVideoCompositorClass: AVVideoCompositing.Type? = VCVideoCompositing.self) throws -> AVPlayerItem {
+        let trackBundle = videoDescription.trackBundle
+        trackBundle.audioTracks.forEach({ $0.prepare(description: videoDescription) })
+        trackBundle.videoTracks.forEach({ $0.prepare(description: videoDescription) })
+        trackBundle.imageTracks.forEach({ $0.prepare(description: videoDescription) })
+        let playerItem = try videoCompositor.makePlayerItem(customVideoCompositorClass: customVideoCompositorClass)
         return playerItem
     }
     
     @discardableResult
     public func export(fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
+        do {
+            let item = try makePlayerItem()
+            return export(playerItem: item, fileName: fileName, progressHandler: progressHandler, completionHandler: completionHandler)
+        } catch let error {
+            completionHandler(nil, error)
+            return nil 
+        }
+    }
+    
+    @discardableResult
+    public func export(playerItem: AVPlayerItem, fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
+        return self.export(asset: playerItem.asset, audioMix: playerItem.audioMix, videoComposition: playerItem.videoComposition, progressHandler: progressHandler, completionHandler: completionHandler)
+    }
+    
+    @discardableResult
+    public func export(asset: AVAsset, audioMix: AVAudioMix?, videoComposition: AVVideoComposition?, fileName: String? = nil, progressHandler: @escaping ProgressHandler, completionHandler: @escaping ((URL?, Error?) -> Void)) -> CancelClosure? {
         do {
             let audioSession = AVAudioSession.sharedInstance()
             try audioSession.setCategory(.audioProcessing, options: [.mixWithOthers])
@@ -97,13 +103,12 @@ open class VideoClap: NSObject {
             log.error(error)
         }
         
-        let playerItem = playerItemForPlay()
-        if playerItem.asset.tracks(withMediaType: .audio).isEmpty && playerItem.asset.tracks(withMediaType: .video).isEmpty {
+        if asset.tracks(withMediaType: .audio).isEmpty && asset.tracks(withMediaType: .video).isEmpty {
             completionHandler(nil, VideoClapError.exportFailed)
             return nil
         }
         
-        guard let session = AVAssetExportSession(asset: playerItem.asset, presetName: AVAssetExportPresetHighestQuality) else {
+        guard let session = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHighestQuality) else {
             completionHandler(nil, VideoClapError.exportFailed)
             return nil
         }
@@ -139,13 +144,13 @@ open class VideoClap: NSObject {
         }
         
         session.outputURL = exportVideoURL
-        session.audioMix = playerItem.audioMix
+        session.audioMix = audioMix
         session.outputFileType = .mov
         session.shouldOptimizeForNetworkUse = true
-        session.videoComposition = playerItem.videoComposition
+        session.videoComposition = videoComposition
         session.directoryForTemporaryFiles = VideoClap.ExportFolder
         session.canPerformMultiplePassesOverSourceMediaData = false
-        session.audioTimePitchAlgorithm = playerItem.audioTimePitchAlgorithm
+        session.audioTimePitchAlgorithm = .spectral
         
         let den: Int64 = 100
         let progress = Progress(totalUnitCount: den)
@@ -167,8 +172,12 @@ open class VideoClap: NSObject {
         
         let timer = Timer.every(0.1) { (timer: Timer) in
             if progress.isCancelled {
-                timer.invalidate()
-                session.cancelExport()
+                if timer.isValid {
+                    timer.invalidate()
+                }
+                if session.status != .cancelled {
+                    session.cancelExport()
+                }
             } else {
                 progress.completedUnitCount = Int64(min(1.0, session.progress) * Float(den))
                 progressHandler(progress)
@@ -188,19 +197,23 @@ open class VideoClap: NSObject {
         }
     }
     
-    func imageGenerator() -> AVAssetImageGenerator {
-        let playerItem = playerItemForPlay()
-        let generator = AVAssetImageGenerator(asset: playerItem.asset)
-        generator.appliesPreferredTrackTransform = true
-        generator.requestedTimeToleranceAfter = .zero
-        generator.requestedTimeToleranceBefore = .zero
-        generator.maximumSize = requestCallbackHandler.videoDescription.renderSize
-        generator.videoComposition = playerItem.videoComposition
-        return generator
+    func imageGenerator() -> AVAssetImageGenerator? {
+        do {
+            let playerItem = try makePlayerItem()
+            let generator = AVAssetImageGenerator(asset: playerItem.asset)
+            generator.appliesPreferredTrackTransform = true
+            generator.requestedTimeToleranceAfter = .zero
+            generator.requestedTimeToleranceBefore = .zero
+            generator.maximumSize = videoDescription.renderSize
+            generator.videoComposition = playerItem.videoComposition
+            return generator
+        } catch let error {
+            return nil 
+        }
     }
     
     public func estimateVideoDuration() -> CMTime {
-        return playerItemForPlay().asset.duration
+        return (try? makePlayerItem().asset.duration) ?? .zero
     }
     
     public static func cleanExportFolder() {

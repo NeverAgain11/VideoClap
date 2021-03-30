@@ -39,7 +39,7 @@ public class VCAssetImageGenerator: AVAssetImageGenerator {
             return
         }
         
-        if let cacheImage = ThumbnailCache.shared.imageFromMemoryCache(forKey: cacheKey) {
+        if let cacheImage = ThumbnailCache.shared.image(forKey: cacheKey) {
             handler(time,
                     cacheImage,
                     time,
@@ -54,11 +54,9 @@ public class VCAssetImageGenerator: AVAssetImageGenerator {
                 }
                 var uiImage: UIImage?
                 if let cgImage = image {
-                    uiImage = UIImage(cgImage: cgImage)
-                    ThumbnailCache.shared.storeImage(toMemory: uiImage, forKey: cacheKey)
-                } else {
-                    ThumbnailCache.shared.storeImage(toMemory: nil, forKey: cacheKey)
+                    uiImage = UIImage(cgImage: cgImage)   
                 }
+                ThumbnailCache.shared.storeImage(toMemory: uiImage, forKey: cacheKey)
                 handler(requestedTime,
                         uiImage,
                         actualTime,

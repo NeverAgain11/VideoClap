@@ -8,7 +8,7 @@
 import AVFoundation
 
 public class VCRequestItem {
-    var sourceFrameDic: [String : CIImage] = [:]
+    public var sourceFrameDic: [String : CIImage] = [:]
     
-    var instruction: VCVideoInstruction = .init()
+    public var instruction: VCVideoInstruction = .init()
 }

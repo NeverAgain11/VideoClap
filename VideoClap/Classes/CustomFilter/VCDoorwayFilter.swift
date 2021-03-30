@@ -11,6 +11,8 @@ import CoreImage
 open class VCDoorwayFilter: CIFilter {
     
     private static let sourceCode = """
+    // author: gre
+    // License: MIT
     #define black vec4(0.0, 0.0, 0.0, 1.0)
     #define boundMin vec2(0.0, 0.0)
     #define boundMax vec2(1.0, 1.0)
@@ -63,7 +65,7 @@ open class VCDoorwayFilter: CIFilter {
             return color;
         }
         else {
-            return vec4(0.0, 0.0, 0.0, 1.0); // FIXME: 返回黑色，暂时修复显示图像异常
+            return vec4(0.0, 0.0, 0.0, 1.0); // FIXME: Return black, avoid displaying strange image
             vec4 backgroundColor = bgColor(p, pto, reflection, inputTargetImage, progress);
             return backgroundColor;
         }

@@ -10,9 +10,9 @@ import CoreImage
 
 open class VCDropletsFilter: CIFilter {
     
-    /// https://www.shadertoy.com/view/ltlSzl
     private static let sourceCode = """
-    
+    // https://www.shadertoy.com/view/ltlSzl
+    // Created by miloszmaki
     #define NUM 100
 
     float rand(float x)

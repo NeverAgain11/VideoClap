@@ -7,7 +7,7 @@
 
 import AVFoundation
 
-public class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol {
+open class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol {
     
     public var sourceTimeRange: CMTimeRange = .zero
     
@@ -21,32 +21,39 @@ public class VCAudioTrackDescription: NSObject, VCMediaTrackDescriptionProtocol 
     
     public var audioVolumeRampDescriptions: [VCAudioVolumeRampDescription] = []
     
-    public var prefferdTransform: CGAffineTransform? = nil
-    
     public var mediaURL: URL? = nil
     
     public var id: String = ""
     
     public var audioEffectProvider: VCAudioEffectProviderProtocol?
     
+    public internal(set) var processingFormat: AVAudioFormat?
+    
+    public internal(set) var maxFrames: CMItemCount?
+    
     public override init() {
         super.init()
     }
     
-    public func copy(with zone: NSZone? = nil) -> Any {
+    open func copy(with zone: NSZone? = nil) -> Any {
         return self
     }
     
-    public func mutableCopy(with zone: NSZone? = nil) -> Any {
+    open func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCAudioTrackDescription()
         copyObj.mediaURL                    = mediaURL
         copyObj.id                          = id
         copyObj.timeRange                   = timeRange
-        copyObj.prefferdTransform           = prefferdTransform
         copyObj.audioVolumeRampDescriptions = audioVolumeRampDescriptions
         copyObj.audioEffectProvider         = audioEffectProvider
         copyObj.sourceTimeRange             = sourceTimeRange
+        copyObj.processingFormat            = processingFormat
+        copyObj.maxFrames                   = maxFrames
         return copyObj
+    }
+    
+    open func prepare(description: VCVideoDescription) {
+
     }
     
 }

@@ -12,7 +12,8 @@ import CoreImage
 open class VCMegapolis2DPatternTransitionFilter: CIFilter {
     
     private static let sourceCode = """
-    
+    // https://www.shadertoy.com/view/3t2SWd
+    // Created by FabriceNeyret2
     #define TIME_MULT 0.25
     #define IDLE_TIME 0.05
 

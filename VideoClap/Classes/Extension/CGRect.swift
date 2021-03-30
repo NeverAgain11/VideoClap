@@ -19,4 +19,11 @@ extension CGRect {
         }
     }
     
+    func add(_ rect: CGRect) -> CGRect {
+        return CGRect(x: self.origin.x + rect.origin.x,
+                      y: self.origin.y + rect.origin.y,
+                      width: self.size.width + rect.size.width,
+                      height: self.size.height + rect.size.height)
+    }
+    
 }

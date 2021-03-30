@@ -9,12 +9,18 @@ import UIKit
 import SnapKit
 import AVFoundation
 
+public protocol VCTimeScaleViewDelegate: NSObject {
+    func cellModel(model: VCTimeScaleCellModel, index: Int)
+}
+
 public class VCTimeScaleView: UIView {
+    
+    public weak var delegate: VCTimeScaleViewDelegate?
     
     public let timeControl: VCTimeControl
     
-    internal lazy var cells: [VCTimeScaleCell] = {
-        let cells: [VCTimeScaleCell] = []
+    internal lazy var cellModels: [VCTimeScaleCellModel] = {
+        let cells: [VCTimeScaleCellModel] = []
         return cells
     }()
     
@@ -39,7 +45,7 @@ public class VCTimeScaleView: UIView {
     }
     
     private func validate() -> Bool {
-        if datasourceCount <= 0 || cellWidth <= 0 {
+        if datasourceCount < 0 || cellWidth <= 0 {
             return false
         }
         return true
@@ -49,17 +55,23 @@ public class VCTimeScaleView: UIView {
         guard validate() else {
             return
         }
-        frame.size.width = cellWidth * CGFloat(datasourceCount)
+        frame.size.width = timeControl.maxLength
         guard let attributes = layoutAttributesForElements(in: rect) else {
             return
         }
-        cells.forEach({ $0.removeFromSuperview() })
-        let newCells = attributes.map { (attribute) -> VCTimeScaleCell in
-            let cell = cellForItemAt(index: attribute.indexPath.item, attribute: attribute);
-            addSubview(cell);
-            return cell;
+        cellModels.forEach({ $0.dotLabel.removeFromSuperview(); $0.keyTimeLabel.removeFromSuperview() })
+        let newCells = attributes.map { (attribute) -> VCTimeScaleCellModel in
+            let cell = cellForItemAt(index: attribute.indexPath.item)
+            addSubview(cell.keyTimeLabel)
+            addSubview(cell.dotLabel)
+            cell.dotLabel.sizeToFit()
+            cell.keyTimeLabel.sizeToFit()
+            cell.dotLabel.center = attribute.frame.center
+            cell.keyTimeLabel.center = CGPoint(x: attribute.frame.minX, y: attribute.frame.midY)
+            delegate?.cellModel(model: cell, index: attribute.indexPath.item)
+            return cell
         }
-        cells = newCells
+        cellModels = newCells
     }
     
     private func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
@@ -67,11 +79,14 @@ public class VCTimeScaleView: UIView {
         let low = min(datasourceCount, Int(ceil(rect.maxX / cellWidth)) )
         var attributes: [UICollectionViewLayoutAttributes] = []
         if low <= upper {
-            return nil
+            let attr = UICollectionViewLayoutAttributes(forCellWith: IndexPath(item: 0, section: 0))
+            attr.frame = CGRect(origin: CGPoint(x: 0, y: 0), size: CGSize(width: cellWidth, height: self.bounds.height))
+            attributes.append(attr)
+            return attributes
         }
         let cellSize = CGSize(width: cellWidth, height: self.bounds.height)
         let y: CGFloat = 0
-        for index in upper..<low {
+        for index in upper...low {
             let x: CGFloat = CGFloat(index) * cellWidth
             let attr = UICollectionViewLayoutAttributes(forCellWith: IndexPath(item: index, section: 0))
             attr.frame = CGRect(origin: CGPoint(x: x, y: y), size: cellSize)
@@ -80,8 +95,8 @@ public class VCTimeScaleView: UIView {
         return attributes
     }
     
-    private func cellForItemAt(index: Int, attribute: UICollectionViewLayoutAttributes) -> VCTimeScaleCell {
-        let cell = VCTimeScaleCell(frame: attribute.frame)
+    private func cellForItemAt(index: Int) -> VCTimeScaleCellModel {
+        let cell = VCTimeScaleCellModel()
         let time = CMTime(value: timeControl.intervalTime.value * Int64(index), timescale: VCTimeControl.timeBase)
         
         if time.value % 600 == 0 {
@@ -91,7 +106,11 @@ public class VCTimeScaleView: UIView {
             let remaind = time.value - seconds * 600
             cell.keyTimeLabel.text = "\(remaind / 20)f"
         }
- 
+        if index == datasourceCount {
+            cell.dotLabel.isHidden = true
+        } else {
+            cell.dotLabel.isHidden = false
+        }
         return cell
     }
     

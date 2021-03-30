@@ -7,33 +7,88 @@
 
 import AVFoundation
 
-public class VCTextTrackDescription: NSObject, VCTrackDescriptionProtocol {
+public class VCTextTrackDescription: VCImageTrackDescription {
     
-    public var id: String = ""
+    public var text = NSMutableAttributedString(string: "")
     
-    public var timeRange: CMTimeRange = .zero
-    
-    public var text: NSAttributedString = NSAttributedString(string: "")
-    
-    public var center: CGPoint = .zero
-    
-    /// 顺时针，弧度制，1.57顺时针旋转90度，3.14顺时针旋转180度
-    public var rotateRadian: CGFloat = 0.0
-    
-    public var isTypewriter: Bool = false
-    
-    public func copy(with zone: NSZone? = nil) -> Any {
-        return self
+    public var center: CGPoint {
+        get {
+            switch imageLayout {
+            case .fit:
+                return .zero
+            case .fill:
+                return .zero
+            case .center(let point):
+                return point
+            case .rect(_):
+                return .zero
+            }
+        }
+        set {
+            imageLayout = .center(newValue)
+        }
     }
     
-    public func mutableCopy(with zone: NSZone? = nil) -> Any {
+    public var textEffectProvider: VCTextEffectProviderProtocol?
+    
+    internal var context = VCTextEffectRenderContext()
+    
+    public override func mutableCopy(with zone: NSZone? = nil) -> Any {
         let copyObj = VCTextTrackDescription()
-        copyObj.id           = id
-        copyObj.timeRange    = timeRange
-        copyObj.rotateRadian = rotateRadian
-        copyObj.text         = text.mutableCopy() as! NSAttributedString
-        copyObj.isTypewriter = isTypewriter
-        return self
+        copyObj.mediaURL           = mediaURL
+        copyObj.id                 = id
+        copyObj.timeRange          = timeRange
+        copyObj.isFlipHorizontal   = isFlipHorizontal
+        copyObj.filterIntensity    = filterIntensity
+        copyObj.lutImageURL        = lutImageURL
+        copyObj.rotateRadian       = rotateRadian
+        copyObj.cropedRect         = cropedRect
+        copyObj.trajectory         = trajectory
+        copyObj.canvasStyle        = canvasStyle
+        copyObj.imageLayout        = imageLayout
+        copyObj.indexPath          = indexPath
+        copyObj.text               = text.mutableCopy() as! NSMutableAttributedString
+        copyObj.center             = center
+        copyObj.textEffectProvider = textEffectProvider
+        return copyObj
+    }
+    
+    public override func prepare(description: VCVideoDescription) {
+        super.prepare(description: description)
+        if textEffectProvider != nil {
+            context.text = text
+            context.renderSize = description.renderSize
+            context.renderScale = description.renderScale
+            context.textSize = text.size()
+            
+            let framesetter = SCTFramesetter(attrString: text)
+            let sctFrame = framesetter.createFrame()
+            context.characters = sctFrame.characters()
+        }
+    }
+    
+    public override func originImage(time: CMTime, compensateTimeRange: CMTimeRange?) -> CIImage? {
+        return originImage(time: time, renderSize: .zero, renderScale: 0.0, compensateTimeRange: compensateTimeRange)
+    }
+    
+    public override func originImage(time: CMTime, renderSize: CGSize, renderScale: CGFloat, compensateTimeRange: CMTimeRange?) -> CIImage? {
+        locker.object(forKey: #function).lock()
+        defer {
+            locker.object(forKey: #function).unlock()
+        }
+        
+        if let effectProvider = self.textEffectProvider {
+            let progress = (time.seconds / timeRange.duration.seconds).clamped(to: 0...1.0)
+            context.progress = CGFloat(progress)
+            return effectProvider.effectImage(context: context)
+        } else {
+            let renderer = VCGraphicsRenderer()
+            renderer.rendererRect.size = text.size()
+            
+            return renderer.ciImage { (context) in
+                text.draw(at: .zero)
+            }
+        }
     }
     
 }

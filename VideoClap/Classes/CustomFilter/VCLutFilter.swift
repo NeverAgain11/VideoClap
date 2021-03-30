@@ -10,6 +10,8 @@ import CoreImage
 
 open class VCLutFilter: CIFilter {
     
+    public static let share = VCLutFilter()
+    
     private static let sourceCode = """
     kernel vec4 YasicLUT(sampler inputImage, sampler inputLUT, float intensity) {
         vec4 textureColor = sample(inputImage, samplerCoord(inputImage));
@@ -49,6 +51,14 @@ open class VCLutFilter: CIFilter {
     
     @objc public var inputIntensity: NSNumber = 1.0
     
+    lazy var context: CIContext = {
+        var options: [CIContextOption : Any] = [:]
+        options[.workingColorSpace] = CGColorSpace(name: CGColorSpace.sRGB)
+        options[.outputColorSpace] = CGColorSpaceCreateDeviceRGB()
+        let context = CIContext(options: options)
+        return context
+    }()
+    
     public override var outputImage: CIImage? {
         guard let kernel = VCLutFilter.kernel else { return nil }
         guard let inputImage = self.inputImage else { return nil }
@@ -58,11 +68,10 @@ open class VCLutFilter: CIFilter {
         finalFrame = kernel.apply(extent: finalFrame.extent, roiCallback: { (index, destRect) -> CGRect in
             return index == 0 ? destRect : lookupImage.extent
         }, arguments: [finalFrame, lookupImage, inputIntensity.floatValue]) ?? finalFrame
-        
-        if let colorSpace = lookupImage.colorSpace {
+        if #available(iOS 10.0, *) {
+            finalFrame = finalFrame.matchedFromWorkingSpace(to: CGColorSpaceCreateDeviceRGB()) ?? finalFrame
+        } else {
             let origin = finalFrame.extent.origin
-            let context = CIContext(options: [CIContextOption.workingColorSpace : colorSpace,
-                                              CIContextOption.outputColorSpace : CGColorSpaceCreateDeviceRGB()])
             if let cgImage = context.createCGImage(finalFrame, from: finalFrame.extent) {
                 finalFrame = CIImage(cgImage: cgImage)
                 finalFrame = finalFrame.transformed(by: .init(translationX: origin.x, y: origin.y))
